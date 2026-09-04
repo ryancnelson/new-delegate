@@ -398,6 +398,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 35 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=https` and HTTPS mount translation metadata
 
+### Iteration 36 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=gopher` and path mount translation metadata
+
 ---
 
 ## Ideas Inbox (Unsorted)
