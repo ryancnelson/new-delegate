@@ -3,6 +3,7 @@ package compatibility
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -97,5 +98,87 @@ func TestRunReferenceRunnerFallsBackToBinPath(t *testing.T) {
 	_, err = CompareFixture(fixture, CompareOptions{BinPath: script})
 	if err != nil {
 		t.Fatalf("CompareFixture() = %v, want nil", err)
+	}
+}
+
+func TestRunFixtureSuite(t *testing.T) {
+	tempDir := t.TempDir()
+	src := filepath.Join("testdata", "fixture-server-8080.json")
+	dst := filepath.Join(tempDir, "fixture-server-8080.json")
+
+	encoded, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dst, encoded, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	mismatches, err := RunFixtureSuite(context.Background(), tempDir, CompareOptions{})
+	if err != nil {
+		t.Fatalf("RunFixtureSuite() = %v, want nil", err)
+	}
+	if len(mismatches) != 0 {
+		t.Fatalf("RunFixtureSuite() mismatches = %d, want 0", len(mismatches))
+	}
+}
+
+func TestRunFixtureSuiteReportsMismatch(t *testing.T) {
+	tempDir := t.TempDir()
+	src := filepath.Join("testdata", "fixture-server-8080.json")
+	dst := filepath.Join(tempDir, "fixture-server-8080.json")
+
+	encoded, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fixture Fixture
+	if err := json.Unmarshal(encoded, &fixture); err != nil {
+		t.Fatal(err)
+	}
+	fixture.ReferenceConfig.Servers[0].Listen = ":9090"
+	mutated, err := json.Marshal(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dst, mutated, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	mismatches, err := RunFixtureSuite(context.Background(), tempDir, CompareOptions{})
+	if err != nil {
+		t.Fatalf("RunFixtureSuite() = %v, want nil", err)
+	}
+	if len(mismatches) != 1 {
+		t.Fatalf("RunFixtureSuite() mismatches = %d, want 1", len(mismatches))
+	}
+	if mismatches[0].Name != "SERVER=http with -P8080" {
+		t.Fatalf("mismatch name = %q, want %q", mismatches[0].Name, "SERVER=http with -P8080")
+	}
+}
+
+func TestRunFixtureSuitePropagatesRunnerError(t *testing.T) {
+	tempDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tempDir, "fixture.json"), []byte(`{
+  "name": "bad ref",
+  "args": ["SERVER=http", "-P8080"],
+  "reference_config": {
+    "servers": [
+      {"name":"default","protocol":"http","listen":":8080"}
+    ]
+  }
+}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	runnerErr := errors.New("reference unavailable")
+	runner := func(_ context.Context, _ ...string) ([]byte, error) { return nil, runnerErr }
+
+	_, err := RunFixtureSuite(context.Background(), tempDir, CompareOptions{Runner: runner})
+	if err == nil {
+		t.Fatal("RunFixtureSuite() = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "reference unavailable") {
+		t.Fatalf("RunFixtureSuite() error = %v, want contains %q", err, "reference unavailable")
 	}
 }

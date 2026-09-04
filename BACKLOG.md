@@ -270,7 +270,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   peer address remains the default and untrusted forwarding headers are
   ignored.
 - [DONE] HTTP/FTP Fetch, Store, and List translation.
-- [IN PROGRESS] Differential compatibility harness for an original DeleGate executable.
+- [DONE] Differential compatibility harness for an original DeleGate executable.
 
 ---
 
@@ -377,6 +377,12 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 28 (2026-09-04)
 - [DONE] ✅ Added FTP LIST translation on the dedicated ftp connector
 
+### Iteration 29 (2026-09-04)
+- [DONE] ✅ Added compatibility harness scaffolding for deterministic fixture loading
+
+### Iteration 30 (2026-09-04)
+- [DONE] ✅ Added a runnable compatibility fixture suite with optional reference-binary execution
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -404,5 +410,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Select the next compatibility slice after the HTTP Fetch, Store,
-and CONNECT foundation.
+**Next step:** Select the next compatibility slice to extend legacy-directive
+parity coverage and broaden the fixture corpus against a reference DeleGate
+executable.

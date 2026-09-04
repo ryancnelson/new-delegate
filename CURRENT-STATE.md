@@ -160,11 +160,9 @@ Last verified: 2026-09-04
 - `ftp://` mounts now execute protocol-neutral Fetch and Store operations through
   a dedicated FTP connector and preserve loopback behavior for `RETR`, `STOR`, and
   `LIST` operations.
-- A compatibility harness skeleton now exists for differential checks against
-  original DeleGate semantics. It loads verified legacy fixtures with expected
-  canonical output, compares new parser results against fixed baselines, and
-  supports a pluggable reference runner hook suitable for wiring a reference
-  executable later.
+- A differential compatibility harness now executes fixture suites over
+  canonical baseline JSON and supports an optional reference executable/path for
+  actual behavior comparisons against original DeleGate output.
 
 ## Unverified
 
@@ -174,8 +172,9 @@ Last verified: 2026-09-04
 
 ## Current gate
 
-Active gate is now wiring the compatibility harness to an actual reference
-executable.
+Active gate is now expanding the compatibility fixture set for additional legacy
+directives while keeping comparison behavior wired through a reference-executable
+path.
 
 Active verification and release builds target only Darwin/arm64 and Linux/amd64
 until the owner expands the matrix.

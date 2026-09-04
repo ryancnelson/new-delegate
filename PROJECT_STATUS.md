@@ -2,6 +2,17 @@
 
 Running changelog, updated automatically every 10 minutes.
 
+## 2026-09-04 06:32
+
+- This pass adds `iter-30`, making the compatibility harness runnable as a
+  fixture suite with optional external reference execution.
+- `./scripts/check.sh` remains green (`gofmt`, `vet`, tests, race, and
+  Darwin/arm64 + Linux/amd64 builds) with local verification.
+- Current gate in `CURRENT-STATE.md` now: expand compatibility fixture coverage
+  while using the reference-executable-capable suite path.
+- Working tree is clean and in sync with `origin`/`ci`; scope remains
+  Darwin/arm64 and Linux/amd64.
+
 ## 2026-09-04 05:53
 
 - New commit `c99b4ca [iter-28] add ftp list translation` adds protocol-neutral
@@ -456,3 +467,10 @@ Running changelog, updated automatically every 10 minutes.
 - Working tree is clean and in sync with `origin/main`; current gate per
   `CURRENT-STATE.md` remains the differential compatibility slice: FTP `LIST`
   translation and compatibility harnesses against original DeleGate.
+
+## 2026-09-03 23:14
+
+- New commit: `0a1d631 [iter-29] add compatibility harness scaffolding`. Working tree clean, in sync with `origin/main`.
+- FTP `LIST` translation is confirmed committed (`c99b4ca`/`ee9cb4f`, `iter-28`). Differential compatibility harness scaffolding against the original DeleGate implementation is now in place.
+- New `[IN PROGRESS]` item (BACKLOG.md line 273): differential compatibility harness for an original DeleGate executable. New current gate per CURRENT-STATE.md: wire the compatibility harness to an actual reference executable.
+- Build/release scope still limited to Darwin/arm64 and Linux/amd64. Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.

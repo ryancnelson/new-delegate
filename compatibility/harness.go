@@ -17,6 +17,7 @@ type ReferenceRunner func(ctx context.Context, args ...string) ([]byte, error)
 // CompareOptions controls how compatibility checks compare new behavior against
 // prior output.
 type CompareOptions struct {
+	Context context.Context
 	Runner  ReferenceRunner
 	BinPath string
 }
@@ -47,7 +48,11 @@ func CompareFixture(fixture Fixture, opts CompareOptions) (FixtureMismatch, erro
 	}
 
 	var reference []byte
-	reference, err = runReferenceRunner(context.Background(), fixture.Args, opts)
+	ctx := opts.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	reference, err = runReferenceRunner(ctx, fixture.Args, opts)
 	if err != nil {
 		return FixtureMismatch{}, fmt.Errorf("reference comparison for %q: %w", fixture.Name, err)
 	}
