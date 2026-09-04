@@ -111,6 +111,18 @@ Development is organized as small iterate-bot sessions. Each session takes the
 highest-priority ready item from `BACKLOG.md`, begins with a failing test, makes
 the smallest implementation that passes, updates verified state, and commits.
 
+Create reproducible single-binary release archives for every verified target:
+
+```sh
+./scripts/release.sh v0.1.0 dist
+shasum -a 256 -c dist/SHA256SUMS
+```
+
+The fixed matrix is Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64, and
+Windows/amd64, all with `CGO_ENABLED=0`. Each deterministic zip contains only
+`delegate` (or `delegate.exe`) and `README.md`; `delegate version` reports the
+link-time stamp. The native archive is smoke-tested with `delegate check`.
+
 The canonical private origin is Gitea on Biggie. A private GitHub mirror feeds
 Biggie's existing Woodpecker forge integration; it is CI transport, not a
 second source of truth.

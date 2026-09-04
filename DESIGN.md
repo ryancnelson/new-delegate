@@ -62,6 +62,10 @@ Darwin/arm64 is the primary development platform. Linux/amd64 and Linux/arm64
 are runtime targets. illumos/amd64 and Windows/amd64 are compile-checked. The
 default build uses pure Go and no assembly.
 
+Release archives use fixed ordering, timestamps, modes, trimmed source paths,
+and an empty Go build ID. The same source/version pair must produce identical
+SHA-256 manifests.
+
 ## Reference-derived guardrails
 
 Copyparty demonstrates that a broad, multi-protocol service can remain useful

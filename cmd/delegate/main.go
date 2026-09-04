@@ -18,6 +18,8 @@ import (
 	gatewayserver "gitea.local/ryan/new-delegate/server"
 )
 
+var version = "devel"
+
 func main() {
 	args := os.Args[1:]
 	reloadPath := configPathFromArgs(args)
@@ -39,6 +41,14 @@ func configPathFromArgs(args []string) string {
 }
 
 func run(args []string, stdout, stderr io.Writer, serve func(config.Config) error) int {
+	if len(args) > 0 && args[0] == "version" {
+		if len(args) != 1 {
+			fmt.Fprintln(stderr, "version takes no arguments")
+			return 2
+		}
+		fmt.Fprintln(stdout, version)
+		return 0
+	}
 	mode := "serve"
 	if len(args) > 0 && (args[0] == "check" || args[0] == "serve" || args[0] == "explain") {
 		mode = args[0]

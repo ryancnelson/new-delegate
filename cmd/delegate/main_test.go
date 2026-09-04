@@ -42,6 +42,20 @@ func TestRunCheckPrintsCanonicalConfigWithoutServing(t *testing.T) {
 	}
 }
 
+func TestRunPrintsBuildVersionWithoutLoadingConfiguration(t *testing.T) {
+	oldVersion := version
+	version = "v1.2.3-test"
+	t.Cleanup(func() { version = oldVersion })
+	var stdout, stderr bytes.Buffer
+	got := run([]string{"version"}, &stdout, &stderr, func(config.Config) error {
+		t.Fatal("version invoked runtime")
+		return nil
+	})
+	if got != 0 || stdout.String() != "v1.2.3-test\n" || stderr.Len() != 0 {
+		t.Fatalf("run(version) = %d, stdout=%q, stderr=%q", got, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunCheckLoadsTOMLConfigWithoutServing(t *testing.T) {
 	directory := t.TempDir()
 	path := filepath.Join(directory, "delegate.toml")

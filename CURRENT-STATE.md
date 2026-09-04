@@ -116,6 +116,15 @@ Last verified: 2026-09-03
   listener binds, unknown transport policies fail before dialing, idle pools
   close at shutdown, and changing the preloaded backend TLS-policy set requires
   a restart while routing among the existing set may reload.
+- `scripts/release.sh VERSION OUTPUT_DIRECTORY` produces deterministic zip
+  archives for Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64, and
+  Windows/amd64 with CGO disabled, trimmed paths, no VCS metadata, an empty Go
+  build ID, and a link-time version stamp. Archives contain the executable and
+  README, preserve executable mode, and have a stable SHA-256 manifest. Two
+  complete real builds produced identical manifests; all checksums verified,
+  and the extracted Darwin binary reported its version and passed `check`
+  against the canonical example. Archive construction also has isolated,
+  network-free determinism tests.
 
 ## Unverified
 
@@ -125,5 +134,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Package the portable gateway as checksummed single-binary release artifacts and
-smoke-test the native archive.
+Add fail-closed URL-authority source patterns to `MOUNT` as the routing
+prerequisite for HTTP forward proxying.

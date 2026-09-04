@@ -57,7 +57,21 @@ Running changelog, updated automatically every 10 minutes.
 - Invalid backend material causes zero binds, unknown policies cause zero
   backend calls, idle pools close at shutdown, and changes to the preloaded TLS
   policy set require restart. The full local gate passes; remote CI is pending.
-  Next gate: checksummed self-contained release artifacts.
+  Woodpecker pipeline #21 accepted commit `8be449e`. Next gate: checksummed
+  self-contained release artifacts.
+
+## 2026-09-03 21:31
+
+- Iteration 21 adds a deterministic Go standard-library release packager behind
+  `scripts/release.sh`, plus a link-time `delegate version` command.
+- Five CGO-free zip archives cover Darwin/arm64, Linux/amd64, Linux/arm64,
+  illumos/amd64, and Windows/amd64. Fixed metadata/order, trimmed paths, disabled
+  VCS embedding, and an empty build ID make output reproducible. A SHA-256
+  manifest covers every archive.
+- Two complete real builds produced identical manifests; all five checksums
+  verified. The extracted Darwin/arm64 executable reported `v0.0.0-smoke` and
+  successfully checked `examples/delegate.toml`. The full local gate passes;
+  remote CI is pending. Next gate: URL-authority `MOUNT` sources.
 
 ## 2026-09-03 18:46
 
@@ -219,6 +233,14 @@ Running changelog, updated automatically every 10 minutes.
 - New commit: `37ef906 [iter-19] terminate frontend TLS atomically`. Matches the iteration-19 summary already logged out-of-band at 21:08 in this file: frontend TLS termination uses only the standard library; every identity loads before the first bind; plaintext and TLS listeners coexist under the existing coordinated shutdown lifecycle; loopback fixtures prove TLS 1.3 service, TLS-1.2-only client rejection, the secure TLS 1.2 default, zero binds on cert failure, and closure of earlier sockets when a later bind fails.
 - New `[IN PROGRESS]` item (BACKLOG.md line 195): apply each HTTPS mount's validated backend trust and optional client identity — this is the current gate per CURRENT-STATE.md ("build per-mount backend TLS transports without leaking transport policy into protocol-neutral Fetch operations"). Work has already started uncommitted: modified `tlsruntime/frontend.go`, `BACKLOG.md`; untracked `tlsruntime/backend.go`, `tlsruntime/backend_test.go`, `connector/routes.go`, `connector/routes_test.go`.
 - Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
+
+## 2026-09-03 21:24
+
+- New commit: `8be449e [iter-20] route backend TLS per mount`. Working tree clean, in sync with `origin/main`.
+- Matches the iteration-20 summary already logged out-of-band at 21:22 in this file: HTTPS mounts select preloaded backend transports after mount resolution/authorization without leaking TLS details into the protocol-neutral Fetch; system roots default, custom CA files append trust, explicit server names/TLS minimums apply, optional client identities support mutual TLS; loopback tests prove private-CA and client-cert verification through the full gateway; invalid backend material blocks all listener binds; unknown transport policies fail before dialing; idle pools close at shutdown; changing the preloaded backend TLS-policy set requires a restart (routing among the existing set may reload).
+- **Full TLS story is now `[DONE]`**: frontend termination (iter-19) and per-mount backend TLS/mTLS (iter-20) both closed, joining the earlier independent TLS policy model (iter-18).
+- New `[READY]` item (BACKLOG.md line 205): produce checksummed single-binary archives for every supported target. New current gate per CURRENT-STATE.md: package the portable gateway as checksummed single-binary release artifacts and smoke-test the native archive.
+- Remaining unverified unchanged: legacy syntax outside the verified `SERVER`/`-P`/practical scoped `MOUNT`/`PERMIT`/`REJECT` subset; legacy adapter still one server per process invocation.
 
 ## 2026-09-03 19:56
 

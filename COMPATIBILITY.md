@@ -17,6 +17,7 @@ Only passing tests may move an item to `verified`.
 | Modern TOML | Strict canonical configuration file | verified: server, mount, policy, trusted proxy, and TLS models |
 | Decision inspection | Side-effect-free effective routing/policy explanation | verified: JSON `explain` command |
 | Forwarded client identity | Per-listener header and trusted-proxy CIDRs | verified: HTTP, right-to-left trust chain |
+| Portable distribution | Checksummed self-contained executable archives | verified: five CGO-free targets |
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | planned |
 | SOCKS5 | CONNECT and bounded relay | planned |

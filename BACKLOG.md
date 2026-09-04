@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 20 - Per-mount backend TLS)
+**Last Updated:** 2026-09-03 (Iteration 21 - Reproducible release artifacts)
 
 ---
 
@@ -202,12 +202,22 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-023: Self-contained release artifacts
 
-- [READY] Produce checksummed single-binary archives for every supported target.
+- [DONE] Produce checksummed single-binary archives for every supported target.
 - Acceptance: one deterministic script builds Darwin/arm64, Linux/amd64,
   Linux/arm64, illumos/amd64, and Windows/amd64 with `CGO_ENABLED=0`; archives
   contain only the executable plus essential notices; SHA-256 checksums are
   emitted; the native artifact passes `delegate check` against the example;
   tests use a temporary output directory and never depend on public networks.
+
+### P1-024: URL-authority MOUNT sources
+
+- [READY] Extend mount sources beyond path-only patterns to original-style
+  absolute HTTP URLs while preserving path mounts as reverse-gateway defaults.
+- Acceptance: canonical and legacy forms distinguish scheme, host, port, and
+  normalized path without DNS; host comparison is case-insensitive and ports
+  are explicit; userinfo, fragments, ambiguous escaping, and malformed
+  authorities fail closed; resolution remains deterministic; `explain` covers
+  both source forms. This becomes the routing basis for HTTP forward proxying.
 
 ---
 
@@ -307,6 +317,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 20 (2026-09-03)
 - [DONE] ✅ Routed per-mount backend TLS and mutual TLS
 
+### Iteration 21 (2026-09-03)
+- [DONE] ✅ Built reproducible checksummed release archives
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -334,5 +347,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Package the portable gateway as checksummed single-binary release
-artifacts and smoke-test the native archive.
+**Next step:** Add fail-closed URL-authority source patterns to `MOUNT` as the
+routing prerequisite for HTTP forward proxying.
