@@ -27,13 +27,17 @@ Last verified: 2026-09-03
   panic, and accepted paths are tested for idempotence.
 - Mount resolution chooses longest specificity, then explicit priority;
   no-match and equal-winner ambiguity are typed failures.
+- The policy kernel defaults to deny, matches source/protocol/method/mount
+  constraints, chooses highest priority, and gives rejection precedence at an
+  equal priority. Decisions carry stable reason codes, and enforcement tests
+  prove a denied callback cannot execute.
 
 ## Unverified
 
 - Woodpecker repository activation and pipeline execution.
 - Legacy syntax other than the verified `SERVER`, `-P`, and practical `MOUNT`
-  subset, plus policy and gateway runtime behavior. Mount scoping by named
-  server and protocol is deferred until multiple listeners exist.
+  subset, plus gateway runtime behavior. Legacy `PERMIT`/`REJECT` parsing and
+  mount scoping by named server/protocol remain deferred.
 
 ## Current gate
 

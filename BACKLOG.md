@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 4 - Safe deterministic resolution)
+**Last Updated:** 2026-09-03 (Iteration 5 - Policy kernel)
 
 ---
 
@@ -70,7 +70,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-008: Permit/reject policy kernel
 
-- [READY] Evaluate source, protocol, method, and mount constraints.
+- [DONE] Evaluate source, protocol, method, and mount constraints.
 - Acceptance: default deny; explicit rejection wins at equal priority; no
   connector method can be invoked before an allow decision.
 
@@ -124,6 +124,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 4 (2026-09-03)
 - [DONE] ✅ Added fail-closed path normalization and deterministic mount resolution
 
+### Iteration 5 (2026-09-03)
+- [DONE] ✅ Added typed default-deny permit/reject decisions and enforcement
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -146,6 +149,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add the default-deny permit/reject kernel while the Gitea forge
-is connected to Woodpecker; remote CI remains required before the batch is
+**Next step:** Build the HTTP-to-HTTP acceptance slice while the Gitea forge is
+connected to Woodpecker; remote CI remains required before the batch is
 accepted.
