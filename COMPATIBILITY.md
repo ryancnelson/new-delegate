@@ -89,6 +89,8 @@ Intentional differences:
   when `SERVER=` is uppercase.
 - Legacy compatibility fixtures now include mixed-case `MOUNT` option keys
   (`server=`, `protocol=`, `priority=`) on legacy directives.
+- Legacy compatibility fixtures now include mixed-case `MOUNT` option keys for a
+  full HTTPS legacy mount with matching policies.
 - Legacy compatibility fixtures now include uppercase `SERVER=HTTPS` `CONNECT`
   metadata and selector normalization.
 - Legacy compatibility fixtures now include uppercase `SERVER=SOCKS` `CONNECT`

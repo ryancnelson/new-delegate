@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 61 - MOUNT option key case normalization)
+**Last Updated:** 2026-09-04 (Iteration 62 - HTTPS MOUNT option key case coverage)
 
 ---
 
@@ -479,6 +479,10 @@ Track completed items here to celebrate progress and inform future strategic rev
 - [DONE] ✅ Added mixed-case parsing support for legacy `MOUNT` option keys and
   compatibility fixture coverage for case-mixed `priority`, `server`, and `protocol`
   options.
+
+### Iteration 62 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for mixed-case `MOUNT` option
+  keys in an HTTPS legacy mount flow with `PERMIT`/`REJECT` metadata.
 
 ---
 

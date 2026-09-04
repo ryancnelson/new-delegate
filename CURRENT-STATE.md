@@ -219,6 +219,8 @@ Last verified: 2026-09-04
   `GOPHER`, `FTP`, and `SOCKS`.
 - The compatibility fixture corpus now includes mixed-case `MOUNT` option key
   parsing for `priority=`, `server=`, and `protocol=`.
+- The compatibility fixture corpus now includes mixed-case `MOUNT` option keys in a
+  full HTTPS legacy mount flow with policy metadata.
 - The compatibility fixture corpus now includes `SERVER=HTTPS` `CONNECT` metadata and
   selector case-normalization.
 - The compatibility fixture corpus now includes `SERVER=SOCKS` `CONNECT` metadata
