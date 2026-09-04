@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"net/textproto"
 	"net/url"
 	"strconv"
@@ -102,9 +103,21 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 	}
 	defer data.Close()
 
-	switch strings.ToUpper(method) {
+	command := strings.ToUpper(method)
+	switch command {
 	case "PUT":
-		if err := writeFTPCommand(controlWriter, "STOR", parsed.Path); err != nil {
+		command = "STOR"
+	case "LIST":
+		command = "LIST"
+	case http.MethodGet:
+		command = "RETR"
+	default:
+		command = "RETR"
+	}
+
+	switch command {
+	case "STOR":
+		if err := writeFTPCommand(controlWriter, command, parsed.Path); err != nil {
 			return operation.Result{}, err
 		}
 		reply, err = readFTPReply(controlReader)
@@ -126,8 +139,8 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 			return operation.Result{}, fmt.Errorf("ftp STOR completion: %w", err)
 		}
 		return operation.Result{Status: reply.Code}, nil
-	default:
-		if err := writeFTPCommand(controlWriter, "RETR", parsed.Path); err != nil {
+	case "RETR":
+		if err := writeFTPCommand(controlWriter, command, parsed.Path); err != nil {
 			return operation.Result{}, err
 		}
 		reply, err = readFTPReply(controlReader)
@@ -147,7 +160,29 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 			return operation.Result{}, fmt.Errorf("ftp RETR completion: %w", err)
 		}
 		return operation.Result{Status: reply.Code, Body: io.NopCloser(bytes.NewReader(payload))}, nil
+	case "LIST":
+		if err := writeFTPCommand(controlWriter, command, parsed.Path); err != nil {
+			return operation.Result{}, err
+		}
+		reply, err = readFTPReply(controlReader)
+		if err != nil {
+			return operation.Result{}, fmt.Errorf("ftp LIST: %w", err)
+		}
+		if reply.Code < 100 || reply.Code > 199 {
+			return operation.Result{}, fmt.Errorf("ftp LIST rejected with %d", reply.Code)
+		}
+		payload, err := io.ReadAll(data)
+		if err != nil {
+			return operation.Result{}, fmt.Errorf("ftp LIST data read: %w", err)
+		}
+		_ = data.Close()
+		reply, err = readFTPReply(controlReader)
+		if err != nil {
+			return operation.Result{}, fmt.Errorf("ftp LIST completion: %w", err)
+		}
+		return operation.Result{Status: reply.Code, Body: io.NopCloser(bytes.NewReader(payload))}, nil
 	}
+	return operation.Result{}, fmt.Errorf("unsupported ftp command %q", command)
 }
 
 type ftpReply struct {

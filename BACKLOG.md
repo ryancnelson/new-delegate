@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 27 - HTTP/FTP Fetch and Store translation)
+**Last Updated:** 2026-09-04 (Iteration 28 - HTTP/FTP Fetch and List translation)
 
 ---
 
@@ -248,6 +248,13 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   bodies reach the HTTP connector; denial invokes no connector; existing Fetch
   and CONNECT behavior remains unchanged; loopback tests prove the full slice.
 
+### P1-028: Typed FTP List operation
+
+- [DONE] Route authorized ftp list fetches into the dedicated FTP connector.
+- Acceptance: `LIST` over `ftp://` targets returns directory listing text and
+  status through the semantic `Fetch` operation while preserving mount
+  selection and policy behavior.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -262,7 +269,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 - [DONE] Trusted-proxy CIDRs for accepting forwarded client addresses; direct
   peer address remains the default and untrusted forwarding headers are
   ignored.
-- [DONE] HTTP/FTP Fetch and Store translation.
+- [DONE] HTTP/FTP Fetch, Store, and List translation.
 - Differential compatibility harness for an original DeleGate executable.
 
 ---
@@ -366,6 +373,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 27 (2026-09-04)
 - [DONE] ✅ Added FTP Fetch and Store connector translation
+
+### Iteration 28 (2026-09-04)
+- [DONE] ✅ Added FTP LIST translation on the dedicated ftp connector
 
 ---
 

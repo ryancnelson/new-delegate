@@ -14,6 +14,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -151,6 +152,24 @@ func TestHTTPRoutesDispatchesFTPFetchAndStore(t *testing.T) {
 	if got := string(store["/reports/plan.txt"]); got != storePayload {
 		t.Fatalf("stored body = %q, want %q", got, storePayload)
 	}
+
+	listResult, err := routes.FetchForMount(context.Background(), mount.Mount{
+		Target: "ftp://" + address + "/",
+	}, operation.Fetch{
+		Method:   "LIST",
+		Resource: "ftp://" + address + "/",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listResult.Body.Close()
+	listBody, err := io.ReadAll(listResult.Body)
+	if err != nil || string(listBody) != "reports/plan.txt\n" {
+		t.Fatalf("list body = %q, %v; want reports/plan.txt\\n", listBody, err)
+	}
+	if listResult.Status != 226 {
+		t.Fatalf("list status = %d, want 226", listResult.Status)
+	}
 }
 
 func startFakeFTPServer(t *testing.T, files map[string][]byte, uploads map[string][]byte) (string, func()) {
@@ -245,6 +264,31 @@ func startFakeFTPServer(t *testing.T, files map[string][]byte, uploads map[strin
 						dataLock.Lock()
 						uploads[argument] = received
 						dataLock.Unlock()
+						_ = writeFTPLine(connection, "226 Transfer complete")
+					case "LIST":
+						if dataListener == nil {
+							_ = writeFTPLine(connection, "425 Use PASV first")
+							continue
+						}
+						_ = writeFTPLine(connection, "150 Here comes the directory listing")
+						dataConnection, acceptErr := dataListener.Accept()
+						if acceptErr != nil {
+							_ = writeFTPLine(connection, "425 Data connection failed")
+							continue
+						}
+						dataLock.Lock()
+						lines := make([]string, 0, len(files))
+						for name := range files {
+							lines = append(lines, strings.TrimPrefix(name, "/"))
+						}
+						dataLock.Unlock()
+						sort.Strings(lines)
+						for _, name := range lines {
+							_, _ = dataConnection.Write([]byte(name + "\n"))
+						}
+						_ = dataConnection.Close()
+						_ = dataListener.Close()
+						dataListener = nil
 						_ = writeFTPLine(connection, "226 Transfer complete")
 					case "QUIT":
 						_ = writeFTPLine(connection, "221 Bye")
