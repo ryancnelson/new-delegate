@@ -39,16 +39,17 @@ Last verified: 2026-09-03
   canonical `origin` remains `ryan/new-delegate` on Gitea. The local-backend
   pipeline bootstraps a checksum-pinned Go 1.25.6 toolchain in `/tmp` because
   the intentionally small agent image does not contain Go.
+- Biggie Woodpecker pipeline 4 passed in 31 seconds at commit `fa799d6`,
+  validating formatting, vet, all tests, and CGO-free Darwin/arm64,
+  Linux/amd64, Linux/arm64, and illumos/amd64 builds.
 
 ## Unverified
 
-- A green Woodpecker pipeline; repository activation and webhook delivery are
-  verified, and the checksum-pinned runner fix awaits its first execution.
 - Legacy syntax other than the verified `SERVER`, `-P`, and practical `MOUNT`
   subset, plus gateway runtime behavior. Legacy `PERMIT`/`REJECT` parsing and
   mount scoping by named server/protocol remain deferred.
 
 ## Current gate
 
-Push iteration 6 to both Gitea and the private GitHub CI mirror, then require a
-green Biggie Woodpecker build before accepting the batch.
+Add canonical policy configuration and the original `PERMIT`/`REJECT` syntax,
+then make the tested HTTP slice runnable from validated configuration.

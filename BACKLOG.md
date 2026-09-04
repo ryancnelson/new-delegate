@@ -24,7 +24,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-001: Bootstrap and prove remote CI
 
-- [IN PROGRESS] Create the Go module, project contracts, and Woodpecker gate.
+- [DONE] Create the Go module, project contracts, and Woodpecker gate.
 - Acceptance: `./scripts/check.sh` passes locally; a push to `main` produces a
   green Woodpecker pipeline on Biggie; Linux and Darwin/arm64 builds succeed
   with `CGO_ENABLED=0`.
@@ -110,7 +110,7 @@ Ideas that need more thought, research, or are lower value. Park here for consid
 Track completed items here to celebrate progress and inform future strategic reviews.
 
 ### Iteration 0 (2026-09-03)
-- [DONE] ✅ Initialized project with iterate-bot methodology
+- [DONE] ✅ Initialized project with iterate-bot methodology and proved Biggie CI
 
 ### Iteration 1 (2026-09-03)
 - [DONE] ✅ Added immutable validation for canonical server configuration
@@ -152,5 +152,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Obtain the first green Biggie Woodpecker run, then add legacy
-`PERMIT`/`REJECT` parsing and a runnable configuration loader.
+**Next step:** Add legacy `PERMIT`/`REJECT` parsing and a runnable configuration
+loader.

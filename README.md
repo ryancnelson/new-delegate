@@ -1,5 +1,7 @@
 # new-delegate
 
+[![Woodpecker CI](http://biggie.lynx-eagle.ts.net:8110/api/badges/5/status.svg)](http://biggie.lynx-eagle.ts.net:8110/repos/5)
+
 `new-delegate` is a portable, DeleGate-compatible application gateway written
 in Go. It preserves the original program's strongest concepts: a daemon can
 present one protocol on its client side, map virtual resources with `MOUNT`,

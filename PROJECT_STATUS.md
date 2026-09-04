@@ -21,6 +21,14 @@ Running changelog, updated automatically every 10 minutes.
   is ready to ship with iteration 6 after the minimal local-backend agent was
   found not to include a Go toolchain.
 
+## 2026-09-03 19:22
+
+- Biggie Woodpecker pipeline 4 passed in 31 seconds at `fa799d6`.
+- The bootstrap, repository activation, webhook delivery, tests, and portable
+  builds are now verified remotely.
+- The first compatibility-kernel batch through the HTTP Fetch acceptance slice
+  is accepted. Next is canonical and legacy `PERMIT`/`REJECT` configuration.
+
 ## 2026-09-03 18:54
 
 - Two more iterations landed: `2faa643 [iter-1] add canonical server validation`, `b5bef4f [iter-2] parse legacy SERVER directives`.
