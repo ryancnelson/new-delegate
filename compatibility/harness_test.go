@@ -44,6 +44,40 @@ func TestLoadFixtureRejectsEmptyArgs(t *testing.T) {
 	}
 }
 
+func TestLoadFixtureRejectsMissingName(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "bad.json")
+	if err := os.WriteFile(path, []byte(`{
+  "name": "",
+  "args": ["SERVER=http", "-P8080"],
+  "reference_config": {"servers": [{"name":"default","protocol":"http","listen":":8080"}]}
+}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadFixture(path); err == nil {
+		t.Fatal("LoadFixture() = nil, want error")
+	} else if !strings.Contains(err.Error(), "missing name") {
+		t.Fatalf("LoadFixture() error = %v, want contains %q", err, "missing name")
+	}
+}
+
+func TestLoadFixtureRejectsInvalidReferenceConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "bad.json")
+	if err := os.WriteFile(path, []byte(`{
+  "name": "bad",
+  "args": ["SERVER=http", "-P8080"],
+  "reference_config": {}
+}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadFixture(path); err == nil {
+		t.Fatal("LoadFixture() = nil, want error")
+	} else if !strings.Contains(err.Error(), "reference_config invalid") {
+		t.Fatalf("LoadFixture() error = %v, want contains %q", err, "reference_config invalid")
+	}
+}
+
 func TestCompareFixtureAgainstStoredReference(t *testing.T) {
 	fixture, err := LoadFixture(filepath.Join("testdata", "fixture-server-8080.json"))
 	if err != nil {
