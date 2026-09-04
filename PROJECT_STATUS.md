@@ -29,13 +29,21 @@ Running changelog, updated automatically every 10 minutes.
 - The first compatibility-kernel batch through the HTTP Fetch acceptance slice
   is accepted. Next is canonical and legacy `PERMIT`/`REJECT` configuration.
 
-## 2026-09-03 19:48
+## 2026-09-03 19:44
 
 - Iteration 7 adds original-style `PERMIT` and `REJECT` parsing with golden and
   table tests.
 - Policy evaluation now supports source CIDRs and destination suffix patterns
   without runtime name resolution.
 - The complete local gate, including race tests and portable builds, passes.
+
+## 2026-09-03 19:47
+
+- Iteration 8 makes validated legacy directives runnable through the HTTP
+  frontend and adds a side-effect-free canonical JSON `check` mode.
+- Tests prove parse, validation, and protocol errors cannot reach listener
+  startup. Runtime server and backend-client timeouts are bounded.
+- The complete local gate passes.
 
 ## 2026-09-03 18:54
 
@@ -75,3 +83,10 @@ Running changelog, updated automatically every 10 minutes.
 - No new commits since the last entry (`f290c05` still HEAD, in sync with `origin/main`). Only local change is this file itself.
 - BACKLOG.md and CURRENT-STATE.md unchanged: all of P1-001–P1-009 still `[DONE]`; current gate is still adding canonical policy configuration plus the original `PERMIT`/`REJECT` syntax, then wiring the tested HTTP slice up to validated configuration.
 - Quiet tick — work appears paused since the last iteration landed.
+
+## 2026-09-03 19:44
+
+- New commit: `30d5cf5 [iter-7] parse legacy policy directives`. Working tree clean, in sync with `origin/main`.
+- A new backlog item (previously undocumented in earlier snapshots) covering original `PERMIT="protocol:destination:source"`/`REJECT` parsing is `[DONE]`: rules parse with explicit priorities preserving first-match order, and the policy kernel matches IP/CIDR sources and exact or `*.suffix` destinations without DNS or network activity. This matches the iteration-7 work already logged at 19:48 elsewhere in this file (golden/table tests, source CIDRs, destination suffix patterns, race tests, portable builds all passing).
+- New current gate per CURRENT-STATE.md: make the tested HTTP slice runnable from validated legacy configuration (i.e. wire a config loader end-to-end) — mount scoping by named server/protocol remains deferred.
+- All previously tracked Priority 1 items (P1-001–P1-009) remain `[DONE]`; no regressions.

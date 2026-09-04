@@ -46,13 +46,18 @@ Last verified: 2026-09-03
   parse into canonical rules with explicit priorities preserving first-match
   order. The policy kernel matches IP/CIDR sources and exact or `*.suffix`
   destinations without DNS or network activity.
+- `delegate check DIRECTIVE...` validates and prints canonical JSON without
+  opening sockets. `delegate DIRECTIVE...` and `delegate serve DIRECTIVE...`
+  start the tested HTTP slice only after full parsing and validation. Other
+  frontend protocols fail before listener startup. HTTP server and backend
+  client timeouts are bounded.
 
 ## Unverified
 
 - Legacy syntax outside the verified `SERVER`, `-P`, practical `MOUNT`,
-  `PERMIT`, and `REJECT` subset. A runnable validated configuration loader and
-  mount scoping by named server/protocol remain deferred.
+  `PERMIT`, and `REJECT` subset. Graceful signal-driven shutdown, canonical
+  TOML loading, and mount scoping by named server/protocol remain deferred.
 
 ## Current gate
 
-Make the tested HTTP slice runnable from validated legacy configuration.
+Add graceful shutdown and test listener lifecycle behavior.

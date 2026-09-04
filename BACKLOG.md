@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 7 - Legacy policy configuration)
+**Last Updated:** 2026-09-03 (Iteration 8 - Runnable legacy configuration)
 
 ---
 
@@ -89,6 +89,14 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   destination suffix wildcards, ordered fallback rejection, and malformed
   selectors; matching performs no DNS or network I/O.
 
+### P1-011: Runnable validation-first command
+
+- [DONE] Validate legacy directives before starting the HTTP frontend and add a
+  side-effect-free `check` mode.
+- Acceptance: tests prove invalid configuration and unsupported frontends never
+  invoke serving; valid directives reach the server; `check` emits canonical
+  JSON without opening a listener; runtime clients and servers have timeouts.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -141,6 +149,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 7 (2026-09-03)
 - [DONE] ✅ Added original-style `PERMIT`/`REJECT` parsing and selector matching
 
+### Iteration 8 (2026-09-03)
+- [DONE] ✅ Made validated legacy directives runnable with a safe check mode
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -163,4 +174,4 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add a runnable, validation-first legacy configuration command.
+**Next step:** Add graceful shutdown and listener lifecycle tests.

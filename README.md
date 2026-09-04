@@ -21,6 +21,18 @@ go test -race ./...
 go vet ./...
 ```
 
+Validate original-style directives without starting a listener:
+
+```sh
+go run ./cmd/delegate check \
+  SERVER=http -P8080 \
+  'MOUNT=/* http://127.0.0.1:9000/*' \
+  'PERMIT=http:127.0.0.1:*'
+```
+
+Remove `check` (or replace it with `serve`) to start the current HTTP frontend.
+With no matching `PERMIT`, requests are denied by default.
+
 Development is organized as small iterate-bot sessions. Each session takes the
 highest-priority ready item from `BACKLOG.md`, begins with a failing test, makes
 the smallest implementation that passes, updates verified state, and commits.
