@@ -93,3 +93,6 @@ Last verified: 2026-09-03
 
 Reload canonical files into the atomic store while requiring a restart for
 listener-topology changes.
+
+The tested reload operation now does this atomically; portable signal-driven
+runtime triggering remains the current gate.

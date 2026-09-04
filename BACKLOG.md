@@ -158,6 +158,8 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 - Independent frontend/backend TLS configuration.
 - Atomic configuration reload.
+- [DONE] Atomic canonical file reload operation with rollback and explicit
+  restart requirement for listener-topology changes.
 - Trusted-proxy CIDRs for accepting forwarded client addresses; direct peer
   address remains the default and untrusted forwarding headers are ignored.
 - HTTP/FTP Fetch and Store translation.

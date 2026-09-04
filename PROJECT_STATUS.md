@@ -128,6 +128,14 @@ Running changelog, updated automatically every 10 minutes.
 - Working tree has new in-progress work, currently uncommitted: modified `cmd/delegate/main_test.go`, `config/config_test.go`, plus untracked `server/group_test.go` — suggests the next iteration is testing toward the new current gate.
 - New current gate per CURRENT-STATE.md: run multiple validated HTTP listeners under one coordinated lifecycle (multi-listener runtime). Remaining unverified: legacy syntax outside the verified `SERVER`/`-P`/practical scoped `MOUNT`/`PERMIT`/`REJECT` subset, and the coordinated multi-listener runtime itself.
 
+## 2026-09-03 20:34
+
+- Two new commits: `53793ef [iter-13] coordinate HTTP listeners`, `c698201 [iter-14] publish atomic config snapshots`. Working tree is clean, in sync with `origin/main`.
+- **Multi-listener HTTP coordination** is `[DONE]` (BACKLOG.md line 138/224) — canonical configuration can run multiple named HTTP listeners; duplicate listen addresses fail validation; startup pre-binds every socket and rolls back on partial bind failure; one listener's failure cancels its peers; parent cancellation gives every active listener the same bounded graceful drain window. This closes the gate from the last entry.
+- **Atomic config snapshot publication** is `[DONE]` (BACKLOG.md line 148/227) — runtime config is published through an atomic immutable snapshot store; invalid candidates leave the previous snapshot active; inputs/outputs can't mutate stored slices; concurrent replace/read passes the race detector; each HTTP request reads exactly one snapshot for routing and authorization.
+- New current gate per CURRENT-STATE.md: reload canonical files into the atomic store while requiring a restart for listener-topology changes (i.e. live config reload, short of changing which ports are bound).
+- Remaining unverified unchanged: legacy syntax outside the verified `SERVER`/`-P`/practical scoped `MOUNT`/`PERMIT`/`REJECT` subset. Noted addition: the legacy adapter still describes one server per process invocation — multiple listeners require canonical (TOML) configuration.
+
 ## 2026-09-03 19:56
 
 - The iteration-9 work described as in progress above is now committed as
@@ -197,3 +205,9 @@ Running changelog, updated automatically every 10 minutes.
   detector.
 - The complete local gate passes; remote Woodpecker acceptance remains to be
   run. Signal-driven file reload is the next slice.
+
+## 2026-09-03 20:38
+
+- Iteration 15 adds canonical TOML file reload with atomic publication,
+  rollback on parse or validation failure, and restart-required rejection for
+  listener-topology changes. The complete local gate passes.
