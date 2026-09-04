@@ -4,6 +4,13 @@ Last verified: 2026-09-04
 
 ## Verified
 
+- Iteration 86 established a race-clean geographic-link foundation and made
+  Biggie Woodpecker enforce `go test -race ./...`. The Alpine agent image now
+  includes its C build toolchain. Push-triggered pipelines reproduced and
+  resolved the missing-CGO and missing-compiler failures; restarted pipeline 84
+  passed ordinary tests, race tests, and CGO-free Darwin/arm64 and Linux/amd64
+  builds at exact commit `0344b48`. The `link` package remains unwired and is
+  not yet a real Tailcat or two-host acceptance test.
 - The private Gitea repository `ryan/new-delegate` exists on Biggie.
 - The local working copy uses Go 1.25 on Darwin/arm64.
 - The design, compatibility ledger, and iterate-bot workflow are recorded.

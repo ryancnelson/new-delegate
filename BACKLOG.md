@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Astra architecture/code review handoff; implementation pending)
+**Last Updated:** 2026-09-04 (Iteration 86 - race-gated Woodpecker runner)
 
 ---
 
@@ -65,7 +65,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-031: Restore race-clean tests and make Woodpecker enforce them
 
-- [IN PROGRESS] Ready first. Files: `link/tailcat_test.go`, `.woodpecker/test.yml`,
+- [DONE] Files: `link/tailcat_test.go`, `.woodpecker/test.yml`,
   `scripts/check.sh`, `scripts/ci-go.sh` as needed.
 - Immediate operational priority: the owner reports Woodpecker has been idle
   for four hours. Investigate before further feature development. Read the
@@ -99,6 +99,14 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 - Reconcile untracked link files deliberately: include their reviewed source
   when committing tests that depend on it. It remains unfinished and unwired;
   passing its tests is not Tailcat feature completion.
+- Verified result: the synchronized link tests and full local gate passed on
+  Darwin/arm64. Push-triggered Woodpecker pipeline 81 reproduced the missing
+  CGO setting; pipeline 82 then proved the agent image lacked a C compiler;
+  pipeline 83 confirmed the host compiler was outside the agent filesystem.
+  The reproducible Alpine agent image now includes `build-base` (with its prior
+  Dockerfile backed up on Biggie). Restarted pipeline 84 passed clone, ordinary
+  tests, `go test -race ./...`, and CGO-free Darwin/arm64 and Linux/amd64 builds
+  at exact commit `0344b48`.
 
 ### P1-032: Prevent HTTP redirect policy bypass
 
@@ -805,6 +813,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Start P1-031 in the active review-remediation queue. Restore the
-race-clean local/remote gate, then follow its dependency order through an actual
-two-host geographic-link demonstration. Do not select another casing fixture.
+**Next step:** Start P1-032 in the active review-remediation queue: prove and
+close the HTTP redirect authorization bypass. Continue in dependency order
+toward the two-host geographic-link demonstration.
