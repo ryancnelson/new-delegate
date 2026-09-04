@@ -110,7 +110,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-032: Prevent HTTP redirect policy bypass
 
-- [IN PROGRESS] Depends on P1-031. Files: `connector/http.go`, `connector/routes.go`,
+- [DONE] Depends on P1-031. Files: `connector/http.go`, `connector/routes.go`,
   `cmd/delegate/main.go`, `connector/routes_test.go`, `server/http_test.go`.
 - Evidence: policy approves only the resolved target; `http.Client.Do` follows
   redirects using a client whose CheckRedirect is unset.
@@ -124,6 +124,13 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   Following redirects is deferred unless every new destination is reauthorized.
 - Acceptance: zero secondary dials, preserved response, and existing TLS and
   header-boundary tests remain green.
+- Verified result: default and per-mount HTTP clients now stop at the first
+  redirect and return that response unchanged. Regression tests cover
+  cross-host Fetch and Store redirects, a same-host path redirect, and an
+  HTTPS-to-HTTP downgrade; none reaches the secondary destination or invokes a
+  caller-provided redirect callback. The full local gate passed, including the
+  race suite and CGO-free Darwin/arm64 and Linux/amd64 builds. Woodpecker
+  pipeline 86 passed all stages at exact commit `9639b33`.
 
 ### P1-033: Constrain FTP data-channel destinations
 
@@ -813,6 +820,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Start P1-032 in the active review-remediation queue: prove and
-close the HTTP redirect authorization bypass. Continue in dependency order
-toward the two-host geographic-link demonstration.
+**Next step:** Start P1-033 in the active review-remediation queue: constrain
+FTP passive data connections to the authorized control peer. Continue in
+dependency order toward the two-host geographic-link demonstration.
