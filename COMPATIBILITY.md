@@ -21,7 +21,7 @@ Only passing tests may move an item to `verified`.
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch, Store (PUT), CONNECT, and FTP Fetch/Store/List; differential harness suite is runnable against baselines |
 | HTTP proxy metadata boundary | Hop-by-hop and proxy-credential stripping | verified: requests and responses |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | partial: LIST added and differential harness suite is runnable |
-| SOCKS5 | CONNECT and bounded relay | planned |
+| SOCKS5 | CONNECT and bounded relay | partial: fail-closed no-auth greeting, CONNECT request, and reply wire framing verified; listener, policy, and relay integration pending |
 | SMTP, POP3, IMAP, NNTP, LDAP, DNS | Later protocol packages | research |
 | Gopher, Finger, Telnet | Compatibility demand determines priority | research |
 

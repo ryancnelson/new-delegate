@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 74 - SOCKS URL-source MOUNT option-key normalization)
+**Last Updated:** 2026-09-04 (Iteration 83 - SOCKS5 CONNECT wire framing)
 
 ---
 
@@ -261,6 +261,14 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   executable when its context has been canceled.
 - Acceptance: an already-canceled suite returns the context error and makes no
   reference-runner call; cancellation is also checked between fixture phases.
+
+### P1-030: SOCKS5 CONNECT wire framing
+
+- [DONE] Decode the no-auth SOCKS5 greeting and CONNECT request, then
+  encode method-selection and reply frames without opening a backend socket.
+- Acceptance: table and malformed-input tests plus fuzz coverage prove bounded,
+  fail-closed parsing for IPv4, IPv6, and domain authorities; unsupported
+  methods and commands have deterministic SOCKS5 replies.
 
 ---
 

@@ -166,6 +166,11 @@ Last verified: 2026-09-04
 - Canceled compatibility fixture-suite contexts now stop before fixture parsing
   or reference-executable execution, with cancellation checked between fixture
   phases as well.
+- A standalone SOCKS5 wire layer now fail-closed decodes no-auth greetings and
+  CONNECT requests for IPv4, IPv6, and validated ASCII domains, while encoding
+  deterministic method and reply frames without DNS, dialing, or listener
+  activation. Bounded greeting and request fuzz runs completed 485,605 and
+  423,323 executions without a panic.
 - The compatibility fixture corpus now includes mount/policy parity coverage with a
   MOUNT + PERMIT/REJECT legacy fixture.
 - The compatibility fixture corpus now includes scoped legacy `MOUNT` option
