@@ -211,6 +211,9 @@ Last verified: 2026-09-04
   for FTP `CONNECT` `MOUNT` metadata with mixed-case protocol.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for SOCKS `CONNECT` `MOUNT` metadata with mixed-case protocol.
+- The compatibility fixture corpus now includes protocol-option case-normalization
+  for CONNECT `MOUNT` metadata with mixed-case `protocol=` and explicit
+  `server=default`.
 - The compatibility fixture corpus now includes `SERVER=HTTPS` `CONNECT` metadata and
   selector case-normalization.
 - The compatibility fixture corpus now includes `SERVER=SOCKS` `CONNECT` metadata

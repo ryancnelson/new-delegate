@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 58 - SOCKS CONNECT mount protocol-scope normalization)
+**Last Updated:** 2026-09-04 (Iteration 59 - CONNECT mount protocol+server option case normalization)
 
 ---
 
@@ -466,6 +466,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 58 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for `SERVER=SOCKS` `CONNECT` `MOUNT` protocol-scope normalization
+
+### Iteration 59 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for `SERVER=HTTP` `CONNECT` `MOUNT` protocol and `server=` option case normalization
 
 ---
 

@@ -1,0 +1,43 @@
+{
+  "name": "SERVER=HTTP protocol scope uppercase for CONNECT mount with explicit server",
+  "args": [
+    "SERVER=HTTP",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:8443 server=default protocol=HtTp priority=10\"",
+    "PERMIT=HtTp:Tunnel.Internal:192.0.2.1",
+    "REJECT=HTTP:Legacy.INTERNAL:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":80"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://example.com:443/",
+        "target": "tcp://tunnel.internal:8443",
+        "priority": 10,
+        "server": "default",
+        "protocol": "http"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "192.0.2.1",
+        "protocol": "http",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
