@@ -1,0 +1,43 @@
+{
+  "name": "CONNECT MOUNT option key case normalization for HTTPS legacy directives",
+  "args": [
+    "SERVER=https",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:9443 PrIoRiTy=20 SeRvEr=default PrOtOcOl=HtTpS\"",
+    "PERMIT=HtTpS:tunnel.internal:127.0.0.1",
+    "REJECT=HTTPS:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "https",
+        "listen": ":443"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://Example.COM:443/",
+        "target": "tcp://tunnel.internal:9443",
+        "priority": 20,
+        "server": "default",
+        "protocol": "https"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "https",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "https",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
