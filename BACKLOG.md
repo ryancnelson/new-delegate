@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 96 - abort late-failed HTTP streams)
+**Last Updated:** 2026-09-04 (Iteration 97 - accept bounded FTP lifecycle)
 
 ---
 
@@ -158,7 +158,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-034: Bound FTP I/O and implement transfer lifecycle
 
-- [IN PROGRESS] Depends on P1-033. Files: `connector/ftp.go`, `connector/ftp_test.go`,
+- [DONE] Depends on P1-033. Files: `connector/ftp.go`, `connector/ftp_test.go`,
   `connector/routes_test.go`; semantic result changes only as needed.
 - RED cases: stalled greeting, unterminated/oversized multiline reply, stalled
   data stream, client cancellation mid-transfer, and large RETR/LIST payload.
@@ -194,8 +194,9 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   streaming 32 KiB causes the HTTP handler to abort the response instead of
   returning a clean EOF or attempting to replace the committed status. The
   client observes a request/body-read failure, and the focused, server, race,
-  and full Darwin/arm64 plus Linux/amd64 portability gates pass. Awaiting
-  exact-commit Woodpecker acceptance.
+  and full Darwin/arm64 plus Linux/amd64 portability gates pass. Push-triggered
+  Woodpecker pipeline 94 passed all stages at exact commit `4e483ac`. All three
+  sub-checkpoints are accepted.
 
 ### P1-035: Make FTP-to-HTTP translation semantic and fail closed
 

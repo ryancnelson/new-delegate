@@ -23,7 +23,8 @@ Last verified: 2026-09-04
   backend body fails. It does not turn a truncated transfer into a clean EOF or
   try to overwrite an already-committed status. A real HTTP client regression
   test observes the late failure after 32 KiB; focused, server, race, and full
-  Darwin/arm64 plus Linux/amd64 gates pass locally.
+  Darwin/arm64 plus Linux/amd64 gates pass locally. Push-triggered Woodpecker
+  pipeline 94 passed all stages at exact commit `4e483ac`, completing P1-034.
 - FTP passive data connections prefer EPSV and derive the data destination from
   the established control connection's numeric peer address. PASV is used only
   for explicit EPSV capability failures; all six PASV fields and the resulting
