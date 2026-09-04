@@ -9,13 +9,17 @@ Last verified: 2026-09-03
 - The design, compatibility ledger, and iterate-bot workflow are recorded.
 - A minimal `delegate` command exists so portability builds exercise a real Go
   package. It has no gateway behavior yet.
+- Canonical `Config` and `Server` values reject missing fields and duplicate
+  names without mutating caller-owned input.
+- The iteration-1 focused test and complete local gate pass on Darwin/arm64.
 
 ## Unverified
 
 - Woodpecker repository activation and pipeline execution.
-- All gateway behavior; implementation begins with the configuration model.
+- Legacy configuration syntax and all gateway runtime behavior.
 
 ## Current gate
 
-Bootstrap the repository and obtain a green Woodpecker build before accepting
-the first functional iteration.
+Connect Biggie's Gitea forge to Woodpecker and obtain a green remote build.
+Local red/green iterations may proceed, but are not accepted until that remote
+gate validates the accumulated commits.

@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 0 - Bootstrap)
+**Last Updated:** 2026-09-03 (Iteration 1 - Canonical server model)
 
 ---
 
@@ -31,7 +31,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-002: Canonical server configuration
 
-- [READY] Define typed `Config` and `Server` values with validation.
+- [DONE] Define typed `Config` and `Server` values with validation.
 - Acceptance: table tests prove valid HTTP server configuration is accepted;
   missing name, protocol, or listen address is rejected; duplicate names are
   rejected; inputs are not mutated.
@@ -111,6 +111,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 0 (2026-09-03)
 - [DONE] ✅ Initialized project with iterate-bot methodology
 
+### Iteration 1 (2026-09-03)
+- [DONE] ✅ Added immutable validation for canonical server configuration
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -133,4 +136,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Complete P1-001 and require a green remote pipeline.
+**Next step:** Parse original `SERVER` directives while the Gitea forge is
+connected to Woodpecker; remote CI remains required before the batch is
+accepted.
