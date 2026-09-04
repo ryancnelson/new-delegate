@@ -1,0 +1,20 @@
+when:
+  - event: push
+  - event: pull_request
+
+steps:
+  - name: test
+    image: golang:1.25-bookworm
+    commands:
+      - test -z "$(gofmt -l .)"
+      - go vet ./...
+      - go test ./...
+      - go test -race ./...
+
+  - name: portable-builds
+    image: golang:1.25-bookworm
+    commands:
+      - CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o /tmp/delegate-darwin-arm64 ./cmd/delegate
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/delegate-linux-amd64 ./cmd/delegate
+      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/delegate-linux-arm64 ./cmd/delegate
+      - CGO_ENABLED=0 GOOS=illumos GOARCH=amd64 go build -o /tmp/delegate-illumos-amd64 ./cmd/delegate
