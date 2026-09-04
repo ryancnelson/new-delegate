@@ -21,12 +21,19 @@ Last verified: 2026-09-03
   multiple ordered mappings, and explicit `priority=N` parse without runtime
   side effects. Invalid wildcards, schemes, hosts, options, and priorities are
   fatal.
+- Request paths are decoded once and normalized before matching. Traversal,
+  encoded separators, double encoding, backslashes, invalid UTF-8, and control
+  bytes fail closed. A bounded fuzz run completed 334,664 executions without a
+  panic, and accepted paths are tested for idempotence.
+- Mount resolution chooses longest specificity, then explicit priority;
+  no-match and equal-winner ambiguity are typed failures.
 
 ## Unverified
 
 - Woodpecker repository activation and pipeline execution.
 - Legacy syntax other than the verified `SERVER`, `-P`, and practical `MOUNT`
-  subset, plus path resolution, policy, and gateway runtime behavior.
+  subset, plus policy and gateway runtime behavior. Mount scoping by named
+  server and protocol is deferred until multiple listeners exist.
 
 ## Current gate
 

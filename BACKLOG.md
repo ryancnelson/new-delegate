@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 3 - Canonical and legacy mounts)
+**Last Updated:** 2026-09-03 (Iteration 4 - Safe deterministic resolution)
 
 ---
 
@@ -56,14 +56,15 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-006: Safe path normalization
 
-- [READY] Normalize request paths before matching.
+- [DONE] Normalize request paths before matching.
 - Acceptance: traversal, encoded traversal, NUL bytes, and ambiguous escaping
   are rejected; normal paths have stable idempotent results; fuzz target never
   panics.
 
 ### P1-007: Deterministic mount resolution
 
-- [READY] Resolve by server, protocol, specificity, and explicit priority.
+- [DONE] Resolve by specificity and explicit priority. Server and protocol
+  scoping remain for the multi-listener milestone.
 - Acceptance: table tests cover exact, wildcard, fallback, no-match, and
   ambiguity; ambiguity fails closed.
 
@@ -120,6 +121,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 3 (2026-09-03)
 - [DONE] ✅ Added canonical mounts and the practical original `MOUNT` form
 
+### Iteration 4 (2026-09-03)
+- [DONE] ✅ Added fail-closed path normalization and deterministic mount resolution
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -142,6 +146,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Normalize paths and resolve mounts deterministically while the
-Gitea forge is connected to Woodpecker; remote CI remains required before the
-batch is accepted.
+**Next step:** Add the default-deny permit/reject kernel while the Gitea forge
+is connected to Woodpecker; remote CI remains required before the batch is
+accepted.
