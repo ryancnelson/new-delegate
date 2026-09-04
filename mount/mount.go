@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 // Mount maps a frontend path pattern to a backend URL pattern.
 type Mount struct {
-	Path     string `json:"path" toml:"path"`
-	Target   string `json:"target" toml:"target"`
-	Priority int    `json:"priority,omitempty" toml:"priority"`
-	Server   string `json:"server,omitempty" toml:"server"`
-	Protocol string `json:"protocol,omitempty" toml:"protocol"`
+	Path     string             `json:"path" toml:"path"`
+	Target   string             `json:"target" toml:"target"`
+	Priority int                `json:"priority,omitempty" toml:"priority"`
+	Server   string             `json:"server,omitempty" toml:"server"`
+	Protocol string             `json:"protocol,omitempty" toml:"protocol"`
+	TLS      *tlsconfig.Backend `json:"tls,omitempty" toml:"tls"`
 }
 
 var supportedTargetSchemes = map[string]struct{}{
@@ -55,6 +58,14 @@ func (m Mount) Validate() error {
 	}
 	if strings.Count(target.Path, "*") > 1 || (strings.Contains(target.Path, "*") && !strings.HasSuffix(target.Path, "*")) {
 		return fmt.Errorf("mount target %q has an invalid wildcard", m.Target)
+	}
+	if m.TLS != nil {
+		if !strings.EqualFold(target.Scheme, "https") {
+			return fmt.Errorf("mount backend TLS policy requires an HTTPS target")
+		}
+		if err := m.TLS.Validate(); err != nil {
+			return fmt.Errorf("mount backend TLS: %w", err)
+		}
 	}
 	return nil
 }

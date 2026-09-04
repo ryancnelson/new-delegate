@@ -8,6 +8,7 @@ import (
 
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/policy"
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 func TestStoreReplacesWholeValidatedSnapshot(t *testing.T) {
@@ -51,6 +52,11 @@ func TestStoreSnapshotsDoNotExposeMutableState(t *testing.T) {
 	initial := storeTestConfig("old.internal", 8080)
 	initial.Servers[0].ClientIPHeader = "X-Forwarded-For"
 	initial.Servers[0].TrustedProxies = []string{"10.0.0.0/8"}
+	initial.Servers[0].TLS = &tlsconfig.Frontend{
+		CertificateFile: "cert.pem", PrivateKeyFile: "key.pem",
+	}
+	initial.Mounts[0].Target = "https://old.internal/*"
+	initial.Mounts[0].TLS = &tlsconfig.Backend{CAFile: "ca.pem"}
 	store, err := NewStore(initial)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
@@ -59,7 +65,9 @@ func TestStoreSnapshotsDoNotExposeMutableState(t *testing.T) {
 	snapshot := store.Snapshot()
 	snapshot.Servers[0].Name = "mutated"
 	snapshot.Servers[0].TrustedProxies[0] = "192.0.2.0/24"
+	snapshot.Servers[0].TLS.CertificateFile = "mutated.pem"
 	snapshot.Mounts[0].Target = "http://mutated.invalid/*"
+	snapshot.Mounts[0].TLS.CAFile = "mutated-ca.pem"
 	snapshot.Policies[0].Effect = policy.Reject
 	if got := store.Snapshot(); !reflect.DeepEqual(got, initial) {
 		t.Fatalf("Snapshot() exposed stored state: %#v", got)

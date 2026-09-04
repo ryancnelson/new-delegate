@@ -8,6 +8,7 @@ import (
 
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/policy"
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 // Config is the complete configuration consumed by the gateway runtime.
@@ -19,11 +20,12 @@ type Config struct {
 
 // Server describes a named protocol listener.
 type Server struct {
-	Name           string   `json:"name" toml:"name"`
-	Protocol       string   `json:"protocol" toml:"protocol"`
-	Listen         string   `json:"listen" toml:"listen"`
-	ClientIPHeader string   `json:"client_ip_header,omitempty" toml:"client_ip_header"`
-	TrustedProxies []string `json:"trusted_proxies,omitempty" toml:"trusted_proxies"`
+	Name           string              `json:"name" toml:"name"`
+	Protocol       string              `json:"protocol" toml:"protocol"`
+	Listen         string              `json:"listen" toml:"listen"`
+	ClientIPHeader string              `json:"client_ip_header,omitempty" toml:"client_ip_header"`
+	TrustedProxies []string            `json:"trusted_proxies,omitempty" toml:"trusted_proxies"`
+	TLS            *tlsconfig.Frontend `json:"tls,omitempty" toml:"tls"`
 }
 
 // Validate reports configuration errors without modifying the receiver.
@@ -55,6 +57,11 @@ func (c Config) Validate() error {
 		for _, prefix := range server.TrustedProxies {
 			if _, err := netip.ParsePrefix(prefix); err != nil {
 				return fmt.Errorf("server %q: invalid trusted proxy CIDR %q", server.Name, prefix)
+			}
+		}
+		if server.TLS != nil {
+			if err := server.TLS.Validate(); err != nil {
+				return fmt.Errorf("server %q: %w", server.Name, err)
 			}
 		}
 		if _, ok := seen[server.Name]; ok {

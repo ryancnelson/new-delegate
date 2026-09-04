@@ -93,6 +93,15 @@ Last verified: 2026-09-03
   right to left, malformed chains return HTTP 400 before backend invocation,
   and IPv4-mapped peers match IPv4 CIDRs. These settings participate in strict
   TOML decoding, immutable configuration snapshots, and atomic live reload.
+- Canonical TOML models frontend TLS termination independently from backend
+  verification and optional client identity. Certificate/key references must
+  be paired, minimum versions are restricted to TLS 1.2 or 1.3, backend TLS is
+  legal only for HTTPS targets, and no insecure verification bypass exists.
+  Validation reads no referenced files. `check` exposes the canonical model;
+  startup and reload reject configured TLS before publication or listener
+  setup until their runtime adapters are implemented. TLS pointers are deep
+  copied in immutable snapshots, and frontend TLS is part of listener
+  topology.
 
 ## Unverified
 
@@ -102,5 +111,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Define independent frontend and backend TLS configuration with strict
-validation before adding certificate loading or network side effects.
+Implement frontend TLS termination from the validated model, preloading every
+certificate before any listener begins serving.

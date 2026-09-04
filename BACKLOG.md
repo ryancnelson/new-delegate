@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 17 - Explicit trusted proxies)
+**Last Updated:** 2026-09-03 (Iteration 18 - Independent TLS model)
 
 ---
 
@@ -171,11 +171,34 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   config snapshots deep-copy the CIDR list; trust settings reload without
   treating them as listener-topology changes.
 
+### P1-020: Independent TLS configuration model
+
+- [DONE] Model frontend TLS termination separately from backend TLS
+  verification and client identity.
+- Acceptance: strict TOML represents the two directions independently;
+  frontend certificate/key and backend client-certificate/key references must
+  be paired; minimum versions accept only TLS 1.2 or 1.3; backend verification
+  has no insecure bypass; configured-but-not-yet-consumed TLS makes `serve`
+  fail before opening listeners while side-effect-free `check` still works.
+
+### P1-021: Frontend TLS runtime
+
+- [READY] Terminate HTTPS on configured HTTP frontends using the validated
+  certificate/key references and minimum TLS version.
+- Acceptance: all certificates are loaded before any listener begins serving;
+  load or bind failure rolls back every listener; plaintext and TLS listeners
+  can coexist; TLS 1.2/1.3 minimums are enforced; cancellation retains the
+  bounded multi-listener drain behavior; loopback tests use generated fixtures.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
 
-- Independent frontend/backend TLS configuration.
+- [DONE] Independent frontend/backend TLS configuration model; runtime
+  certificate loading, frontend termination, and custom backend transports are
+  tracked separately.
+- Frontend TLS termination from validated file references.
+- Per-mount backend TLS verification and optional client identity.
 - [DONE] Atomic configuration reload for canonical files, with rollback and an
   explicit restart requirement for listener-topology changes.
 - [DONE] Trusted-proxy CIDRs for accepting forwarded client addresses; direct
@@ -256,6 +279,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 17 (2026-09-03)
 - [DONE] ✅ Added explicit forwarded-client trust boundaries
 
+### Iteration 18 (2026-09-03)
+- [DONE] ✅ Modeled independent fail-closed TLS policy
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -283,5 +309,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Define independent frontend and backend TLS configuration with
-strict validation before adding certificate loading or network side effects.
+**Next step:** Implement frontend TLS termination from the validated model with
+all certificate loading and listener setup completed before serving begins.

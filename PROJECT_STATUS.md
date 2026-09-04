@@ -13,9 +13,23 @@ Running changelog, updated automatically every 10 minutes.
   portability matrix. Coverage includes spoof rejection, malformed-chain
   rejection before backend invocation, immutable CIDR snapshots, strict TOML
   decoding, IPv4-mapped peer handling, and live trust-policy reload without a
-  listener restart. Remote CI acceptance is still pending for this iteration.
+  listener restart. Woodpecker pipeline #18 accepted commit `038da90`.
 - Next gate: model independent frontend and backend TLS settings with strict,
   side-effect-free validation.
+
+## 2026-09-03 21:00
+
+- Iteration 18 now has a strict, side-effect-free TLS policy model. Listener
+  identity is separate from backend CA/name/client identity; paired references
+  and TLS 1.2/1.3 minimums are validated, and no insecure backend verification
+  option exists.
+- `delegate check` accepts and prints the model, while startup and live reload
+  reject TLS configuration before opening listeners or publishing snapshots
+  because the runtime adapters are not implemented yet. This prevents a
+  plaintext runtime from silently accepting an encryption declaration.
+- The full local gate passes with race detection and the CGO-free portability
+  matrix. Remote CI is pending. Next gate: frontend TLS termination with
+  preloaded certificates and coordinated listener rollback.
 
 ## 2026-09-03 18:46
 
@@ -158,6 +172,13 @@ Running changelog, updated automatically every 10 minutes.
 - New current gate per CURRENT-STATE.md: add explicit trusted-proxy CIDRs before honoring forwarded client addresses. Matches new untracked `clientaddr/` directory in the working tree — work on this has already started.
 - Working tree has in-progress, uncommitted changes: modified `config/config.go`, `config/config_test.go`, `config/store.go`, plus untracked `clientaddr/`.
 - Remaining unverified unchanged: legacy syntax outside the verified subset; the legacy adapter still describes one server per process invocation.
+
+## 2026-09-03 20:54
+
+- New commit: `038da90 [iter-17] trust forwarded clients explicitly`. Working tree is otherwise clean apart from `BACKLOG.md` (modified) and untracked `tlsconfig/`.
+- **Explicit forwarded-client trust boundary** is `[DONE]` (BACKLOG.md line 166/191/267) — matches the iteration-17 summary already logged out-of-band at 20:48 in this file: HTTP policy uses the direct socket peer by default; a canonical listener can pair a client-address header with trusted-proxy CIDRs; untrusted headers are ignored; trusted chains walk right to left; malformed trusted chains return HTTP 400 before backend invocation; IPv4-mapped peers match IPv4 CIDRs. Participates in strict TOML decoding, immutable snapshots, and atomic live reload.
+- **New `[IN PROGRESS]` item** (BACKLOG.md line 176): model frontend TLS termination separately from backend TLS — this is the new current gate per CURRENT-STATE.md ("define independent frontend and backend TLS configuration with strict validation before adding certificate loading or network side effects"). Matches the untracked `tlsconfig/` directory already appearing in the working tree.
+- Remaining unverified unchanged: legacy syntax outside the verified `SERVER`/`-P`/practical scoped `MOUNT`/`PERMIT`/`REJECT` subset; legacy adapter still one server per process invocation.
 
 ## 2026-09-03 19:56
 

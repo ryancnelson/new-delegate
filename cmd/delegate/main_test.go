@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"gitea.local/ryan/new-delegate/config"
+	"gitea.local/ryan/new-delegate/mount"
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 func TestRunCheckPrintsCanonicalConfigWithoutServing(t *testing.T) {
@@ -287,6 +289,66 @@ listen = "127.0.0.1:8081"
 	}
 }
 
+func TestRunChecksButRefusesUnimplementedTLSBeforeServing(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "delegate.toml")
+	contents := []byte(`
+[[servers]]
+name = "public"
+protocol = "http"
+listen = "127.0.0.1:8080"
+[servers.tls]
+certificate_file = "certs/frontend.pem"
+private_key_file = "certs/frontend-key.pem"
+minimum_version = "1.3"
+
+[[mounts]]
+path = "/*"
+target = "https://backend.internal/*"
+[mounts.tls]
+ca_file = "certs/backend-ca.pem"
+minimum_version = "1.2"
+`)
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var checkOut, checkErr bytes.Buffer
+	if got := run([]string{"check", "--config", path}, &checkOut, &checkErr, func(config.Config) error {
+		t.Fatal("serve called by check")
+		return nil
+	}); got != 0 {
+		t.Fatalf("check = %d, stderr=%q", got, checkErr.String())
+	}
+	if !strings.Contains(checkOut.String(), `"minimum_version": "1.3"`) {
+		t.Fatalf("check output does not contain frontend TLS: %s", checkOut.String())
+	}
+
+	var stdout, stderr bytes.Buffer
+	serveCalls := 0
+	got := run([]string{"serve", "--config", path}, &stdout, &stderr, func(config.Config) error {
+		serveCalls++
+		return nil
+	})
+	if got != 2 || serveCalls != 0 || !strings.Contains(stderr.String(), "TLS runtime") {
+		t.Fatalf("serve = %d, calls=%d, stderr=%q; want fail-closed TLS rejection", got, serveCalls, stderr.String())
+	}
+}
+
+func TestRuntimeSupportRejectsBackendTLSIndependently(t *testing.T) {
+	configured := config.Config{
+		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+		Mounts: []mount.Mount{{
+			Path: "/*", Target: "https://backend.internal/*",
+			TLS: &tlsconfig.Backend{CAFile: "certs/backend-ca.pem"},
+		}},
+	}
+	err := validateRuntimeSupport(configured)
+	if err == nil || !strings.Contains(err.Error(), "backend TLS") {
+		t.Fatalf("validateRuntimeSupport() error = %v, want backend TLS rejection", err)
+	}
+}
+
 func TestRunReportsServeFailure(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	exitCode := run([]string{"SERVER=http"}, &stdout, &stderr, func(config.Config) error {
@@ -340,7 +402,7 @@ listen = ":8080"
 
 	ctx, cancel := context.WithCancel(context.Background())
 	events := make(chan os.Signal, 1)
-	reports := make(chan error, 2)
+	reports := make(chan error, 3)
 	done := make(chan struct{})
 	go func() {
 		watchReload(ctx, events, store, path, func(err error) { reports <- err })
@@ -361,6 +423,18 @@ listen = ":8080"
 	}
 	if got := store.Snapshot().Mounts[0].Target; got != "http://new.internal/*" {
 		t.Fatalf("invalid reload changed target to %q", got)
+	}
+
+	write(`[servers.tls]
+certificate_file = "certs/frontend.pem"
+private_key_file = "certs/frontend-key.pem"
+`)
+	events <- fakeSignal("reload")
+	if err := <-reports; err == nil || !strings.Contains(err.Error(), "TLS runtime") {
+		t.Fatalf("unsupported TLS reload report = %v", err)
+	}
+	if got := store.Snapshot().Servers[0].TLS; got != nil {
+		t.Fatalf("unsupported reload published frontend TLS: %#v", got)
 	}
 	cancel()
 	select {

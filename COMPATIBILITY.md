@@ -9,12 +9,12 @@ Only passing tests may move an item to `verified`.
 | `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: practical syntax, frontend scoping, and resolver kernel |
 | `PERMIT` / `REJECT` | Fail-closed policy rules | verified: basic legacy selectors and canonical kernel |
 | `RELAY` | Authorized transparent byte-stream forwarding | planned |
-| `STLS` | Independent readable frontend/backend TLS settings | planned |
+| `STLS` | Independent readable frontend/backend TLS settings | partial: strict split model verified; runtime planned |
 | `FCL` | Bounded typed request/response transformations | planned |
 | `CACHE` | Explicit response cache policy | planned |
 | Proxy chaining | Backend connector targeting another delegate | planned |
 | Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT`, `PERMIT`, `REJECT` |
-| Modern TOML | Strict canonical configuration file | verified: server, mount, and policy model |
+| Modern TOML | Strict canonical configuration file | verified: server, mount, policy, trusted proxy, and TLS models |
 | Decision inspection | Side-effect-free effective routing/policy explanation | verified: JSON `explain` command |
 | Forwarded client identity | Per-listener header and trusted-proxy CIDRs | verified: HTTP, right-to-left trust chain |
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |

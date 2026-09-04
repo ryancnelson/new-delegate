@@ -7,6 +7,7 @@ import (
 
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/policy"
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -81,6 +82,14 @@ func TestConfigValidate(t *testing.T) {
 				ClientIPHeader: "Forwarded Client", TrustedProxies: []string{"10.0.0.0/8"},
 			}}},
 			wantErr: "header",
+		},
+		{
+			name: "invalid frontend TLS",
+			config: Config{Servers: []Server{{
+				Name: "public", Protocol: "http", Listen: ":8080",
+				TLS: &tlsconfig.Frontend{CertificateFile: "cert.pem"},
+			}}},
+			wantErr: "together",
 		},
 		{
 			name: "mount references unknown server",

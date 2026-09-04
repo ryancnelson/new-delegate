@@ -1,0 +1,28 @@
+[[servers]]
+name = "secure"
+protocol = "http"
+listen = ":8443"
+
+[servers.tls]
+certificate_file = "certs/frontend.pem"
+private_key_file = "certs/frontend-key.pem"
+minimum_version = "1.3"
+
+[[mounts]]
+path = "/*"
+target = "https://backend.internal/*"
+server = "secure"
+protocol = "http"
+
+[mounts.tls]
+ca_file = "certs/backend-ca.pem"
+server_name = "backend.internal"
+client_certificate_file = "certs/client.pem"
+client_private_key_file = "certs/client-key.pem"
+minimum_version = "1.2"
+
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "backend.internal"
+source = "127.0.0.1"

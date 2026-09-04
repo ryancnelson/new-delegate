@@ -71,6 +71,20 @@ chain is evaluated from right to left until the first untrusted address;
 malformed chains fail with HTTP 400 before routing reaches a backend. These
 settings are request policy and may be changed by an atomic `SIGHUP` reload.
 
+Frontend TLS termination and backend TLS verification/client identity have
+separate strict configuration records. The shape can be inspected today:
+
+```sh
+go run ./cmd/delegate check --config examples/tls-policy.toml
+```
+
+Frontend identity requires paired certificate/private-key file references.
+Backend policy may name a CA file, verification name, and paired client
+certificate/private-key references. Minimum versions are limited to TLS 1.2
+or 1.3, and there is intentionally no insecure verification bypass. Until the
+runtime adapters land, `serve` rejects either TLS record before opening a
+listener instead of silently ignoring it.
+
 Explain the effective routing and policy result without opening a listener or
 contacting the backend:
 

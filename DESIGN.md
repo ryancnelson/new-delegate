@@ -35,6 +35,7 @@ approval. It does not manufacture semantic operations.
   SendMail, Connect, and Relay.
 - `mount`: deterministic mapping from frontend names to backend targets.
 - `policy`: explicit permit/reject decisions with default deny.
+- `tlsconfig`: independent, side-effect-free frontend and backend TLS policy.
 - `connector`: backend implementations.
 - `observability`: structured events, metrics, and audit records.
 
@@ -50,6 +51,7 @@ approval. It does not manufacture semantic operations.
 - Protocol decoding is bounded by configured sizes and deadlines.
 - Secret values never enter the canonical configuration or observability
   event model.
+- Backend TLS verification cannot be disabled by configuration.
 
 ## Portability
 

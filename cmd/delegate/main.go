@@ -80,17 +80,32 @@ func run(args []string, stdout, stderr io.Writer, serve func(config.Config) erro
 		}
 		return 0
 	}
-	for _, frontend := range configured.Servers {
-		if !strings.EqualFold(frontend.Protocol, "http") {
-			fmt.Fprintln(stderr, "unsupported frontend protocol: the runnable slice currently supports HTTP servers")
-			return 2
-		}
+	if err := validateRuntimeSupport(configured); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 2
 	}
 	if err := serve(configured); err != nil {
 		fmt.Fprintf(stderr, "serve: %v\n", err)
 		return 1
 	}
 	return 0
+}
+
+func validateRuntimeSupport(configured config.Config) error {
+	for _, frontend := range configured.Servers {
+		if !strings.EqualFold(frontend.Protocol, "http") {
+			return fmt.Errorf("unsupported frontend protocol: the runnable slice currently supports HTTP servers")
+		}
+		if frontend.TLS != nil {
+			return fmt.Errorf("unsupported TLS runtime: frontend TLS is configured but not implemented")
+		}
+	}
+	for _, mounted := range configured.Mounts {
+		if mounted.TLS != nil {
+			return fmt.Errorf("unsupported TLS runtime: backend TLS policy is configured but not implemented")
+		}
+	}
+	return nil
 }
 
 func writeJSON(output io.Writer, value any) error {
@@ -272,7 +287,7 @@ func watchReload(ctx context.Context, events <-chan os.Signal, store *config.Sto
 		case <-ctx.Done():
 			return
 		case <-events:
-			report(config.ReloadTOMLFile(store, path))
+			report(config.ReloadTOMLFileWithValidation(store, path, validateRuntimeSupport))
 		}
 	}
 }

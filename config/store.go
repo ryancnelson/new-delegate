@@ -49,8 +49,18 @@ func clone(source Config) Config {
 	result.Servers = append([]Server(nil), source.Servers...)
 	for i := range result.Servers {
 		result.Servers[i].TrustedProxies = append([]string(nil), source.Servers[i].TrustedProxies...)
+		if source.Servers[i].TLS != nil {
+			copied := *source.Servers[i].TLS
+			result.Servers[i].TLS = &copied
+		}
 	}
 	result.Mounts = append([]mount.Mount(nil), source.Mounts...)
+	for i := range result.Mounts {
+		if source.Mounts[i].TLS != nil {
+			copied := *source.Mounts[i].TLS
+			result.Mounts[i].TLS = &copied
+		}
+	}
 	result.Policies = append([]policy.Rule(nil), source.Policies...)
 	return result
 }

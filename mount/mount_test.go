@@ -3,6 +3,8 @@ package mount
 import (
 	"strings"
 	"testing"
+
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 func TestMountValidate(t *testing.T) {
@@ -22,6 +24,24 @@ func TestMountValidate(t *testing.T) {
 		{
 			name:  "delegate chain",
 			mount: Mount{Path: "/*", Target: "delegate://next-proxy:8081/*"},
+		},
+		{
+			name: "HTTPS with backend TLS policy",
+			mount: Mount{Path: "/*", Target: "https://backend.internal/*", TLS: &tlsconfig.Backend{
+				CAFile: "certs/backend-ca.pem", MinimumVersion: "1.3",
+			}},
+		},
+		{
+			name:    "backend TLS on plaintext target",
+			mount:   Mount{Path: "/*", Target: "http://backend.internal/*", TLS: &tlsconfig.Backend{}},
+			wantErr: "HTTPS",
+		},
+		{
+			name: "invalid backend TLS policy",
+			mount: Mount{Path: "/*", Target: "https://backend.internal/*", TLS: &tlsconfig.Backend{
+				ClientCertificateFile: "certs/client.pem",
+			}},
+			wantErr: "together",
 		},
 		{name: "missing path", mount: Mount{Target: "http://backend/"}, wantErr: "path is required"},
 		{name: "relative path", mount: Mount{Path: "api/*", Target: "http://backend/*"}, wantErr: "absolute"},
