@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 67 - HTTPS URL-source MOUNT option-key coverage)
+**Last Updated:** 2026-09-04 (Iteration 68 - FTP URL-source MOUNT option-key coverage)
 
 ---
 
@@ -497,6 +497,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 67 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for mixed-case option-key casing in HTTPS URL-source legacy `MOUNT` directives.
+
+### Iteration 68 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for mixed-case option-key casing in FTP URL-source legacy `MOUNT` directives.
 
 ---
 

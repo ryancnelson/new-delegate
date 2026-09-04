@@ -205,6 +205,8 @@ Last verified: 2026-09-04
   coverage for legacy URL-source `MOUNT` directives.
 - The compatibility fixture corpus now includes mixed-case option-key
   coverage for HTTPS URL-source legacy `MOUNT` directives.
+- The compatibility fixture corpus now includes mixed-case option-key
+  coverage for FTP URL-source legacy `MOUNT` directives.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for HTTPS `CONNECT` `MOUNT` metadata with mixed-case protocol.
 - The compatibility fixture corpus now includes protocol-option case-normalization

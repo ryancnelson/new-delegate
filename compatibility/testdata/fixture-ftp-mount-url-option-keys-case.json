@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT URL source option key case normalization for FTP target",
+  "args": [
+    "SERVER=FTP",
+    "MOUNT=\"https://legacy.example:8443/files/* ftp://files.internal/files/* PrIoRiTy=16 SeRvEr=default PrOtOcOl=FtP\"",
+    "PERMIT=FTP:files.internal:127.0.0.1",
+    "REJECT=HTTP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "https://legacy.example:8443/files/*",
+        "target": "ftp://files.internal/files/*",
+        "priority": 16,
+        "server": "default",
+        "protocol": "ftp"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "ftp",
+        "destination": "files.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
