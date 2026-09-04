@@ -1,0 +1,52 @@
+{
+  "name": "SERVER=http -P8080 scoped MOUNT options",
+  "args": [
+    "SERVER=http",
+    "-P8080",
+    "MOUNT=\"/docs/* http://api.internal/docs/* server=default protocol=http priority=20\"",
+    "MOUNT=\"http://legacy.example:8080/files/* https://files.internal/files/* server=default protocol=http priority=5\"",
+    "PERMIT=http:api.internal:10.0.0.0/8",
+    "REJECT=*:203.0.113.0/24"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":8080"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/docs/*",
+        "target": "http://api.internal/docs/*",
+        "priority": 20,
+        "server": "default",
+        "protocol": "http"
+      },
+      {
+        "source": "http://legacy.example:8080/files/*",
+        "target": "https://files.internal/files/*",
+        "priority": 5,
+        "server": "default",
+        "protocol": "http"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "10.0.0.0/8",
+        "protocol": "http",
+        "destination": "api.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "203.0.113.0/24",
+        "protocol": "*",
+        "destination": "*"
+      }
+    ]
+  }
+}

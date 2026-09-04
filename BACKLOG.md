@@ -386,6 +386,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 31 (2026-09-04)
 - [DONE] ✅ Expanded compatibility fixture coverage and verified multi-fixture suite behavior
 
+### Iteration 32 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for scoped legacy `MOUNT` options (`server=`, `protocol=`, `priority=`)
+
 ---
 
 ## Ideas Inbox (Unsorted)

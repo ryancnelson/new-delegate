@@ -31,6 +31,8 @@ Intentional differences:
 - Identical repeated scalar directives are idempotent; conflicting repetitions
   are fatal rather than silently taking the last value.
 - No matching mount or permit rule denies the operation.
+- Legacy fixture parity now covers scoped legacy `MOUNT` options (`server=`,
+  `protocol=`, and `priority=`) alongside existing path and absolute-URL forms.
 - Ambiguous mount precedence is a configuration error.
 - Secret configuration contains references, never resolved values.
 - Modern TOML is canonical; legacy syntax is an adapter onto the same model.

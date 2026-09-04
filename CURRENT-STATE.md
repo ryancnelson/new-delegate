@@ -165,6 +165,8 @@ Last verified: 2026-09-04
   actual behavior comparisons against original DeleGate output.
 - The compatibility fixture corpus now includes mount/policy parity coverage with a
   MOUNT + PERMIT/REJECT legacy fixture.
+- The compatibility fixture corpus now includes scoped legacy `MOUNT` option
+  coverage for `server=`, `protocol=`, and `priority=` metadata.
 
 ## Unverified
 
