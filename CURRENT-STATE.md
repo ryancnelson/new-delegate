@@ -205,6 +205,8 @@ Last verified: 2026-09-04
   for HTTPS legacy URL-source `MOUNT` directives with uppercase `protocol=HTTPS`.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for Gopher legacy URL-source `MOUNT` directives.
+- The compatibility fixture corpus now includes protocol-option case-normalization
+  for SOCKS legacy URL-source `MOUNT` directives.
 - The compatibility fixture corpus now includes mixed-case option-key
   coverage for legacy URL-source `MOUNT` directives.
 - The compatibility fixture corpus now includes mixed-case option-key
