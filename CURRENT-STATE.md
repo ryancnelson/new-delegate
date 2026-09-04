@@ -209,6 +209,8 @@ Last verified: 2026-09-04
   Gopher URL-source legacy `MOUNT` directives.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for SOCKS legacy URL-source `MOUNT` directives.
+- The compatibility fixture corpus now includes option-key case-normalization for
+  SOCKS URL-source legacy `MOUNT` directives.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for FTP legacy URL-source `MOUNT` directives.
 - The compatibility fixture corpus now includes mixed-case option-key

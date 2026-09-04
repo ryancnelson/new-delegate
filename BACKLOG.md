@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 73 - Gopher URL-source MOUNT option-key normalization)
+**Last Updated:** 2026-09-04 (Iteration 74 - SOCKS URL-source MOUNT option-key normalization)
 
 ---
 
@@ -515,6 +515,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 73 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for option-key case normalization in Gopher URL-source legacy `MOUNT` directives.
+
+### Iteration 74 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for option-key case normalization in SOCKS URL-source legacy `MOUNT` directives.
 
 ---
 

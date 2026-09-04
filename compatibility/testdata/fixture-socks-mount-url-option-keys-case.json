@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT URL source option key case normalization for SOCKS target",
+  "args": [
+    "SERVER=SOCKS",
+    "MOUNT=\"http://legacy.example:1080/files/* tcp://tunnel.internal:1080 pRiOrItY=21 sErVeR=default pRoToCoL=SoCkS\"",
+    "PERMIT=SOCKS:tunnel.internal:127.0.0.1",
+    "REJECT=HTTP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "socks",
+        "listen": ":1080"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "http://legacy.example:1080/files/*",
+        "target": "tcp://tunnel.internal:1080",
+        "priority": 21,
+        "server": "default",
+        "protocol": "socks"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "socks",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

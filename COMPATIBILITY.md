@@ -80,6 +80,8 @@ Intentional differences:
   URL-source legacy `MOUNT` directives.
 - Legacy compatibility fixtures now include protocol-case normalization for SOCKS
   legacy URL-source `MOUNT` protocol options.
+- Legacy compatibility fixtures now include option-key case normalization for SOCKS
+  URL-source legacy `MOUNT` directives.
 - Legacy compatibility fixtures now include protocol-case normalization for FTP
   legacy URL-source `MOUNT` protocol options.
 - Legacy compatibility fixtures now include mixed-case option-key normalization
