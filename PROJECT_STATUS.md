@@ -2,6 +2,18 @@
 
 Running changelog, updated automatically every 10 minutes.
 
+## 2026-09-04 05:53
+
+- New commit `c99b4ca [iter-28] add ftp list translation` adds protocol-neutral
+  ftp `LIST` command dispatch through the dedicated `FTP` connector.
+- Focused loopback and full-repo verification pass for this slice:
+  `gofmt`, `go vet`, `go test`, `go test -race`, and CGO-free `darwin/arm64`
+  plus `linux/amd64` builds.
+- Biggie Woodpecker repo 5 badge endpoint still returns `success` after the push.
+- Working tree is clean and in sync with `origin` and `ci` on `c99b4ca`.
+- Current gate in `CURRENT-STATE.md` remains the differential compatibility harness
+  against the original DeleGate implementation.
+
 ## 2026-09-03 20:48
 
 - Iteration 17 implements the explicit trusted-proxy boundary: the direct peer
