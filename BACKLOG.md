@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 69 - HTTPS URL-source MOUNT protocol-case normalization)
+**Last Updated:** 2026-09-04 (Iteration 70 - Gopher URL-source MOUNT protocol-case normalization)
 
 ---
 
@@ -503,6 +503,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 69 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for uppercase protocol scoping on HTTPS URL-source legacy `MOUNT` directives.
+
+### Iteration 70 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for uppercase protocol scoping on Gopher URL-source legacy `MOUNT` directives.
 
 ---
 

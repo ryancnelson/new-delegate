@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT URL source and protocol scope uppercase protocol for Gopher legacy directives",
+  "args": [
+    "SERVER=gopher",
+    "MOUNT=\"http://legacy.example:70/files/* http://files.internal/files/* server=default protocol=GoPhEr priority=19\"",
+    "PERMIT=GOPHER:files.internal:127.0.0.1",
+    "REJECT=HTTP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "http://legacy.example:70/files/*",
+        "target": "http://files.internal/files/*",
+        "server": "default",
+        "protocol": "gopher",
+        "priority": 19
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "files.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
