@@ -181,6 +181,8 @@ Last verified: 2026-09-04
   for `SERVER=HTTP` and uppercase `PERMIT` selectors.
 - The compatibility fixture corpus now includes protocol-case normalization checks
   for `SERVER=FTP` and uppercase `PERMIT` selectors with FTP mounts.
+- The compatibility fixture corpus now includes protocol-case normalization checks
+  for `SERVER=HTTPS` and uppercase protocol selectors.
 
 ## Unverified
 

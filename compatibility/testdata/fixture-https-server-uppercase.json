@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=HTTPS uppercase protocol normalization",
+  "args": [
+    "SERVER=HTTPS",
+    "MOUNT=\"/secure/* https://backend.internal/secure/*\"",
+    "PERMIT=HTTPS:backend.internal:127.0.0.1",
+    "REJECT=HtTpS:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "https",
+        "listen": ":443"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/secure/*",
+        "target": "https://backend.internal/secure/*"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "https",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "https",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

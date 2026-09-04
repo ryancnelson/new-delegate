@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 28 - HTTP/FTP Fetch and List translation)
+**Last Updated:** 2026-09-04 (Iteration 40 - Uppercase HTTPS protocol normalization fixture)
 
 ---
 
@@ -409,6 +409,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 39 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for uppercase `SERVER=FTP` and uppercase policy selectors
+
+### Iteration 40 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for uppercase `SERVER=HTTPS` and matching protocol selectors
 
 ---
 
