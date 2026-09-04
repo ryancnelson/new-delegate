@@ -69,6 +69,10 @@ approval. It does not manufacture semantic operations.
 - FTP dialing and control/data socket activity are bounded. Control replies are
   decoded as complete single- or multiline records under one aggregate size
   limit, and context cancellation closes owned sockets to interrupt blocked I/O.
+- RETR and LIST return streaming bodies that own the FTP data/control sockets
+  through final completion validation. EOF, cancellation, timeout, transfer
+  failure, and early Close each converge on one idempotent cleanup path; STOR
+  validates completion before returning.
 - HTTP CONNECT authority and TCP target ports are validated without DNS before
   routing; a resolver-selected mount and affirmative policy decision precede
   every relay dial.

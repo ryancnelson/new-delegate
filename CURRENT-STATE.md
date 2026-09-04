@@ -10,7 +10,15 @@ Last verified: 2026-09-04
   unterminated, mismatched, and oversized replies fail closed. Deterministic
   timeout/cancellation tests, parser tables and fuzz seeds, and the full local
   gate pass. Push-triggered Woodpecker pipeline 90 passed at exact commit
-  `d6363e2`. Streaming transfer ownership remains the next P1-034 sub-step.
+  `d6363e2`.
+- FTP RETR and LIST results now return before the payload completes and stream
+  directly from the bounded data socket. The returned body owns both sockets,
+  cancellation hooks, and the final FTP completion reply; EOF validates a 2xx
+  completion, while timeout, cancellation, failure, or early Close releases all
+  resources. STOR also rejects failed completion replies. Large staged payload,
+  late-failure, early-close, timeout, cancellation, and existing route tests
+  pass locally. HTTP-side late-failure propagation remains the final P1-034
+  sub-step.
 - FTP passive data connections prefer EPSV and derive the data destination from
   the established control connection's numeric peer address. PASV is used only
   for explicit EPSV capability failures; all six PASV fields and the resulting

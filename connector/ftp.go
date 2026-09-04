@@ -2,7 +2,6 @@ package connector
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"gitea.local/ryan/new-delegate/operation"
@@ -73,17 +73,22 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 		return operation.Result{}, err
 	}
 
-	control, err := f.dial(ctx, parsed.Host)
+	rawControl, err := f.dial(ctx, parsed.Host)
 	if err != nil {
 		return operation.Result{}, fmt.Errorf("dial ftp control: %w", err)
 	}
-	defer control.Close()
+	control := &ftpDeadlineConn{Conn: rawControl, timeout: f.controlTimeoutValue()}
+	transferOwned := false
 	stopControlCancellation := context.AfterFunc(ctx, func() { _ = control.Close() })
-	defer stopControlCancellation()
+	defer func() {
+		if !transferOwned {
+			stopControlCancellation()
+			_ = control.Close()
+		}
+	}()
 
-	controlIO := &ftpDeadlineConn{Conn: control, timeout: f.controlTimeoutValue()}
-	controlReader := newFTPReplyReader(controlIO, f.maxReplyBytesValue())
-	controlWriter := textproto.NewWriter(bufio.NewWriter(controlIO))
+	controlReader := newFTPReplyReader(control, f.maxReplyBytesValue())
+	controlWriter := textproto.NewWriter(bufio.NewWriter(control))
 	if _, err := readFTPReply(controlReader); err != nil {
 		return operation.Result{}, fmt.Errorf("connect ftp: %w", err)
 	}
@@ -124,14 +129,18 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 	if err != nil {
 		return operation.Result{}, err
 	}
-	data, err := f.dial(ctx, pasv)
+	rawData, err := f.dial(ctx, pasv)
 	if err != nil {
 		return operation.Result{}, fmt.Errorf("dial ftp data: %w", err)
 	}
-	defer data.Close()
+	data := &ftpDeadlineConn{Conn: rawData, timeout: f.dataTimeoutValue()}
 	stopDataCancellation := context.AfterFunc(ctx, func() { _ = data.Close() })
-	defer stopDataCancellation()
-	data = &ftpDeadlineConn{Conn: data, timeout: f.dataTimeoutValue()}
+	defer func() {
+		if !transferOwned {
+			stopDataCancellation()
+			_ = data.Close()
+		}
+	}()
 
 	command := strings.ToUpper(method)
 	switch command {
@@ -168,51 +177,106 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 		if err != nil {
 			return operation.Result{}, fmt.Errorf("ftp STOR completion: %w", err)
 		}
+		if reply.Code < 200 || reply.Code > 299 {
+			return operation.Result{}, fmt.Errorf("ftp STOR completion rejected with %d", reply.Code)
+		}
 		return operation.Result{Status: reply.Code}, nil
-	case "RETR":
+	case "RETR", "LIST":
 		if err := writeFTPCommand(controlWriter, command, parsed.Path); err != nil {
 			return operation.Result{}, err
 		}
 		reply, err = readFTPReply(controlReader)
 		if err != nil {
-			return operation.Result{}, fmt.Errorf("ftp RETR: %w", err)
+			return operation.Result{}, fmt.Errorf("ftp %s: %w", command, err)
 		}
 		if reply.Code < 100 || reply.Code > 199 {
-			return operation.Result{}, fmt.Errorf("ftp RETR rejected with %d", reply.Code)
+			return operation.Result{}, fmt.Errorf("ftp %s rejected with %d", command, reply.Code)
 		}
-		payload, err := io.ReadAll(data)
-		if err != nil {
-			return operation.Result{}, fmt.Errorf("ftp RETR data read: %w", err)
+		body := &ftpTransferBody{
+			ctx:         ctx,
+			command:     command,
+			data:        data,
+			control:     control,
+			reader:      controlReader,
+			stopData:    stopDataCancellation,
+			stopControl: stopControlCancellation,
 		}
-		_ = data.Close()
-		reply, err = readFTPReply(controlReader)
-		if err != nil {
-			return operation.Result{}, fmt.Errorf("ftp RETR completion: %w", err)
-		}
-		return operation.Result{Status: reply.Code, Body: io.NopCloser(bytes.NewReader(payload))}, nil
-	case "LIST":
-		if err := writeFTPCommand(controlWriter, command, parsed.Path); err != nil {
-			return operation.Result{}, err
-		}
-		reply, err = readFTPReply(controlReader)
-		if err != nil {
-			return operation.Result{}, fmt.Errorf("ftp LIST: %w", err)
-		}
-		if reply.Code < 100 || reply.Code > 199 {
-			return operation.Result{}, fmt.Errorf("ftp LIST rejected with %d", reply.Code)
-		}
-		payload, err := io.ReadAll(data)
-		if err != nil {
-			return operation.Result{}, fmt.Errorf("ftp LIST data read: %w", err)
-		}
-		_ = data.Close()
-		reply, err = readFTPReply(controlReader)
-		if err != nil {
-			return operation.Result{}, fmt.Errorf("ftp LIST completion: %w", err)
-		}
-		return operation.Result{Status: reply.Code, Body: io.NopCloser(bytes.NewReader(payload))}, nil
+		transferOwned = true
+		return operation.Result{Status: 226, Body: body}, nil
 	}
 	return operation.Result{}, fmt.Errorf("unsupported ftp command %q", command)
+}
+
+type ftpTransferBody struct {
+	ctx         context.Context
+	command     string
+	data        net.Conn
+	control     net.Conn
+	reader      *ftpReplyReader
+	stopData    func() bool
+	stopControl func() bool
+
+	finishOnce sync.Once
+	stateMu    sync.Mutex
+	closed     bool
+}
+
+func (b *ftpTransferBody) Read(buffer []byte) (int, error) {
+	if b.isClosed() {
+		return 0, io.ErrClosedPipe
+	}
+	read, err := b.data.Read(buffer)
+	if err == nil {
+		return read, nil
+	}
+	if contextErr := b.ctx.Err(); contextErr != nil {
+		b.finish()
+		return read, contextErr
+	}
+	if !errors.Is(err, io.EOF) {
+		b.finish()
+		return read, fmt.Errorf("ftp %s data read: %w", b.command, err)
+	}
+
+	_ = b.data.Close()
+	reply, completionErr := readFTPReply(b.reader)
+	if completionErr != nil {
+		b.finish()
+		return read, fmt.Errorf("ftp %s completion: %w", b.command, completionErr)
+	}
+	if reply.Code < 200 || reply.Code > 299 {
+		b.finish()
+		return read, fmt.Errorf("ftp %s completion rejected with %d", b.command, reply.Code)
+	}
+	b.finish()
+	return read, io.EOF
+}
+
+func (b *ftpTransferBody) Close() error {
+	b.finish()
+	return nil
+}
+
+func (b *ftpTransferBody) isClosed() bool {
+	b.stateMu.Lock()
+	defer b.stateMu.Unlock()
+	return b.closed
+}
+
+func (b *ftpTransferBody) finish() {
+	b.finishOnce.Do(func() {
+		b.stateMu.Lock()
+		b.closed = true
+		b.stateMu.Unlock()
+		if b.stopData != nil {
+			b.stopData()
+		}
+		if b.stopControl != nil {
+			b.stopControl()
+		}
+		_ = b.data.Close()
+		_ = b.control.Close()
+	})
 }
 
 type ftpReply struct {

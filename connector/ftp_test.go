@@ -102,6 +102,9 @@ func TestFTPPASVFallbackIgnoresAdvertisedHost(t *testing.T) {
 	if got, want := dialer.addresses(), []string{"127.0.0.1:21", "127.0.0.1:4242"}; !equalStrings(got, want) {
 		t.Fatalf("dial addresses = %q, want %q", got, want)
 	}
+	if _, err := io.Copy(io.Discard, result.Body); err != nil {
+		t.Fatal(err)
+	}
 	if err := <-scriptDone; err != nil {
 		t.Fatal(err)
 	}
@@ -336,6 +339,9 @@ func TestFTPReadsMultilineGreeting(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer result.Body.Close()
+	if _, err := io.Copy(io.Discard, result.Body); err != nil {
+		t.Fatal(err)
+	}
 	if err := <-scriptDone; err != nil {
 		t.Fatal(err)
 	}
@@ -482,6 +488,313 @@ func TestReadFTPReplyRejectsMalformedMultiline(t *testing.T) {
 	}
 }
 
+func TestFTPFetchReturnsBeforeDataCompletes(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		method  string
+		command string
+	}{
+		{name: "retrieve", method: "GET", command: "RETR"},
+		{name: "list", method: "LIST", command: "LIST"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			testFTPFetchReturnsBeforeDataCompletes(t, test.method, test.command)
+		})
+	}
+}
+
+func testFTPFetchReturnsBeforeDataCompletes(t *testing.T, method, command string) {
+	t.Helper()
+	controlClient, controlServer := net.Pipe()
+	dataClient, dataServer := net.Pipe()
+	dialer := &ftpScriptDialer{
+		control: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		data: dataClient,
+	}
+	transferReady := make(chan struct{})
+	releaseTransfer := make(chan struct{})
+	scriptDone := runFTPControlScript(controlServer, func(reader *bufio.Reader, control net.Conn) error {
+		if err := openFTPTestTransfer(reader, control, command); err != nil {
+			return err
+		}
+		close(transferReady)
+		<-releaseTransfer
+		payload := strings.Repeat("streamed-data-", 1<<17)
+		if _, err := io.WriteString(dataServer, payload); err != nil {
+			return err
+		}
+		if err := dataServer.Close(); err != nil {
+			return err
+		}
+		return writeFTPLine(control, "226 Transfer complete")
+	})
+
+	resultReady := make(chan struct {
+		result operation.Result
+		err    error
+	}, 1)
+	go func() {
+		result, err := NewFTP(dialer).Fetch(context.Background(), operation.Fetch{
+			Method:   method,
+			Resource: "ftp://127.0.0.1:21/large.txt",
+		})
+		resultReady <- struct {
+			result operation.Result
+			err    error
+		}{result: result, err: err}
+	}()
+	<-transferReady
+	var fetched operation.Result
+	select {
+	case outcome := <-resultReady:
+		if outcome.err != nil {
+			t.Fatal(outcome.err)
+		}
+		fetched = outcome.result
+	case <-time.After(100 * time.Millisecond):
+		close(releaseTransfer)
+		_ = dataServer.Close()
+		_ = controlServer.Close()
+		<-resultReady
+		t.Fatal("Fetch waited for the complete data payload")
+	}
+	close(releaseTransfer)
+	payload, err := io.ReadAll(fetched.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fetched.Body.Close()
+	if got, want := len(payload), len("streamed-data-")*(1<<17); got != want {
+		t.Fatalf("payload length = %d, want %d", got, want)
+	}
+	if err := <-scriptDone; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFTPFetchBodySurfacesFailedCompletion(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	dataClient, dataServer := net.Pipe()
+	dialer := &ftpScriptDialer{
+		control: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		data: dataClient,
+	}
+	scriptDone := runFTPControlScript(controlServer, func(reader *bufio.Reader, control net.Conn) error {
+		if err := openFTPTestTransfer(reader, control, "RETR"); err != nil {
+			return err
+		}
+		if _, err := io.WriteString(dataServer, "partial payload"); err != nil {
+			return err
+		}
+		if err := dataServer.Close(); err != nil {
+			return err
+		}
+		return writeFTPLine(control, "550 Transfer failed")
+	})
+
+	result, err := NewFTP(dialer).Fetch(context.Background(), operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload, err := io.ReadAll(result.Body)
+	defer result.Body.Close()
+	if got, want := string(payload), "partial payload"; got != want {
+		t.Fatalf("payload = %q, want %q", got, want)
+	}
+	if err == nil || !strings.Contains(err.Error(), "completion rejected with 550") {
+		t.Fatalf("body error = %v, want failed FTP completion", err)
+	}
+	if scriptErr := <-scriptDone; scriptErr != nil {
+		t.Fatal(scriptErr)
+	}
+}
+
+func TestFTPFetchBodyCloseReleasesTransferSockets(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	dataClient, dataServer := net.Pipe()
+	trackedControl := &ftpCloseTrackingConn{
+		Conn: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		closed: make(chan struct{}),
+	}
+	trackedData := &ftpCloseTrackingConn{Conn: dataClient, closed: make(chan struct{})}
+	dialer := &ftpScriptDialer{control: trackedControl, data: trackedData}
+	scriptDone := runFTPControlScript(controlServer, func(reader *bufio.Reader, control net.Conn) error {
+		if err := openFTPTestTransfer(reader, control, "RETR"); err != nil {
+			return err
+		}
+		buffer := make([]byte, 1)
+		_, err := dataServer.Read(buffer)
+		if err == nil {
+			return errors.New("data connection remained readable after body close")
+		}
+		return nil
+	})
+
+	result, err := NewFTP(dialer).Fetch(context.Background(), operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := result.Body.Close(); err != nil {
+		t.Fatal(err)
+	}
+	for name, closed := range map[string]<-chan struct{}{
+		"control": trackedControl.closed,
+		"data":    trackedData.closed,
+	} {
+		select {
+		case <-closed:
+		case <-time.After(250 * time.Millisecond):
+			t.Fatalf("%s connection was not closed", name)
+		}
+	}
+	_ = dataServer.Close()
+	if scriptErr := <-scriptDone; scriptErr != nil {
+		t.Fatal(scriptErr)
+	}
+}
+
+func TestFTPFetchBodyCancellationInterruptsRead(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	dataClient, dataServer := net.Pipe()
+	dialer := &ftpScriptDialer{
+		control: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		data: dataClient,
+	}
+	transferReady := make(chan struct{})
+	scriptDone := runFTPControlScript(controlServer, func(reader *bufio.Reader, control net.Conn) error {
+		if err := openFTPTestTransfer(reader, control, "RETR"); err != nil {
+			return err
+		}
+		close(transferReady)
+		buffer := make([]byte, 1)
+		_, _ = dataServer.Read(buffer)
+		return nil
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	result, err := NewFTP(dialer).Fetch(ctx, operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-transferReady
+	readDone := make(chan error, 1)
+	go func() {
+		buffer := make([]byte, 1)
+		_, readErr := result.Body.Read(buffer)
+		readDone <- readErr
+	}()
+	cancel()
+	select {
+	case readErr := <-readDone:
+		if !errors.Is(readErr, context.Canceled) {
+			t.Fatalf("body read error = %v, want context cancellation", readErr)
+		}
+	case <-time.After(250 * time.Millisecond):
+		_ = result.Body.Close()
+		t.Fatal("body read did not stop after cancellation")
+	}
+	_ = result.Body.Close()
+	_ = dataServer.Close()
+	if scriptErr := <-scriptDone; scriptErr != nil {
+		t.Fatal(scriptErr)
+	}
+}
+
+func TestFTPFetchBodyUsesDataTimeout(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	dataClient, dataServer := net.Pipe()
+	defer dataServer.Close()
+	dialer := &ftpScriptDialer{
+		control: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		data: dataClient,
+	}
+	scriptDone := runFTPControlScript(controlServer, func(reader *bufio.Reader, control net.Conn) error {
+		if err := openFTPTestTransfer(reader, control, "RETR"); err != nil {
+			return err
+		}
+		buffer := make([]byte, 1)
+		_, _ = dataServer.Read(buffer)
+		return nil
+	})
+	connector := NewFTP(dialer)
+	connector.dataTimeout = 25 * time.Millisecond
+	result, err := connector.Fetch(context.Background(), operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	started := time.Now()
+	_, err = result.Body.Read(make([]byte, 1))
+	if err == nil || !strings.Contains(err.Error(), "timeout") {
+		t.Fatalf("body read error = %v, want data timeout", err)
+	}
+	if elapsed := time.Since(started); elapsed > 250*time.Millisecond {
+		t.Fatalf("stalled data read returned after %s, want bounded return", elapsed)
+	}
+	_ = result.Body.Close()
+	if scriptErr := <-scriptDone; scriptErr != nil {
+		t.Fatal(scriptErr)
+	}
+}
+
+func TestFTPStoreRejectsFailedCompletion(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	dataClient, dataServer := net.Pipe()
+	dialer := &ftpScriptDialer{
+		control: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		data: dataClient,
+	}
+	scriptDone := runFTPControlScript(controlServer, func(reader *bufio.Reader, control net.Conn) error {
+		if err := openFTPTestTransfer(reader, control, "STOR"); err != nil {
+			return err
+		}
+		if _, err := io.ReadAll(dataServer); err != nil {
+			return err
+		}
+		return writeFTPLine(control, "550 Store failed")
+	})
+
+	_, err := NewFTP(dialer).Store(context.Background(), operation.Store{
+		Method:   "PUT",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+		Body:     strings.NewReader("upload"),
+	})
+	if err == nil || !strings.Contains(err.Error(), "completion rejected with 550") {
+		t.Fatalf("Store() error = %v, want failed FTP completion", err)
+	}
+	if scriptErr := <-scriptDone; scriptErr != nil {
+		t.Fatal(scriptErr)
+	}
+}
+
 func FuzzReadFTPReply(f *testing.F) {
 	for _, seed := range []string{
 		"220 ready\r\n",
@@ -578,6 +891,22 @@ func ftpLoginScript(reader *bufio.Reader, control net.Conn) error {
 		return err
 	}
 	return writeFTPLine(control, "200 Type set to I")
+}
+
+func openFTPTestTransfer(reader *bufio.Reader, control net.Conn, command string) error {
+	if err := ftpLoginScript(reader, control); err != nil {
+		return err
+	}
+	if err := expectFTPCommand(reader, "EPSV"); err != nil {
+		return err
+	}
+	if err := writeFTPLine(control, "229 Entering Extended Passive Mode (|||4242|)"); err != nil {
+		return err
+	}
+	if err := expectFTPCommand(reader, command); err != nil {
+		return err
+	}
+	return writeFTPLine(control, "150 Opening data connection")
 }
 
 func ftpRetrieveScript(reader *bufio.Reader, control net.Conn, data net.Conn, payload string) error {

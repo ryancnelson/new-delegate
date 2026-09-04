@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 92 - bounded FTP control I/O)
+**Last Updated:** 2026-09-04 (Iteration 94 - streaming FTP transfer ownership)
 
 ---
 
@@ -183,6 +183,13 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   focused, race, and full portability gates pass. Push-triggered Woodpecker
   pipeline 90 passed all stages at exact commit `d6363e2`; sub-checkpoints (b)
   and (c) remain.
+- Sub-checkpoint (b) is locally verified: RETR/LIST return a live body before
+  data completion, stream a multi-megabyte staged payload without connector
+  buffering, validate the final 2xx reply at EOF, surface late failure through
+  Body.Read, and close both sockets on timeout, cancellation, or early Close.
+  STOR rejects a failed completion reply. Focused, existing connector, race, and
+  full portability gates pass. Awaiting exact-commit Woodpecker acceptance;
+  sub-checkpoint (c) remains.
 
 ### P1-035: Make FTP-to-HTTP translation semantic and fail closed
 
