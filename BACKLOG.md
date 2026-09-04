@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 13 - Coordinated HTTP listeners)
+**Last Updated:** 2026-09-03 (Iteration 14 - Atomic configuration snapshots)
 
 ---
 
@@ -143,6 +143,15 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   every listener; command validation passes multiple HTTP frontends to the
   runtime and still rejects unsupported protocols.
 
+### P1-017: Atomic configuration snapshots
+
+- [DONE] Publish validated configuration to concurrent request handlers as
+  immutable, all-or-nothing snapshots.
+- Acceptance: invalid replacement leaves the prior snapshot active; valid
+  replacement cannot be changed through caller-owned slices; concurrent reads
+  and replacements pass the race detector; each HTTP request uses one snapshot
+  for both mount resolution and policy evaluation.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -214,6 +223,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 13 (2026-09-03)
 - [DONE] ✅ Added coordinated, bounded multi-listener HTTP lifecycle
 
+### Iteration 14 (2026-09-03)
+- [DONE] ✅ Added race-tested atomic configuration snapshot publication
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -241,4 +253,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add atomic whole-configuration reload with rollback on failure.
+**Next step:** Reload canonical files into the atomic store while requiring a
+restart for listener-topology changes.

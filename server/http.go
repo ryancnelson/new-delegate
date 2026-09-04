@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 
+	"gitea.local/ryan/new-delegate/config"
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/operation"
 	"gitea.local/ryan/new-delegate/policy"
@@ -22,8 +23,7 @@ type fetchConnector interface {
 
 type httpHandler struct {
 	server    string
-	mounts    []mount.Mount
-	rules     []policy.Rule
+	snapshot  func() config.Config
 	connector fetchConnector
 }
 
@@ -36,16 +36,25 @@ func NewHTTPHandler(mounts []mount.Mount, rules []policy.Rule, connector fetchCo
 // NewHTTPHandlerForServer constructs an HTTP frontend with a named-server
 // identity used for scoped mount selection.
 func NewHTTPHandlerForServer(server string, mounts []mount.Mount, rules []policy.Rule, connector fetchConnector) http.Handler {
+	fixed := config.Config{
+		Mounts: append([]mount.Mount(nil), mounts...), Policies: append([]policy.Rule(nil), rules...),
+	}
+	return NewReloadableHTTPHandler(server, func() config.Config { return fixed }, connector)
+}
+
+// NewReloadableHTTPHandler reads exactly one complete configuration snapshot
+// for each request, keeping routing and policy evaluation on the same version.
+func NewReloadableHTTPHandler(server string, snapshot func() config.Config, connector fetchConnector) http.Handler {
 	return &httpHandler{
 		server:    server,
-		mounts:    append([]mount.Mount(nil), mounts...),
-		rules:     append([]policy.Rule(nil), rules...),
+		snapshot:  snapshot,
 		connector: connector,
 	}
 }
 
 func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	matched, err := mount.ResolveFor(h.mounts, mount.Request{
+	configured := h.snapshot()
+	matched, err := mount.ResolveFor(configured.Mounts, mount.Request{
 		Path: request.URL.EscapedPath(), Server: h.server, Protocol: "http",
 	})
 	if err != nil {
@@ -60,7 +69,7 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	decision := policy.Evaluate(h.rules, policy.Request{
+	decision := policy.Evaluate(configured.Policies, policy.Request{
 		Source:      remoteHost(request.RemoteAddr),
 		Protocol:    "http",
 		Destination: targetHostname(matched.Target),

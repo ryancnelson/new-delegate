@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"gitea.local/ryan/new-delegate/config"
 	"gitea.local/ryan/new-delegate/connector"
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/policy"
@@ -115,5 +116,48 @@ func TestHTTPHandlerUsesNamedServerForMountScope(t *testing.T) {
 	handler.ServeHTTP(response, request)
 	if response.Code != http.StatusOK || response.Body.String() != "/public/docs" {
 		t.Fatalf("response = %d %q, want scoped public backend", response.Code, response.Body.String())
+	}
+}
+
+func TestHTTPHandlerReloadsRoutingAndPolicyFromOneSnapshot(t *testing.T) {
+	oldBackend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, "old")
+	}))
+	defer oldBackend.Close()
+	newBackend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, "new")
+	}))
+	defer newBackend.Close()
+
+	makeConfig := func(target string) config.Config {
+		return config.Config{
+			Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+			Mounts:  []mount.Mount{{Path: "/*", Target: target + "/*", Server: "public"}},
+			Policies: []policy.Rule{{
+				Effect: policy.Permit, Protocol: "http", Destination: "*",
+			}},
+		}
+	}
+	store, err := config.NewStore(makeConfig(oldBackend.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewReloadableHTTPHandler("public", store.Snapshot, connector.NewHTTP(oldBackend.Client()))
+
+	request := httptest.NewRequest(http.MethodGet, "http://frontend/resource", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || response.Body.String() != "old" {
+		t.Fatalf("before reload = %d %q, want old backend", response.Code, response.Body.String())
+	}
+
+	if err := store.Replace(makeConfig(newBackend.URL)); err != nil {
+		t.Fatal(err)
+	}
+	request = httptest.NewRequest(http.MethodGet, "http://frontend/resource", nil)
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || response.Body.String() != "new" {
+		t.Fatalf("after reload = %d %q, want new backend", response.Code, response.Body.String())
 	}
 }

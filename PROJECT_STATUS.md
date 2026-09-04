@@ -185,4 +185,15 @@ Running changelog, updated automatically every 10 minutes.
   lifecycle. Duplicate addresses fail validation, all sockets are pre-bound,
   partial bind failure rolls back, and cancellation drains every listener.
 - The complete local gate passes, including race tests and all five portable
-  compile targets. Remote Woodpecker acceptance remains to be run.
+  compile targets. Biggie Woodpecker pipeline 14 passed in 9 seconds at
+  `53793ef`.
+
+## 2026-09-03 20:33
+
+- Iteration 14 adds an atomic immutable configuration store with validated
+  all-or-nothing replacement and rollback on failure.
+- HTTP handlers take one snapshot per request for both routing and policy.
+  Mutation-isolation and concurrent replacement tests pass under the race
+  detector.
+- The complete local gate passes; remote Woodpecker acceptance remains to be
+  run. Signal-driven file reload is the next slice.

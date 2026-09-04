@@ -77,6 +77,11 @@ Last verified: 2026-09-03
   rolls back partial bind success; one listener failure cancels its peers, and
   parent cancellation gives every active listener the same bounded graceful
   drain window.
+- Runtime configuration is published through an atomic immutable snapshot
+  store. Invalid candidates leave the previous snapshot active, inputs and
+  outputs cannot mutate stored slices, and concurrent replacements/readers
+  pass the race detector. Each HTTP request reads exactly one snapshot for
+  routing and authorization.
 
 ## Unverified
 
@@ -86,4 +91,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Add atomic whole-configuration reload with rollback on failure.
+Reload canonical files into the atomic store while requiring a restart for
+listener-topology changes.

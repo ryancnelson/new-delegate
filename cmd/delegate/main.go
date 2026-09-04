@@ -206,10 +206,14 @@ func serveHTTP(configured config.Config) error {
 	defer stop()
 
 	backend := connector.NewHTTP(&http.Client{Timeout: 60 * time.Second})
+	configStore, err := config.NewStore(configured)
+	if err != nil {
+		return fmt.Errorf("initialize configuration store: %w", err)
+	}
 	httpServers := make([]*http.Server, 0, len(configured.Servers))
 	listeners := make([]net.Listener, 0, len(configured.Servers))
 	for _, frontend := range configured.Servers {
-		handler := gatewayserver.NewHTTPHandlerForServer(frontend.Name, configured.Mounts, configured.Policies, backend)
+		handler := gatewayserver.NewReloadableHTTPHandler(frontend.Name, configStore.Snapshot, backend)
 		httpServer := &http.Server{
 			Addr:              frontend.Listen,
 			Handler:           handler,
