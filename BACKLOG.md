@@ -188,8 +188,8 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   buffering, validate the final 2xx reply at EOF, surface late failure through
   Body.Read, and close both sockets on timeout, cancellation, or early Close.
   STOR rejects a failed completion reply. Focused, existing connector, race, and
-  full portability gates pass. Awaiting exact-commit Woodpecker acceptance;
-  sub-checkpoint (c) remains.
+  full portability gates pass. Push-triggered Woodpecker pipeline 92 passed all
+  stages at exact commit `ad9b9e8`; sub-checkpoint (c) remains.
 
 ### P1-035: Make FTP-to-HTTP translation semantic and fail closed
 

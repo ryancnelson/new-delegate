@@ -17,8 +17,9 @@ Last verified: 2026-09-04
   completion, while timeout, cancellation, failure, or early Close releases all
   resources. STOR also rejects failed completion replies. Large staged payload,
   late-failure, early-close, timeout, cancellation, and existing route tests
-  pass locally. HTTP-side late-failure propagation remains the final P1-034
-  sub-step.
+  pass locally. Push-triggered Woodpecker pipeline 92 passed all stages at
+  exact commit `ad9b9e8`. HTTP-side late-failure propagation remains the final
+  P1-034 sub-step.
 - FTP passive data connections prefer EPSV and derive the data destination from
   the established control connection's numeric peer address. PASV is used only
   for explicit EPSV capability failures; all six PASV fields and the resulting
