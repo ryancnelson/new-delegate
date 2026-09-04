@@ -177,6 +177,8 @@ Last verified: 2026-09-04
   coverage with an HTTPS mount and protocol-specific permit/reject parity.
 - The compatibility fixture corpus now includes default-port `SERVER=socks`
   coverage with TCP target support and protocol-aware permit/reject metadata.
+- The compatibility fixture corpus now includes protocol case normalization checks
+  for `SERVER=HTTP` and uppercase `PERMIT` selectors.
 
 ## Unverified
 

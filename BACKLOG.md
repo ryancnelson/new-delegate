@@ -404,6 +404,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 37 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=socks` and TCP mount translation metadata
 
+### Iteration 38 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for legacy protocol case normalization in `SERVER` and policy selectors
+
 ---
 
 ## Ideas Inbox (Unsorted)

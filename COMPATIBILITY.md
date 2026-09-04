@@ -50,3 +50,5 @@ Intentional differences:
   mount and policy parity.
 - Legacy compatibility fixtures now include default-port `SERVER=socks` with TCP
   mount and protocol metadata.
+- Legacy compatibility fixtures now include protocol-case normalization for
+  uppercase `SERVER=` and uppercase protocol selectors in `PERMIT`/`REJECT`.

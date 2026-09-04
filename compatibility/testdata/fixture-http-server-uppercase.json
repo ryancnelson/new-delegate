@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=HTTP and PERMIT/REJECT protocol case normalization",
+  "args": [
+    "SERVER=HTTP",
+    "MOUNT=\"/admin/* http://backend.internal/admin/*\"",
+    "PERMIT=HTTP:backend.internal:127.0.0.1",
+    "REJECT=http:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":80"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/admin/*",
+        "target": "http://backend.internal/admin/*"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "http",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
