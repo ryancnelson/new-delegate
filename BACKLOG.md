@@ -110,7 +110,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-032: Prevent HTTP redirect policy bypass
 
-- [IDEA] Depends on P1-031. Files: `connector/http.go`, `connector/routes.go`,
+- [IN PROGRESS] Depends on P1-031. Files: `connector/http.go`, `connector/routes.go`,
   `cmd/delegate/main.go`, `connector/routes_test.go`, `server/http_test.go`.
 - Evidence: policy approves only the resolved target; `http.Client.Do` follows
   redirects using a client whose CheckRedirect is unset.

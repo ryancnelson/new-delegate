@@ -111,6 +111,139 @@ func TestHTTPRoutesExecutesStore(t *testing.T) {
 	}
 }
 
+func TestHTTPRoutesNeverFollowBackendRedirects(t *testing.T) {
+	t.Run("cross-host Fetch and Store", func(t *testing.T) {
+		redirectCalls := atomic.Int32{}
+		destinationCalls := atomic.Int32{}
+		destinationURL, _, closeDestination := startHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			destinationCalls.Add(1)
+			w.WriteHeader(http.StatusNoContent)
+		}), false)
+		defer closeDestination()
+		redirectURL, _, closeRedirect := startHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Location", destinationURL+"/denied")
+			w.WriteHeader(http.StatusTemporaryRedirect)
+			_, _ = io.WriteString(w, "redirect body")
+		}), false)
+		defer closeRedirect()
+
+		routes := NewHTTPRoutes(&http.Client{
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				redirectCalls.Add(1)
+				return nil
+			},
+		}, nil)
+		defer routes.CloseIdleConnections()
+
+		fetch, err := routes.FetchForMount(context.Background(), mount.Mount{}, operation.Fetch{
+			Method: http.MethodGet, Resource: redirectURL + "/start",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer fetch.Body.Close()
+		if fetch.Status != http.StatusTemporaryRedirect {
+			t.Fatalf("Fetch status = %d, want %d", fetch.Status, http.StatusTemporaryRedirect)
+		}
+		fetchBody, err := io.ReadAll(fetch.Body)
+		if err != nil || string(fetchBody) != "redirect body" {
+			t.Fatalf("Fetch body = %q, %v; want redirect body", fetchBody, err)
+		}
+		if got := fetch.Metadata["Location"]; len(got) != 1 || got[0] != destinationURL+"/denied" {
+			t.Fatalf("Fetch Location = %q, want redirect target", got)
+		}
+
+		store, err := routes.StoreForMount(context.Background(), mount.Mount{}, operation.Store{
+			Method: http.MethodPut, Resource: redirectURL + "/start",
+			Body: strings.NewReader("payload"), Size: 7,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer store.Body.Close()
+		if store.Status != http.StatusTemporaryRedirect {
+			t.Fatalf("Store status = %d, want %d", store.Status, http.StatusTemporaryRedirect)
+		}
+		storeBody, err := io.ReadAll(store.Body)
+		if err != nil || string(storeBody) != "redirect body" {
+			t.Fatalf("Store body = %q, %v; want redirect body", storeBody, err)
+		}
+		if got := store.Metadata["Location"]; len(got) != 1 || got[0] != destinationURL+"/denied" {
+			t.Fatalf("Store Location = %q, want redirect target", got)
+		}
+		if got := destinationCalls.Load(); got != 0 {
+			t.Fatalf("redirect destination calls = %d, want 0", got)
+		}
+		if got := redirectCalls.Load(); got != 0 {
+			t.Fatalf("caller redirect callback calls = %d, want 0", got)
+		}
+	})
+
+	t.Run("same-host path", func(t *testing.T) {
+		deniedCalls := atomic.Int32{}
+		backendURL, _, closeBackend := startHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+			if request.URL.Path == "/start" {
+				http.Redirect(w, request, "/denied", http.StatusFound)
+				return
+			}
+			deniedCalls.Add(1)
+			w.WriteHeader(http.StatusNoContent)
+		}), false)
+		defer closeBackend()
+
+		routes := NewHTTPRoutes(nil, nil)
+		defer routes.CloseIdleConnections()
+		result, err := routes.FetchForMount(context.Background(), mount.Mount{}, operation.Fetch{
+			Method: http.MethodGet, Resource: backendURL + "/start",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer result.Body.Close()
+		if result.Status != http.StatusFound {
+			t.Fatalf("status = %d, want %d", result.Status, http.StatusFound)
+		}
+		if got := deniedCalls.Load(); got != 0 {
+			t.Fatalf("redirected path calls = %d, want 0", got)
+		}
+	})
+
+	t.Run("HTTPS to HTTP downgrade", func(t *testing.T) {
+		destinationCalls := atomic.Int32{}
+		destinationURL, _, closeDestination := startHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			destinationCalls.Add(1)
+			w.WriteHeader(http.StatusNoContent)
+		}), false)
+		defer closeDestination()
+		secureURL, secureCert, closeSecure := startHTTPTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+			http.Redirect(w, request, destinationURL+"/downgraded", http.StatusFound)
+		}), true)
+		defer closeSecure()
+
+		policy := tlsconfig.Backend{ServerName: "127.0.0.1", MinimumVersion: "1.2"}
+		roots := x509.NewCertPool()
+		roots.AddCert(secureCert)
+		routes := NewHTTPRoutes(&http.Client{}, map[tlsconfig.Backend]*tls.Config{
+			policy: {RootCAs: roots, ServerName: "127.0.0.1", MinVersion: tls.VersionTLS12},
+		})
+		defer routes.CloseIdleConnections()
+
+		result, err := routes.FetchForMount(context.Background(), mount.Mount{TLS: &policy}, operation.Fetch{
+			Method: http.MethodGet, Resource: secureURL + "/start",
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer result.Body.Close()
+		if result.Status != http.StatusFound {
+			t.Fatalf("status = %d, want %d", result.Status, http.StatusFound)
+		}
+		if got := destinationCalls.Load(); got != 0 {
+			t.Fatalf("downgrade destination calls = %d, want 0", got)
+		}
+	})
+}
+
 func TestHTTPRoutesDispatchesFTPFetchAndStore(t *testing.T) {
 	store := map[string][]byte{}
 	address, closeServer := startFakeFTPServer(t, map[string][]byte{

@@ -37,6 +37,9 @@ Intentional differences:
   with protocol-scoped rule coverage.
 - Ambiguous mount precedence is a configuration error.
 - Secret configuration contains references, never resolved values.
+- HTTP backend redirects are relayed to the client rather than followed inside
+  the gateway; this prevents a permitted target from redirecting a request to
+  an unresolved and unauthorized destination.
 - Modern TOML is canonical; legacy syntax is an adapter onto the same model.
 - A canceled compatibility fixture-suite context stops before fixture parsing or
   optional reference-executable execution.

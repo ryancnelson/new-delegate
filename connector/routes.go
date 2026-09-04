@@ -42,7 +42,7 @@ func NewHTTPRoutes(defaultClient *http.Client, policies map[tlsconfig.Backend]*t
 		transport.TLSClientConfig = tlsConfig.Clone()
 		client := &http.Client{
 			Transport:     transport,
-			CheckRedirect: defaultClient.CheckRedirect,
+			CheckRedirect: stopRedirects,
 			Jar:           defaultClient.Jar,
 			Timeout:       defaultClient.Timeout,
 		}

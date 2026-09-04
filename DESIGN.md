@@ -59,6 +59,9 @@ approval. It does not manufacture semantic operations.
   choice comes from the resolver-selected mount, never request metadata.
 - Proxy credentials, standard hop-by-hop headers, and `Connection`-nominated
   fields never cross the HTTP frontend/backend boundary.
+- Backend HTTP redirects are returned to the frontend unchanged. Connectors do
+  not follow them because each new destination would require fresh mount
+  resolution and policy authorization.
 - HTTP CONNECT authority and TCP target ports are validated without DNS before
   routing; a resolver-selected mount and affirmative policy decision precede
   every relay dial.

@@ -18,7 +18,13 @@ func NewHTTP(client *http.Client) *HTTP {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &HTTP{client: client}
+	private := *client
+	private.CheckRedirect = stopRedirects
+	return &HTTP{client: &private}
+}
+
+func stopRedirects(_ *http.Request, _ []*http.Request) error {
+	return http.ErrUseLastResponse
 }
 
 func (h *HTTP) Fetch(ctx context.Context, fetch operation.Fetch) (operation.Result, error) {
