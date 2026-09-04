@@ -21,6 +21,7 @@ type fetchConnector interface {
 }
 
 type httpHandler struct {
+	server    string
 	mounts    []mount.Mount
 	rules     []policy.Rule
 	connector fetchConnector
@@ -29,7 +30,14 @@ type httpHandler struct {
 // NewHTTPHandler constructs an HTTP frontend for an already-validated runtime
 // configuration.
 func NewHTTPHandler(mounts []mount.Mount, rules []policy.Rule, connector fetchConnector) http.Handler {
+	return NewHTTPHandlerForServer("", mounts, rules, connector)
+}
+
+// NewHTTPHandlerForServer constructs an HTTP frontend with a named-server
+// identity used for scoped mount selection.
+func NewHTTPHandlerForServer(server string, mounts []mount.Mount, rules []policy.Rule, connector fetchConnector) http.Handler {
 	return &httpHandler{
+		server:    server,
 		mounts:    append([]mount.Mount(nil), mounts...),
 		rules:     append([]policy.Rule(nil), rules...),
 		connector: connector,
@@ -37,7 +45,9 @@ func NewHTTPHandler(mounts []mount.Mount, rules []policy.Rule, connector fetchCo
 }
 
 func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
-	matched, err := mount.Resolve(h.mounts, request.URL.EscapedPath())
+	matched, err := mount.ResolveFor(h.mounts, mount.Request{
+		Path: request.URL.EscapedPath(), Server: h.server, Protocol: "http",
+	})
 	if err != nil {
 		switch {
 		case errors.Is(err, mount.ErrNoMatch):

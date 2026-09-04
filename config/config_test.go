@@ -51,6 +51,22 @@ func TestConfigValidate(t *testing.T) {
 			}},
 			wantErr: "duplicate server name",
 		},
+		{
+			name: "mount references unknown server",
+			config: Config{
+				Servers: []Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+				Mounts:  []mount.Mount{{Path: "/*", Target: "http://backend/*", Server: "missing"}},
+			},
+			wantErr: "unknown server",
+		},
+		{
+			name: "mount protocol disagrees with named server",
+			config: Config{
+				Servers: []Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+				Mounts:  []mount.Mount{{Path: "/*", Target: "http://backend/*", Server: "public", Protocol: "ftp"}},
+			},
+			wantErr: "protocol",
+		},
 	}
 
 	for _, tt := range tests {

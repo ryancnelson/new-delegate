@@ -148,7 +148,8 @@ Running changelog, updated automatically every 10 minutes.
   ambiguous-mount outcomes; successful routing includes the rewritten target
   and policy rule index.
 - The complete local gate passes, including race tests and all five portable
-  compile targets. Remote Woodpecker acceptance remains to be run.
+  compile targets. Biggie Woodpecker pipeline 12 passed in 9 seconds at
+  `795f81f`.
 - A side review of copyparty added design guardrails for self-contained
   deployment, mount-adjacent authorization, explicit trusted-proxy boundaries,
   and atomic whole-config reloads. It also added trusted-proxy and packaging
@@ -158,3 +159,14 @@ Running changelog, updated automatically every 10 minutes.
   release artifacts as the operational capabilities worth measuring; the
   existing compatibility ledger remains test-backed rather than a feature
   count.
+
+## 2026-09-03 20:26
+
+- Iteration 12 adds named-server and protocol scopes to mounts in canonical
+  TOML and the legacy `MOUNT` adapter.
+- Validation rejects unknown or contradictory scopes. The resolver, decision
+  explanation, and live HTTP handler all use the same frontend identity and
+  deterministic scoped-fallback behavior.
+- The complete local gate passes, including race tests, five portable compile
+  targets, and a scoped explanation smoke test. Remote Woodpecker acceptance
+  remains to be run.

@@ -11,7 +11,7 @@ import (
 func TestEvaluateExplainsPermittedRequest(t *testing.T) {
 	configured := config.Config{
 		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
-		Mounts:  []mount.Mount{{Path: "/api/*", Target: "http://api.internal/v1/*"}},
+		Mounts:  []mount.Mount{{Path: "/api/*", Target: "http://api.internal/v1/*", Server: "public", Protocol: "http"}},
 		Policies: []policy.Rule{{
 			Effect: policy.Permit, Protocol: "http", Destination: "api.internal",
 			Source: "10.0.0.0/8", Method: "GET", Mount: "/api/*",
@@ -19,7 +19,7 @@ func TestEvaluateExplainsPermittedRequest(t *testing.T) {
 	}
 
 	got, err := Evaluate(configured, Request{
-		Path: "/api/users", Source: "10.20.30.40", Protocol: "http", Method: "GET",
+		Path: "/api/users", Source: "10.20.30.40", Server: "public", Protocol: "http", Method: "GET",
 	})
 	if err != nil {
 		t.Fatalf("Evaluate() error = %v", err)
@@ -37,7 +37,7 @@ func TestEvaluateExplainsDefaultDeny(t *testing.T) {
 		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
 		Mounts:  []mount.Mount{{Path: "/*", Target: "http://backend.internal/*"}},
 	}
-	got, err := Evaluate(configured, Request{Path: "/docs", Source: "192.0.2.4", Protocol: "http", Method: "GET"})
+	got, err := Evaluate(configured, Request{Path: "/docs", Source: "192.0.2.4", Server: "public", Protocol: "http", Method: "GET"})
 	if err != nil {
 		t.Fatalf("Evaluate() error = %v", err)
 	}
@@ -60,7 +60,7 @@ func TestEvaluateExplainsNoMountAndUnsafePath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.outcome), func(t *testing.T) {
-			got, err := Evaluate(configured, Request{Path: tt.path, Source: "192.0.2.4", Protocol: "http", Method: "GET"})
+			got, err := Evaluate(configured, Request{Path: tt.path, Source: "192.0.2.4", Server: "public", Protocol: "http", Method: "GET"})
 			if err != nil {
 				t.Fatalf("Evaluate() error = %v", err)
 			}
@@ -79,7 +79,7 @@ func TestEvaluateExplainsAmbiguousMount(t *testing.T) {
 			{Path: "/api/*", Target: "http://two.internal/*", Priority: 10},
 		},
 	}
-	got, err := Evaluate(configured, Request{Path: "/api/users", Source: "192.0.2.4", Protocol: "http", Method: "GET"})
+	got, err := Evaluate(configured, Request{Path: "/api/users", Source: "192.0.2.4", Server: "public", Protocol: "http", Method: "GET"})
 	if err != nil {
 		t.Fatalf("Evaluate() error = %v", err)
 	}

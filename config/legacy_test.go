@@ -112,6 +112,22 @@ func TestParseLegacyMounts(t *testing.T) {
 	}
 }
 
+func TestParseLegacyScopedMount(t *testing.T) {
+	configured, err := ParseLegacyArgs([]string{
+		"SERVER=http", "-P8080",
+		`MOUNT="/api/* http://backend/* server=default protocol=http priority=20"`,
+	})
+	if err != nil {
+		t.Fatalf("ParseLegacyArgs() error = %v", err)
+	}
+	want := mount.Mount{
+		Path: "/api/*", Target: "http://backend/*", Server: "default", Protocol: "http", Priority: 20,
+	}
+	if len(configured.Mounts) != 1 || configured.Mounts[0] != want {
+		t.Fatalf("ParseLegacyArgs().Mounts = %#v, want %#v", configured.Mounts, []mount.Mount{want})
+	}
+}
+
 func TestParseLegacyArgsGolden(t *testing.T) {
 	got, err := ParseLegacyArgs([]string{"-P8080", "SERVER=http"})
 	if err != nil {

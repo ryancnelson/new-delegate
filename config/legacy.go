@@ -151,15 +151,20 @@ func parseLegacyMount(value string) (mount.Mount, error) {
 
 	mapping := mount.Mount{Path: fields[0], Target: fields[1]}
 	for _, option := range fields[2:] {
-		if strings.HasPrefix(option, "priority=") {
+		switch {
+		case strings.HasPrefix(option, "priority="):
 			priority, err := strconv.Atoi(strings.TrimPrefix(option, "priority="))
 			if err != nil {
 				return mount.Mount{}, fmt.Errorf("invalid MOUNT priority %q", option)
 			}
 			mapping.Priority = priority
-			continue
+		case strings.HasPrefix(option, "server="):
+			mapping.Server = strings.TrimPrefix(option, "server=")
+		case strings.HasPrefix(option, "protocol="):
+			mapping.Protocol = strings.ToLower(strings.TrimPrefix(option, "protocol="))
+		default:
+			return mount.Mount{}, fmt.Errorf("unknown MOUNT option %q", option)
 		}
-		return mount.Mount{}, fmt.Errorf("unknown MOUNT option %q", option)
 	}
 	if err := mapping.Validate(); err != nil {
 		return mount.Mount{}, fmt.Errorf("invalid MOUNT: %w", err)

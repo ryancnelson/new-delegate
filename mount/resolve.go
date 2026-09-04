@@ -19,10 +19,23 @@ type Match struct {
 	Target         string
 }
 
+// Request identifies both the resource path and the frontend evaluating it.
+type Request struct {
+	Path     string
+	Server   string
+	Protocol string
+}
+
 // Resolve safely normalizes a request path and selects the most specific
 // mapping. Priority only breaks ties between equally specific patterns.
 func Resolve(mounts []Mount, requestPath string) (Match, error) {
-	normalized, err := NormalizePath(requestPath)
+	return ResolveFor(mounts, Request{Path: requestPath})
+}
+
+// ResolveFor resolves a path after filtering mappings by named server and
+// frontend protocol. Empty and "*" scopes match every frontend.
+func ResolveFor(mounts []Mount, request Request) (Match, error) {
+	normalized, err := NormalizePath(request.Path)
 	if err != nil {
 		return Match{}, fmt.Errorf("%w: %v", ErrUnsafePath, err)
 	}
@@ -31,25 +44,31 @@ func Resolve(mounts []Mount, requestPath string) (Match, error) {
 		mapping     Mount
 		capture     string
 		specificity int
+		scope       int
 	}
 	var winner candidate
 	found := false
 	ambiguous := false
 
 	for _, mapping := range mounts {
+		scope, ok := matchScope(mapping, request)
+		if !ok {
+			continue
+		}
 		capture, specificity, ok := matchPath(mapping.Path, normalized)
 		if !ok {
 			continue
 		}
-		current := candidate{mapping: mapping, capture: capture, specificity: specificity}
+		current := candidate{mapping: mapping, capture: capture, specificity: specificity, scope: scope}
 		if !found || current.specificity > winner.specificity ||
-			(current.specificity == winner.specificity && current.mapping.Priority > winner.mapping.Priority) {
+			(current.specificity == winner.specificity && current.mapping.Priority > winner.mapping.Priority) ||
+			(current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority && current.scope > winner.scope) {
 			winner = current
 			found = true
 			ambiguous = false
 			continue
 		}
-		if current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority {
+		if current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority && current.scope == winner.scope {
 			ambiguous = true
 		}
 	}
@@ -65,6 +84,23 @@ func Resolve(mounts []Mount, requestPath string) (Match, error) {
 		target = strings.TrimSuffix(target, "*") + winner.capture
 	}
 	return Match{Mount: winner.mapping, NormalizedPath: normalized, Target: target}, nil
+}
+
+func matchScope(mapping Mount, request Request) (int, bool) {
+	specificity := 0
+	if mapping.Server != "" && mapping.Server != "*" {
+		if mapping.Server != request.Server {
+			return 0, false
+		}
+		specificity++
+	}
+	if mapping.Protocol != "" && mapping.Protocol != "*" {
+		if !strings.EqualFold(mapping.Protocol, request.Protocol) {
+			return 0, false
+		}
+		specificity++
+	}
+	return specificity, true
 }
 
 func matchPath(pattern, requestPath string) (capture string, specificity int, ok bool) {

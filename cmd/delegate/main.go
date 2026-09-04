@@ -148,6 +148,7 @@ func loadExplanation(args []string) (config.Config, explain.Request, error) {
 		return config.Config{}, explain.Request{}, fmt.Errorf("explain currently requires exactly one configured server")
 	}
 	request.Protocol = configured.Servers[0].Protocol
+	request.Server = configured.Servers[0].Name
 	return configured, request, nil
 }
 
@@ -203,7 +204,7 @@ func serveHTTP(configured config.Config) error {
 	defer stop()
 
 	backend := connector.NewHTTP(&http.Client{Timeout: 60 * time.Second})
-	handler := gatewayserver.NewHTTPHandler(configured.Mounts, configured.Policies, backend)
+	handler := gatewayserver.NewHTTPHandlerForServer(configured.Servers[0].Name, configured.Mounts, configured.Policies, backend)
 	httpServer := &http.Server{
 		Addr:              configured.Servers[0].Listen,
 		Handler:           handler,

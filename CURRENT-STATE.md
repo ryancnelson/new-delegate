@@ -67,14 +67,18 @@ Last verified: 2026-09-03
   rejected, no-mount, unsafe-path, and ambiguous-mount outcomes and records
   the rewritten target and winning policy rule when applicable. It works with
   canonical TOML or the verified legacy directive subset.
+- Mounts may be scoped to a named server, frontend protocol, or both. Config
+  validation rejects unknown servers and contradictory server/protocol pairs.
+  Resolution filters by frontend identity, then uses path specificity,
+  explicit priority, and scope specificity deterministically. Both the live
+  HTTP frontend and `explain` supply that identity to the same resolver.
 
 ## Unverified
 
-- Legacy syntax outside the verified `SERVER`, `-P`, practical `MOUNT`,
-  `PERMIT`, and `REJECT` subset. Mount scoping by named server/protocol remains
+- Legacy syntax outside the verified `SERVER`, `-P`, practical scoped `MOUNT`,
+  `PERMIT`, and `REJECT` subset. Coordinated multi-listener runtime remains
   deferred.
 
 ## Current gate
 
-Scope mounts to named servers and frontend protocols for the multi-listener
-model.
+Run multiple validated HTTP listeners under one coordinated lifecycle.

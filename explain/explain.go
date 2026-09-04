@@ -28,6 +28,7 @@ const (
 type Request struct {
 	Path     string `json:"path"`
 	Source   string `json:"source"`
+	Server   string `json:"server"`
 	Protocol string `json:"protocol"`
 	Method   string `json:"method"`
 }
@@ -68,12 +69,17 @@ func Evaluate(configured config.Config, request Request) (Result, error) {
 	if strings.TrimSpace(request.Protocol) == "" {
 		return Result{}, fmt.Errorf("request protocol is required")
 	}
+	if strings.TrimSpace(request.Server) == "" {
+		return Result{}, fmt.Errorf("request server is required")
+	}
 	if strings.TrimSpace(request.Method) == "" {
 		return Result{}, fmt.Errorf("request method is required")
 	}
 
 	result := Result{Request: request}
-	matched, err := mount.Resolve(configured.Mounts, request.Path)
+	matched, err := mount.ResolveFor(configured.Mounts, mount.Request{
+		Path: request.Path, Server: request.Server, Protocol: request.Protocol,
+	})
 	if err != nil {
 		switch {
 		case errors.Is(err, mount.ErrNoMatch):

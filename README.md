@@ -44,6 +44,10 @@ go run ./cmd/delegate serve --config examples/delegate.toml
 `--config=examples/delegate.toml` is also accepted. A TOML file cannot be
 combined with legacy directives on the same invocation.
 
+Mounts may be scoped to a named frontend and protocol with `server` and
+`protocol`. Unscoped mounts remain shared fallbacks; an equally ranked scoped
+mount wins over a shared one.
+
 Explain the effective routing and policy result without opening a listener or
 contacting the backend:
 

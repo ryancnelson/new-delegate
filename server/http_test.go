@@ -93,3 +93,27 @@ func TestHTTPHandlerDenialNeverContactsBackend(t *testing.T) {
 		t.Fatalf("body = %q, want stable denial reason", response.Body.String())
 	}
 }
+
+func TestHTTPHandlerUsesNamedServerForMountScope(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = io.WriteString(w, r.URL.Path)
+	}))
+	defer backend.Close()
+
+	handler := NewHTTPHandlerForServer(
+		"public",
+		[]mount.Mount{
+			{Path: "/*", Target: "http://wrong.invalid/*", Server: "admin"},
+			{Path: "/*", Target: backend.URL + "/public/*", Server: "public", Protocol: "http"},
+		},
+		[]policy.Rule{{Effect: policy.Permit, Protocol: "http"}},
+		connector.NewHTTP(backend.Client()),
+	)
+	request := httptest.NewRequest(http.MethodGet, "http://frontend/docs", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || response.Body.String() != "/public/docs" {
+		t.Fatalf("response = %d %q, want scoped public backend", response.Code, response.Body.String())
+	}
+}

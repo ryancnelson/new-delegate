@@ -90,3 +90,33 @@ func TestResolve(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveForScopesMountsToFrontend(t *testing.T) {
+	mounts := []Mount{
+		{Path: "/api/*", Target: "http://generic/*"},
+		{Path: "/api/*", Target: "http://admin/*", Server: "admin"},
+		{Path: "/api/*", Target: "http://public/*", Server: "public", Protocol: "http"},
+		{Path: "/api/*", Target: "ftp://public/*", Server: "public", Protocol: "ftp"},
+	}
+	tests := []struct {
+		name   string
+		server string
+		proto  string
+		target string
+	}{
+		{name: "server and protocol scope wins", server: "public", proto: "HTTP", target: "http://public/users"},
+		{name: "other named server", server: "admin", proto: "http", target: "http://admin/users"},
+		{name: "generic fallback", server: "other", proto: "http", target: "http://generic/users"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ResolveFor(mounts, Request{Path: "/api/users", Server: tt.server, Protocol: tt.proto})
+			if err != nil {
+				t.Fatalf("ResolveFor() error = %v", err)
+			}
+			if got.Target != tt.target {
+				t.Fatalf("ResolveFor().Target = %q, want %q", got.Target, tt.target)
+			}
+		})
+	}
+}

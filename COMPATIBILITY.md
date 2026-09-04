@@ -6,7 +6,7 @@ Only passing tests may move an item to `verified`.
 | Original concept | Intended modern form | State |
 | --- | --- | --- |
 | `SERVER` | Named frontend listener and protocol | verified: basic protocol and port |
-| `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: practical syntax and resolver kernel |
+| `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: practical syntax, frontend scoping, and resolver kernel |
 | `PERMIT` / `REJECT` | Fail-closed policy rules | verified: basic legacy selectors and canonical kernel |
 | `RELAY` | Authorized transparent byte-stream forwarding | planned |
 | `STLS` | Independent readable frontend/backend TLS settings | planned |

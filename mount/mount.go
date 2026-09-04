@@ -12,6 +12,8 @@ type Mount struct {
 	Path     string `json:"path" toml:"path"`
 	Target   string `json:"target" toml:"target"`
 	Priority int    `json:"priority,omitempty" toml:"priority"`
+	Server   string `json:"server,omitempty" toml:"server"`
+	Protocol string `json:"protocol,omitempty" toml:"protocol"`
 }
 
 var supportedTargetSchemes = map[string]struct{}{
@@ -23,6 +25,12 @@ var supportedTargetSchemes = map[string]struct{}{
 
 // Validate checks one mapping without modifying it.
 func (m Mount) Validate() error {
+	if strings.ContainsAny(m.Server, " \t\r\n") {
+		return fmt.Errorf("mount server scope %q contains whitespace", m.Server)
+	}
+	if strings.ContainsAny(m.Protocol, " \t\r\n") {
+		return fmt.Errorf("mount protocol scope %q contains whitespace", m.Protocol)
+	}
 	if m.Path == "" {
 		return fmt.Errorf("mount path is required")
 	}

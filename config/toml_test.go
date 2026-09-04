@@ -20,6 +20,8 @@ listen = ":8080"
 path = "/*"
 target = "http://backend.internal/*"
 priority = 10
+server = "public"
+protocol = "http"
 
 [[policies]]
 effect = "permit"
@@ -37,7 +39,10 @@ mount = "/*"
 	}
 	want := Config{
 		Servers: []Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
-		Mounts:  []mount.Mount{{Path: "/*", Target: "http://backend.internal/*", Priority: 10}},
+		Mounts: []mount.Mount{{
+			Path: "/*", Target: "http://backend.internal/*", Priority: 10,
+			Server: "public", Protocol: "http",
+		}},
 		Policies: []policy.Rule{{
 			Effect: policy.Permit, Priority: 20, Source: "192.0.2.0/24",
 			Protocol: "http", Destination: "backend.internal", Method: "GET", Mount: "/*",

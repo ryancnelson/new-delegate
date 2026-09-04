@@ -48,6 +48,32 @@ func (c Config) Validate() error {
 		if err := mapping.Validate(); err != nil {
 			return fmt.Errorf("mount %d: %w", i, err)
 		}
+		var scopedServer *Server
+		if mapping.Server != "" && mapping.Server != "*" {
+			for serverIndex := range c.Servers {
+				if c.Servers[serverIndex].Name == mapping.Server {
+					scopedServer = &c.Servers[serverIndex]
+					break
+				}
+			}
+			if scopedServer == nil {
+				return fmt.Errorf("mount %d: unknown server %q", i, mapping.Server)
+			}
+		}
+		if mapping.Protocol != "" && mapping.Protocol != "*" {
+			if scopedServer != nil && !strings.EqualFold(scopedServer.Protocol, mapping.Protocol) {
+				return fmt.Errorf("mount %d: protocol %q does not match server %q protocol %q", i, mapping.Protocol, scopedServer.Name, scopedServer.Protocol)
+			}
+			if scopedServer == nil {
+				foundProtocol := false
+				for _, server := range c.Servers {
+					foundProtocol = foundProtocol || strings.EqualFold(server.Protocol, mapping.Protocol)
+				}
+				if !foundProtocol {
+					return fmt.Errorf("mount %d: protocol scope %q matches no server", i, mapping.Protocol)
+				}
+			}
+		}
 	}
 	for i, rule := range c.Policies {
 		if err := rule.Validate(); err != nil {

@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 11 - Effective-decision explanation)
+**Last Updated:** 2026-09-03 (Iteration 12 - Frontend-scoped mounts)
 
 ---
 
@@ -124,6 +124,15 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   unsafe-path, and ambiguous-mount outcomes; a winning policy rule index and
   rewritten target are included when applicable; incomplete requests fail.
 
+### P1-015: Frontend-scoped mounts
+
+- [DONE] Scope canonical and legacy mounts to named servers and frontend
+  protocols while retaining unscoped fallback mounts.
+- Acceptance: configuration rejects missing named servers and inconsistent
+  server/protocol scopes; path specificity and explicit priority remain
+  deterministic; equally ranked scoped mounts beat generic fallbacks; the
+  explanation and live HTTP paths pass the same frontend identity.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -189,6 +198,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 11 (2026-09-03)
 - [DONE] ✅ Added side-effect-free effective routing and policy explanation
 
+### Iteration 12 (2026-09-03)
+- [DONE] ✅ Added validated named-server and protocol mount scoping
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -216,5 +228,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Scope mounts to named servers and frontend protocols for the
-multi-listener model.
+**Next step:** Run multiple validated HTTP listeners under one coordinated
+lifecycle.
