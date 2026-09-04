@@ -10,7 +10,7 @@ if [ ! -x "${tool_root}/bin/go" ]; then
 	archive="${stage}/go.tar.gz"
 	trap 'rm -rf "$stage"' EXIT HUP INT TERM
 	wget -q -O "$archive" "https://go.dev/dl/go${go_version}.linux-amd64.tar.gz"
-	printf '%s  %s\n' "$go_sha256" "$archive" | sha256sum -c -
+	printf '%s  %s\n' "$go_sha256" "$archive" | sha256sum -c - >/dev/null
 	tar -C "$stage" -xzf "$archive"
 	mkdir -p "$(dirname "$tool_root")"
 	if ! mv "${stage}/go" "$tool_root" 2>/dev/null; then
