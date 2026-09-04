@@ -9,7 +9,8 @@ Last verified: 2026-09-04
   single- or multiline FTP records with a 64 KiB aggregate limit; malformed,
   unterminated, mismatched, and oversized replies fail closed. Deterministic
   timeout/cancellation tests, parser tables and fuzz seeds, and the full local
-  gate pass. Streaming transfer ownership remains the next P1-034 sub-step.
+  gate pass. Push-triggered Woodpecker pipeline 90 passed at exact commit
+  `d6363e2`. Streaming transfer ownership remains the next P1-034 sub-step.
 - FTP passive data connections prefer EPSV and derive the data destination from
   the established control connection's numeric peer address. PASV is used only
   for explicit EPSV capability failures; all six PASV fields and the resulting

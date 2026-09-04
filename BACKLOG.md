@@ -180,8 +180,9 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   contexts close the control socket, dialers receive a bounded context, and the
   aggregate-bounded decoder accepts valid multiline replies while rejecting
   oversized, unterminated, mismatched, and malformed records. Table, fuzz-seed,
-  focused, race, and full portability gates pass. Awaiting exact-commit
-  Woodpecker acceptance; sub-checkpoints (b) and (c) remain.
+  focused, race, and full portability gates pass. Push-triggered Woodpecker
+  pipeline 90 passed all stages at exact commit `d6363e2`; sub-checkpoints (b)
+  and (c) remain.
 
 ### P1-035: Make FTP-to-HTTP translation semantic and fail closed
 
