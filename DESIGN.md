@@ -62,6 +62,10 @@ approval. It does not manufacture semantic operations.
 - Backend HTTP redirects are returned to the frontend unchanged. Connectors do
   not follow them because each new destination would require fresh mount
   resolution and policy authorization.
+- FTP passive data sockets use the numeric peer of the already-authorized
+  control connection. EPSV is preferred; PASV fallback contributes only a
+  strictly validated port and can never redirect the gateway to its advertised
+  host.
 - HTTP CONNECT authority and TCP target ports are validated without DNS before
   routing; a resolver-selected mount and affirmative policy decision precede
   every relay dial.

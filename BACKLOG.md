@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 86 - race-gated Woodpecker runner)
+**Last Updated:** 2026-09-04 (Iteration 90 - FTP passive peer pinning)
 
 ---
 
@@ -134,7 +134,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-033: Constrain FTP data-channel destinations
 
-- [IDEA] Depends on P1-032. Files: `connector/ftp.go`; create
+- [IN PROGRESS] Depends on P1-032. Files: `connector/ftp.go`; create
   `connector/ftp_test.go`; extend `connector/routes_test.go`.
 - Evidence: the PASV response is converted directly into a DialContext target.
 - RED: a fake approved control server advertises a different host in PASV;
@@ -147,6 +147,13 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 - Acceptance: normal retrieval/storage/listing still work; hostile passive
   replies cannot redirect the gateway to another host. Keep data-port handling
   an explicit part of the authorized FTP operation.
+- Verified locally: the focused RED tests observed arbitrary PASV hosts and
+  invalid ports reaching the dialer. The implementation now prefers EPSV,
+  joins its validated port to the control peer, and falls back only for
+  explicit capability responses. PASV validates every byte and the nonzero
+  port but ignores the advertised host. IPv6 EPSV, hostile-host fallback,
+  malformed-field, invalid-port, no-fallback, and RETR/STOR/LIST tests pass;
+  the complete local gate is green. Awaiting exact-commit Woodpecker acceptance.
 
 ### P1-034: Bound FTP I/O and implement transfer lifecycle
 

@@ -336,6 +336,23 @@ func startFakeFTPServer(t *testing.T, files map[string][]byte, uploads map[strin
 						_ = writeFTPLine(connection, "230 User logged in")
 					case "TYPE":
 						_ = writeFTPLine(connection, "200 Type set to I")
+					case "EPSV":
+						if dataListener != nil {
+							_ = dataListener.Close()
+						}
+						dataListener, err = net.Listen("tcp", "127.0.0.1:0")
+						if err != nil {
+							_ = writeFTPLine(connection, "425 Can't open data connection")
+							return
+						}
+						_, port, splitErr := net.SplitHostPort(dataListener.Addr().String())
+						if splitErr != nil {
+							_ = writeFTPLine(connection, "425 Bad data listener")
+							return
+						}
+						_ = writeFTPLine(connection, fmt.Sprintf(
+							"229 Entering Extended Passive Mode (|||%s|)", port,
+						))
 					case "PASV":
 						if dataListener != nil {
 							_ = dataListener.Close()

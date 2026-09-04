@@ -93,7 +93,7 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 		return operation.Result{}, fmt.Errorf("ftp TYPE rejected with %d", reply.Code)
 	}
 
-	pasv, err := ftpPassiveAddress(controlReader, controlWriter)
+	pasv, err := ftpPassiveAddress(control, controlReader, controlWriter)
 	if err != nil {
 		return operation.Result{}, err
 	}
@@ -217,37 +217,128 @@ func writeFTPCommand(writer *textproto.Writer, command string, args ...string) e
 }
 
 func ftpPassiveAddress(
+	control net.Conn,
 	reader *textproto.Reader,
 	writer *textproto.Writer,
 ) (string, error) {
-	if err := writeFTPCommand(writer, "PASV"); err != nil {
+	peer, err := ftpControlPeerIP(control)
+	if err != nil {
+		return "", err
+	}
+	if err := writeFTPCommand(writer, "EPSV"); err != nil {
 		return "", err
 	}
 	reply, err := readFTPReply(reader)
+	if err != nil {
+		return "", fmt.Errorf("ftp EPSV: %w", err)
+	}
+	if reply.Code == 229 {
+		port, parseErr := parseEPSVPort(reply.Body)
+		if parseErr != nil {
+			return "", parseErr
+		}
+		return net.JoinHostPort(peer, strconv.Itoa(port)), nil
+	}
+	if !ftpEPSVUnsupported(reply.Code) {
+		return "", fmt.Errorf("ftp EPSV rejected with %d", reply.Code)
+	}
+
+	if err := writeFTPCommand(writer, "PASV"); err != nil {
+		return "", err
+	}
+	reply, err = readFTPReply(reader)
 	if err != nil {
 		return "", fmt.Errorf("ftp PASV: %w", err)
 	}
 	if reply.Code != 227 {
 		return "", fmt.Errorf("ftp PASV rejected with %d", reply.Code)
 	}
-	start := strings.Index(reply.Body, "(")
-	end := strings.Index(reply.Body, ")")
-	if start == -1 || end == -1 || end <= start {
-		return "", fmt.Errorf("ftp PASV response malformed: %q", reply.Body)
+	port, err := parsePASVPort(reply.Body)
+	if err != nil {
+		return "", err
 	}
-	parts := strings.Split(reply.Body[start+1:end], ",")
+	return net.JoinHostPort(peer, strconv.Itoa(port)), nil
+}
+
+func ftpControlPeerIP(control net.Conn) (string, error) {
+	if control == nil || control.RemoteAddr() == nil {
+		return "", fmt.Errorf("ftp control connection has no remote address")
+	}
+	host, _, err := net.SplitHostPort(control.RemoteAddr().String())
+	if err != nil {
+		return "", fmt.Errorf("ftp control peer address: %w", err)
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return "", fmt.Errorf("ftp control peer is not an IP address: %q", host)
+	}
+	return ip.String(), nil
+}
+
+func ftpEPSVUnsupported(code int) bool {
+	switch code {
+	case 500, 501, 502, 522:
+		return true
+	default:
+		return false
+	}
+}
+
+func parseEPSVPort(body string) (int, error) {
+	inside, err := ftpParenthesizedReply(body, "EPSV")
+	if err != nil {
+		return 0, err
+	}
+	if len(inside) < 5 {
+		return 0, fmt.Errorf("ftp EPSV response malformed: %q", body)
+	}
+	delimiter := inside[:1]
+	parts := strings.Split(inside, delimiter)
+	if len(parts) != 5 || parts[0] != "" || parts[1] != "" || parts[2] != "" || parts[4] != "" {
+		return 0, fmt.Errorf("ftp EPSV response malformed: %q", body)
+	}
+	return parseFTPPort(parts[3], "EPSV", body)
+}
+
+func parsePASVPort(body string) (int, error) {
+	inside, err := ftpParenthesizedReply(body, "PASV")
+	if err != nil {
+		return 0, err
+	}
+	parts := strings.Split(inside, ",")
 	if len(parts) != 6 {
-		return "", fmt.Errorf("ftp PASV response malformed: %q", reply.Body)
+		return 0, fmt.Errorf("ftp PASV response malformed: %q", body)
 	}
-	portHigh, err := strconv.Atoi(strings.TrimSpace(parts[4]))
-	if err != nil {
-		return "", err
+	values := make([]int, len(parts))
+	for index, part := range parts {
+		value, parseErr := strconv.Atoi(strings.TrimSpace(part))
+		if parseErr != nil || value < 0 || value > 255 {
+			return 0, fmt.Errorf("ftp PASV response malformed: %q", body)
+		}
+		values[index] = value
 	}
-	portLow, err := strconv.Atoi(strings.TrimSpace(parts[5]))
-	if err != nil {
-		return "", err
+	port := values[4]*256 + values[5]
+	if port == 0 {
+		return 0, fmt.Errorf("ftp PASV response malformed: %q", body)
 	}
-	return net.JoinHostPort(strings.TrimSpace(strings.Join(parts[:4], ".")), strconv.Itoa(portHigh*256+portLow)), nil
+	return port, nil
+}
+
+func ftpParenthesizedReply(body, command string) (string, error) {
+	start := strings.Index(body, "(")
+	end := strings.Index(body, ")")
+	if start == -1 || end == -1 || end <= start {
+		return "", fmt.Errorf("ftp %s response malformed: %q", command, body)
+	}
+	return body[start+1 : end], nil
+}
+
+func parseFTPPort(value, command, body string) (int, error) {
+	port, err := strconv.Atoi(strings.TrimSpace(value))
+	if err != nil || port < 1 || port > 65535 {
+		return 0, fmt.Errorf("ftp %s response malformed: %q", command, body)
+	}
+	return port, nil
 }
 
 type ftpTarget struct {

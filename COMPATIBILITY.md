@@ -20,7 +20,7 @@ Only passing tests may move an item to `verified`.
 | Portable distribution | Checksummed self-contained executable archives | verified: Darwin/arm64 and Linux/amd64 |
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch, Store (PUT), CONNECT, and FTP Fetch/Store/List; differential harness suite is runnable against baselines |
 | HTTP proxy metadata boundary | Hop-by-hop and proxy-credential stripping | verified: requests and responses |
-| FTP frontend/backend | Typed codec and Fetch/Store/List connector | partial: LIST added and differential harness suite is runnable |
+| FTP frontend/backend | Typed codec and Fetch/Store/List connector | partial: passive data peer pinning and EPSV-first operation verified; bounded transfer lifecycle remains planned |
 | SOCKS5 | CONNECT and bounded relay | partial: fail-closed no-auth greeting, CONNECT request, and reply wire framing verified; listener, policy, and relay integration pending |
 | SMTP, POP3, IMAP, NNTP, LDAP, DNS | Later protocol packages | research |
 | Gopher, Finger, Telnet | Compatibility demand determines priority | research |
@@ -40,6 +40,10 @@ Intentional differences:
 - HTTP backend redirects are relayed to the client rather than followed inside
   the gateway; this prevents a permitted target from redirecting a request to
   an unresolved and unauthorized destination.
+- FTP uses EPSV first. On explicit capability failure it may use PASV, but
+  ignores the advertised PASV host and connects the validated port to the
+  established control peer instead. This deliberately rejects FTP bounce and
+  NAT address substitution behavior that could bypass target authorization.
 - Modern TOML is canonical; legacy syntax is an adapter onto the same model.
 - A canceled compatibility fixture-suite context stops before fixture parsing or
   optional reference-executable execution.

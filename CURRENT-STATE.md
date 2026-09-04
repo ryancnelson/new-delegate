@@ -4,6 +4,12 @@ Last verified: 2026-09-04
 
 ## Verified
 
+- FTP passive data connections prefer EPSV and derive the data destination from
+  the established control connection's numeric peer address. PASV is used only
+  for explicit EPSV capability failures; all six PASV fields and the resulting
+  port are validated, while the server-advertised host is ignored. Offline
+  tests cover IPv6 EPSV, a hostile PASV host, malformed octets, invalid ports,
+  and normal RETR/STOR/LIST behavior. The full Darwin/arm64 local gate passes.
 - Iteration 86 established a race-clean geographic-link foundation and made
   Biggie Woodpecker enforce `go test -race ./...`. The Alpine agent image now
   includes its C build toolchain. Push-triggered pipelines reproduced and
