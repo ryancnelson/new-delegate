@@ -96,9 +96,6 @@ func validateRuntimeSupport(configured config.Config) error {
 		if !strings.EqualFold(frontend.Protocol, "http") {
 			return fmt.Errorf("unsupported frontend protocol: the runnable slice currently supports HTTP servers")
 		}
-		if frontend.TLS != nil {
-			return fmt.Errorf("unsupported TLS runtime: frontend TLS is configured but not implemented")
-		}
 	}
 	for _, mounted := range configured.Mounts {
 		if mounted.TLS != nil {
@@ -256,27 +253,9 @@ func serveHTTP(configured config.Config, reloadPath string, logOutput io.Writer)
 			})
 		}
 	}
-	httpServers := make([]*http.Server, 0, len(configured.Servers))
-	listeners := make([]net.Listener, 0, len(configured.Servers))
-	for _, frontend := range configured.Servers {
-		handler := gatewayserver.NewReloadableHTTPHandler(frontend.Name, configStore.Snapshot, backend)
-		httpServer := &http.Server{
-			Addr:              frontend.Listen,
-			Handler:           handler,
-			ReadHeaderTimeout: 10 * time.Second,
-			ReadTimeout:       30 * time.Second,
-			WriteTimeout:      60 * time.Second,
-			IdleTimeout:       2 * time.Minute,
-		}
-		listener, err := net.Listen("tcp", httpServer.Addr)
-		if err != nil {
-			for _, opened := range listeners {
-				_ = opened.Close()
-			}
-			return fmt.Errorf("listen for server %q: %w", frontend.Name, err)
-		}
-		httpServers = append(httpServers, httpServer)
-		listeners = append(listeners, listener)
+	httpServers, listeners, err := prepareHTTPRuntime(configured, configStore.Snapshot, backend, net.Listen)
+	if err != nil {
+		return err
 	}
 	return gatewayserver.ServeAll(ctx, httpServers, listeners, 10*time.Second)
 }

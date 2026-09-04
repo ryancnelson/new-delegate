@@ -36,6 +36,7 @@ approval. It does not manufacture semantic operations.
 - `mount`: deterministic mapping from frontend names to backend targets.
 - `policy`: explicit permit/reject decisions with default deny.
 - `tlsconfig`: independent, side-effect-free frontend and backend TLS policy.
+- `tlsruntime`: explicit certificate loading and standard-library TLS values.
 - `connector`: backend implementations.
 - `observability`: structured events, metrics, and audit records.
 

@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 18 - Independent TLS model)
+**Last Updated:** 2026-09-03 (Iteration 19 - Frontend TLS runtime)
 
 ---
 
@@ -183,12 +183,22 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-021: Frontend TLS runtime
 
-- [READY] Terminate HTTPS on configured HTTP frontends using the validated
+- [DONE] Terminate HTTPS on configured HTTP frontends using the validated
   certificate/key references and minimum TLS version.
 - Acceptance: all certificates are loaded before any listener begins serving;
   load or bind failure rolls back every listener; plaintext and TLS listeners
   can coexist; TLS 1.2/1.3 minimums are enforced; cancellation retains the
   bounded multi-listener drain behavior; loopback tests use generated fixtures.
+
+### P1-022: Per-mount backend TLS runtime
+
+- [READY] Apply each HTTPS mount's validated backend trust and optional client
+  identity to the selected Fetch without weakening default verification.
+- Acceptance: all referenced CA and client identities load before listeners
+  bind; system roots remain the default when no CA file is set; server-name and
+  TLS minimum settings are enforced per selected mount; mutual TLS is covered
+  with generated loopback fixtures; invalid material causes zero backend and
+  frontend connections; transports have bounded idle pools and close cleanly.
 
 ---
 
@@ -197,7 +207,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 - [DONE] Independent frontend/backend TLS configuration model; runtime
   certificate loading, frontend termination, and custom backend transports are
   tracked separately.
-- Frontend TLS termination from validated file references.
+- [DONE] Frontend TLS termination from validated file references.
 - Per-mount backend TLS verification and optional client identity.
 - [DONE] Atomic configuration reload for canonical files, with rollback and an
   explicit restart requirement for listener-topology changes.
@@ -282,6 +292,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 18 (2026-09-03)
 - [DONE] ✅ Modeled independent fail-closed TLS policy
 
+### Iteration 19 (2026-09-03)
+- [DONE] ✅ Terminated frontend TLS with atomic startup
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -309,5 +322,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Implement frontend TLS termination from the validated model with
-all certificate loading and listener setup completed before serving begins.
+**Next step:** Build per-mount backend TLS transports without leaking transport
+policy into protocol-neutral Fetch operations.

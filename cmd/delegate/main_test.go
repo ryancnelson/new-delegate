@@ -349,6 +349,36 @@ func TestRuntimeSupportRejectsBackendTLSIndependently(t *testing.T) {
 	}
 }
 
+func TestRunPassesFrontendTLSToRuntime(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "delegate.toml")
+	contents := []byte(`
+[[servers]]
+name = "secure"
+protocol = "http"
+listen = "127.0.0.1:8443"
+[servers.tls]
+certificate_file = "certs/frontend.pem"
+private_key_file = "certs/frontend-key.pem"
+minimum_version = "1.3"
+`)
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	serveCalls := 0
+	got := run([]string{"serve", "--config", path}, &stdout, &stderr, func(configured config.Config) error {
+		serveCalls++
+		if len(configured.Servers) != 1 || configured.Servers[0].TLS == nil {
+			t.Fatalf("runtime config = %#v, want frontend TLS", configured)
+		}
+		return nil
+	})
+	if got != 0 || serveCalls != 1 {
+		t.Fatalf("run() = %d, calls=%d, stderr=%q", got, serveCalls, stderr.String())
+	}
+}
+
 func TestRunReportsServeFailure(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	exitCode := run([]string{"SERVER=http"}, &stdout, &stderr, func(config.Config) error {
@@ -430,7 +460,7 @@ certificate_file = "certs/frontend.pem"
 private_key_file = "certs/frontend-key.pem"
 `)
 	events <- fakeSignal("reload")
-	if err := <-reports; err == nil || !strings.Contains(err.Error(), "TLS runtime") {
+	if err := <-reports; err == nil || !strings.Contains(err.Error(), "listener topology") {
 		t.Fatalf("unsupported TLS reload report = %v", err)
 	}
 	if got := store.Snapshot().Servers[0].TLS; got != nil {

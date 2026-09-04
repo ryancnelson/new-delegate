@@ -1,6 +1,5 @@
 // Package tlsconfig defines side-effect-free TLS policy for the two sides of
-// a gateway. Loading certificates and constructing crypto/tls values belong to
-// runtime adapters, not this canonical configuration model.
+// a gateway. Runtime adapters load the referenced certificate material.
 package tlsconfig
 
 import (

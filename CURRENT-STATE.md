@@ -97,11 +97,16 @@ Last verified: 2026-09-03
   verification and optional client identity. Certificate/key references must
   be paired, minimum versions are restricted to TLS 1.2 or 1.3, backend TLS is
   legal only for HTTPS targets, and no insecure verification bypass exists.
-  Validation reads no referenced files. `check` exposes the canonical model;
-  startup and reload reject configured TLS before publication or listener
-  setup until their runtime adapters are implemented. TLS pointers are deep
-  copied in immutable snapshots, and frontend TLS is part of listener
-  topology.
+  Validation reads no referenced files and `check` exposes the canonical
+  model. TLS pointers are deep copied in immutable snapshots, and frontend TLS
+  is part of listener topology.
+- The HTTP runtime loads every configured frontend certificate/key before it
+  binds any socket, then wraps only the matching listeners with standard-library
+  TLS. Plaintext and TLS listeners coexist in one bounded shutdown group. The
+  default minimum is TLS 1.2 and a configured TLS 1.3 minimum is enforced.
+  Generated-certificate loopback tests prove both protocols, version rejection,
+  zero binds on identity failure, and closure of earlier sockets on later bind
+  failure. Custom backend TLS still fails before startup or reload publication.
 
 ## Unverified
 
@@ -111,5 +116,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Implement frontend TLS termination from the validated model, preloading every
-certificate before any listener begins serving.
+Build per-mount backend TLS transports without leaking transport policy into
+protocol-neutral Fetch operations.
