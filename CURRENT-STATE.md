@@ -207,6 +207,8 @@ Last verified: 2026-09-04
   for HTTP `CONNECT` `MOUNT` metadata with mixed-case protocol.
 - The compatibility fixture corpus now includes `SERVER=HTTPS` `CONNECT` metadata and
   selector case-normalization.
+- The compatibility fixture corpus now includes `SERVER=SOCKS` `CONNECT` metadata
+  and selector case-normalization.
 
 ## Unverified
 
