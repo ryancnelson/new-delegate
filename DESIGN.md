@@ -48,6 +48,10 @@ approval. It does not manufacture semantic operations.
 - Absolute URL mount sources match parsed scheme and authority without DNS;
   userinfo and non-canonical source paths are invalid.
 - A request cannot reach a connector without an affirmative policy decision.
+- A backend result is either an explicit HTTP passthrough status or one of the
+  small protocol-neutral outcomes: success, not found, permission denied, or
+  upstream failure. The HTTP frontend owns the outcome-to-status mapping and
+  fails closed on unknown outcomes or invalid passthrough statuses.
 - The direct peer is authoritative unless it is an explicitly trusted proxy;
   malformed client-address chains from trusted proxies fail closed.
 - Equal-specificity mounts require distinct priorities or validation fails.

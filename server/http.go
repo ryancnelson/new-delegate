@@ -160,6 +160,10 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		http.Error(response, "store body too large", http.StatusRequestEntityTooLarge)
 		return
 	}
+	if errors.Is(err, operation.ErrUnsupported) {
+		http.Error(response, "method not supported by backend", http.StatusMethodNotAllowed)
+		return
+	}
 	if err != nil {
 		http.Error(response, "backend fetch failed", http.StatusBadGateway)
 		return
@@ -167,12 +171,40 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	if result.Body != nil {
 		defer result.Body.Close()
 	}
+	status, err := resultHTTPStatus(result, request.Method)
+	if err != nil {
+		http.Error(response, "invalid backend result", http.StatusBadGateway)
+		return
+	}
 	copyResponseHeader(response.Header(), result.Metadata)
-	response.WriteHeader(result.Status)
+	response.WriteHeader(status)
 	if result.Body != nil {
 		if _, err := io.Copy(response, result.Body); err != nil {
 			panic(http.ErrAbortHandler)
 		}
+	}
+}
+
+func resultHTTPStatus(result operation.Result, method string) (int, error) {
+	switch result.Outcome {
+	case operation.OutcomePassthrough:
+		if result.Status < 200 || result.Status > 599 {
+			return 0, fmt.Errorf("invalid passthrough HTTP status %d", result.Status)
+		}
+		return result.Status, nil
+	case operation.OutcomeSuccess:
+		if method == http.MethodPut {
+			return http.StatusNoContent, nil
+		}
+		return http.StatusOK, nil
+	case operation.OutcomeNotFound:
+		return http.StatusNotFound, nil
+	case operation.OutcomePermissionDenied:
+		return http.StatusForbidden, nil
+	case operation.OutcomeUpstreamFailure:
+		return http.StatusBadGateway, nil
+	default:
+		return 0, fmt.Errorf("unknown semantic outcome %d", result.Outcome)
 	}
 }
 

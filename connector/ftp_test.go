@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"strings"
 	"sync"
 	"testing"
@@ -14,6 +15,63 @@ import (
 
 	"gitea.local/ryan/new-delegate/operation"
 )
+
+func TestFTPRejectsUnsupportedFetchMethodsBeforeDial(t *testing.T) {
+	for _, method := range []string{"", "HEAD", "POST", "DELETE"} {
+		t.Run(method, func(t *testing.T) {
+			dials := 0
+			connector := NewFTP(ftpDialerFunc(func(context.Context, string, string) (net.Conn, error) {
+				dials++
+				return nil, errors.New("unexpected dial")
+			}))
+
+			_, err := connector.Fetch(context.Background(), operation.Fetch{
+				Method: method, Resource: "ftp://127.0.0.1/file.txt",
+			})
+			if err == nil || !strings.Contains(err.Error(), "unsupported ftp fetch method") {
+				t.Fatalf("Fetch(%q) error = %v, want unsupported-method error", method, err)
+			}
+			if dials != 0 {
+				t.Fatalf("Fetch(%q) dial count = %d, want zero", method, dials)
+			}
+		})
+	}
+}
+
+func TestFTPRejectsUnsupportedStoreMethodsBeforeDial(t *testing.T) {
+	dials := 0
+	connector := NewFTP(ftpDialerFunc(func(context.Context, string, string) (net.Conn, error) {
+		dials++
+		return nil, errors.New("unexpected dial")
+	}))
+
+	_, err := connector.Store(context.Background(), operation.Store{
+		Method: http.MethodPost, Resource: "ftp://127.0.0.1/file.txt",
+	})
+	if !errors.Is(err, operation.ErrUnsupported) {
+		t.Fatalf("Store() error = %v, want operation.ErrUnsupported", err)
+	}
+	if dials != 0 {
+		t.Fatalf("Store() dial count = %d, want zero", dials)
+	}
+}
+
+func TestFTPReplyCodesMapToSemanticOutcomes(t *testing.T) {
+	for _, test := range []struct {
+		code int
+		want operation.Outcome
+	}{
+		{code: 530, want: operation.OutcomePermissionDenied},
+		{code: 532, want: operation.OutcomePermissionDenied},
+		{code: 550, want: operation.OutcomeNotFound},
+		{code: 425, want: operation.OutcomeUpstreamFailure},
+		{code: 451, want: operation.OutcomeUpstreamFailure},
+	} {
+		if got := ftpOutcome(test.code); got != test.want {
+			t.Errorf("ftpOutcome(%d) = %d, want %d", test.code, got, test.want)
+		}
+	}
+}
 
 func TestFTPUsesEPSVAndControlPeerForIPv6Data(t *testing.T) {
 	controlClient, controlServer := net.Pipe()
@@ -762,7 +820,7 @@ func TestFTPFetchBodyUsesDataTimeout(t *testing.T) {
 	}
 }
 
-func TestFTPStoreRejectsFailedCompletion(t *testing.T) {
+func TestFTPStoreMapsFailedCompletionToSemanticOutcome(t *testing.T) {
 	controlClient, controlServer := net.Pipe()
 	dataClient, dataServer := net.Pipe()
 	dialer := &ftpScriptDialer{
@@ -782,13 +840,16 @@ func TestFTPStoreRejectsFailedCompletion(t *testing.T) {
 		return writeFTPLine(control, "550 Store failed")
 	})
 
-	_, err := NewFTP(dialer).Store(context.Background(), operation.Store{
+	result, err := NewFTP(dialer).Store(context.Background(), operation.Store{
 		Method:   "PUT",
 		Resource: "ftp://127.0.0.1:21/file.txt",
 		Body:     strings.NewReader("upload"),
 	})
-	if err == nil || !strings.Contains(err.Error(), "completion rejected with 550") {
-		t.Fatalf("Store() error = %v, want failed FTP completion", err)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Outcome != operation.OutcomeNotFound || result.Status != 0 {
+		t.Fatalf("Store() result = %#v, want semantic not-found outcome", result)
 	}
 	if scriptErr := <-scriptDone; scriptErr != nil {
 		t.Fatal(scriptErr)

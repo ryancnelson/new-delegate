@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 97 - accept bounded FTP lifecycle)
+**Last Updated:** 2026-09-04 (Iteration 98 - semantic FTP outcomes)
 
 ---
 
@@ -200,7 +200,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-035: Make FTP-to-HTTP translation semantic and fail closed
 
-- [IDEA] Depends on P1-034. Files: `operation/operation.go` (confirm filename),
+- [IN PROGRESS] Depends on P1-034. Files: `operation/operation.go`,
   `connector/ftp.go`, `server/http.go`, related connector/server tests.
 - Evidence: FTP completion codes such as 226 are returned as HTTP status codes;
   unknown methods silently become RETR. Operation fields remain HTTP-shaped.
@@ -215,6 +215,14 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 - Acceptance: no raw FTP status crosses as an HTTP status; translation errors
   fail closed; existing HTTP behavior is regression-tested. Record the chosen
   mapping and any unsupported operations in COMPATIBILITY.md.
+- Sub-checkpoint (a) is locally verified: `operation.Result` distinguishes
+  native HTTP passthrough from semantic success, not-found, permission-denied,
+  and upstream-failure outcomes. The HTTP frontend maps them to 200/204, 404,
+  403, and 502, while invalid outcomes/statuses fail closed. FTP success no
+  longer exposes 226, rejected reply classes map semantically, and GET/LIST or
+  PUT method validation happens before dialing. Focused connector/server tests
+  and the complete ordinary suite pass. The real HTTP-to-FTP outcome matrix
+  and full race/portability gate remain before acceptance.
 
 ### P1-036: Own and drain CONNECT and bridge sessions
 

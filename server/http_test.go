@@ -257,6 +257,81 @@ func TestHTTPHandlerAbortsPartiallyWrittenResponseOnLateBackendFailure(t *testin
 	}
 }
 
+func TestHTTPHandlerMapsSemanticBackendOutcomes(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		outcome operation.Outcome
+		want    int
+	}{
+		{name: "success", outcome: operation.OutcomeSuccess, want: http.StatusOK},
+		{name: "not found", outcome: operation.OutcomeNotFound, want: http.StatusNotFound},
+		{name: "permission denied", outcome: operation.OutcomePermissionDenied, want: http.StatusForbidden},
+		{name: "upstream failure", outcome: operation.OutcomeUpstreamFailure, want: http.StatusBadGateway},
+		{name: "unknown fails closed", outcome: operation.Outcome(255), want: http.StatusBadGateway},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			handler := NewReloadableHTTPHandlerWithRoutes(
+				"public",
+				func() config.Config {
+					return config.Config{
+						Mounts:   []mount.Mount{{Path: "/*", Target: "ftp://backend.invalid/*"}},
+						Policies: []policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "*"}},
+					}
+				},
+				resultMountConnector{result: operation.Result{Outcome: test.outcome}},
+			)
+			request := httptest.NewRequest(http.MethodGet, "http://frontend/object", nil)
+			response := httptest.NewRecorder()
+
+			handler.ServeHTTP(response, request)
+			if response.Code != test.want {
+				t.Fatalf("status = %d, want %d", response.Code, test.want)
+			}
+		})
+	}
+}
+
+func TestResultHTTPStatusPreservesPassthroughAndMapsStoreSuccess(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		result operation.Result
+		method string
+		want   int
+		ok     bool
+	}{
+		{name: "HTTP passthrough", result: operation.Result{Status: http.StatusCreated}, method: http.MethodGet, want: http.StatusCreated, ok: true},
+		{name: "semantic store", result: operation.Result{Outcome: operation.OutcomeSuccess}, method: http.MethodPut, want: http.StatusNoContent, ok: true},
+		{name: "invalid passthrough", result: operation.Result{Status: 0}, method: http.MethodGet},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := resultHTTPStatus(test.result, test.method)
+			if (err == nil) != test.ok || got != test.want {
+				t.Fatalf("resultHTTPStatus() = %d, %v; want %d, success=%t", got, err, test.want, test.ok)
+			}
+		})
+	}
+}
+
+func TestHTTPHandlerMapsUnsupportedBackendOperationToMethodNotAllowed(t *testing.T) {
+	handler := NewReloadableHTTPHandlerWithRoutes(
+		"public",
+		func() config.Config {
+			return config.Config{
+				Mounts:   []mount.Mount{{Path: "/*", Target: "ftp://backend.invalid/*"}},
+				Policies: []policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "*"}},
+			}
+		},
+		resultMountConnector{err: operation.ErrUnsupported},
+	)
+	request := httptest.NewRequest(http.MethodPost, "http://frontend/object", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusMethodNotAllowed)
+	}
+}
+
 type terminalErrorReader struct {
 	io.Reader
 	err error
@@ -272,10 +347,11 @@ func (r *terminalErrorReader) Read(buffer []byte) (int, error) {
 
 type resultMountConnector struct {
 	result operation.Result
+	err    error
 }
 
 func (r resultMountConnector) FetchForMount(context.Context, mount.Mount, operation.Fetch) (operation.Result, error) {
-	return r.result, nil
+	return r.result, r.err
 }
 
 func TestHTTPProxyStripsHopByHopHeadersAndCredentials(t *testing.T) {

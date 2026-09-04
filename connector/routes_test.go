@@ -265,8 +265,8 @@ func TestHTTPRoutesDispatchesFTPFetchAndStore(t *testing.T) {
 	if err != nil || string(fetchBody) != "line one" {
 		t.Fatalf("fetch body = %q, %v; want line one", fetchBody, err)
 	}
-	if fetchResult.Status != 226 {
-		t.Fatalf("fetch status = %d, want 226", fetchResult.Status)
+	if fetchResult.Outcome != operation.OutcomeSuccess || fetchResult.Status != 0 {
+		t.Fatalf("fetch result = %#v, want semantic success without FTP status", fetchResult)
 	}
 
 	storePayload := "new-bytes"
@@ -279,8 +279,8 @@ func TestHTTPRoutesDispatchesFTPFetchAndStore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if storeResult.Status != 226 {
-		t.Fatalf("store status = %d, want 226", storeResult.Status)
+	if storeResult.Outcome != operation.OutcomeSuccess || storeResult.Status != 0 {
+		t.Fatalf("store result = %#v, want semantic success without FTP status", storeResult)
 	}
 	if got := string(store["/reports/plan.txt"]); got != storePayload {
 		t.Fatalf("stored body = %q, want %q", got, storePayload)
@@ -300,8 +300,8 @@ func TestHTTPRoutesDispatchesFTPFetchAndStore(t *testing.T) {
 	if err != nil || string(listBody) != "reports/plan.txt\n" {
 		t.Fatalf("list body = %q, %v; want reports/plan.txt\\n", listBody, err)
 	}
-	if listResult.Status != 226 {
-		t.Fatalf("list status = %d, want 226", listResult.Status)
+	if listResult.Outcome != operation.OutcomeSuccess || listResult.Status != 0 {
+		t.Fatalf("list result = %#v, want semantic success without FTP status", listResult)
 	}
 }
 

@@ -4,6 +4,13 @@ Last verified: 2026-09-04
 
 ## Verified
 
+- Protocol-neutral results now distinguish passthrough HTTP status from
+  success, not-found, permission-denied, and upstream-failure outcomes. The
+  HTTP frontend maps those semantic outcomes to 200/204, 404, 403, and 502 and
+  rejects unknown or invalid results as 502. FTP no longer returns raw 226
+  statuses, and unsupported FTP Fetch/Store methods fail before any dial.
+  Focused connector/server tests and the complete ordinary suite pass locally;
+  real HTTP-to-FTP outcome acceptance remains in P1-035.
 - FTP control setup now uses bounded dial contexts, rolling socket deadlines,
   and context-triggered connection closure. Replies are decoded as complete
   single- or multiline FTP records with a 64 KiB aggregate limit; malformed,

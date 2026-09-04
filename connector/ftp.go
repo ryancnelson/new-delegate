@@ -51,11 +51,19 @@ func NewFTP(dialer contextDialer) *FTP {
 
 // Fetch retrieves one resource from an ftp backend.
 func (f *FTP) Fetch(ctx context.Context, fetch operation.Fetch) (operation.Result, error) {
+	switch fetch.Method {
+	case http.MethodGet, "LIST":
+	default:
+		return operation.Result{}, fmt.Errorf("unsupported ftp fetch method %q: %w", fetch.Method, operation.ErrUnsupported)
+	}
 	return f.operate(ctx, fetch.Method, fetch.Resource, "", fetch.Body)
 }
 
 // Store writes one resource to an ftp backend.
 func (f *FTP) Store(ctx context.Context, store operation.Store) (operation.Result, error) {
+	if store.Method != http.MethodPut {
+		return operation.Result{}, fmt.Errorf("unsupported ftp store method %q: %w", store.Method, operation.ErrUnsupported)
+	}
 	return f.operate(ctx, store.Method, store.Resource, "", store.Body)
 }
 
@@ -100,7 +108,7 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 		return operation.Result{}, fmt.Errorf("ftp USER: %w", err)
 	}
 	if reply.Code != 331 && reply.Code != 230 {
-		return operation.Result{}, fmt.Errorf("ftp USER rejected with %d", reply.Code)
+		return operation.Result{Outcome: ftpOutcome(reply.Code)}, nil
 	}
 	if reply.Code == 331 {
 		if err := writeFTPCommand(controlWriter, "PASS", "anonymous@example.com"); err != nil {
@@ -111,7 +119,7 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 			return operation.Result{}, fmt.Errorf("ftp PASS: %w", err)
 		}
 		if reply.Code != 230 {
-			return operation.Result{}, fmt.Errorf("ftp PASS rejected with %d", reply.Code)
+			return operation.Result{Outcome: ftpOutcome(reply.Code)}, nil
 		}
 	}
 	if err := writeFTPCommand(controlWriter, "TYPE", "I"); err != nil {
@@ -150,8 +158,6 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 		command = "LIST"
 	case http.MethodGet:
 		command = "RETR"
-	default:
-		command = "RETR"
 	}
 
 	switch command {
@@ -164,7 +170,7 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 			return operation.Result{}, fmt.Errorf("ftp STOR: %w", err)
 		}
 		if reply.Code < 100 || reply.Code > 199 {
-			return operation.Result{}, fmt.Errorf("ftp STOR rejected with %d", reply.Code)
+			return operation.Result{Outcome: ftpOutcome(reply.Code)}, nil
 		}
 		if body == nil {
 			body = strings.NewReader("")
@@ -178,9 +184,9 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 			return operation.Result{}, fmt.Errorf("ftp STOR completion: %w", err)
 		}
 		if reply.Code < 200 || reply.Code > 299 {
-			return operation.Result{}, fmt.Errorf("ftp STOR completion rejected with %d", reply.Code)
+			return operation.Result{Outcome: ftpOutcome(reply.Code)}, nil
 		}
-		return operation.Result{Status: reply.Code}, nil
+		return operation.Result{Outcome: operation.OutcomeSuccess}, nil
 	case "RETR", "LIST":
 		if err := writeFTPCommand(controlWriter, command, parsed.Path); err != nil {
 			return operation.Result{}, err
@@ -190,7 +196,7 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 			return operation.Result{}, fmt.Errorf("ftp %s: %w", command, err)
 		}
 		if reply.Code < 100 || reply.Code > 199 {
-			return operation.Result{}, fmt.Errorf("ftp %s rejected with %d", command, reply.Code)
+			return operation.Result{Outcome: ftpOutcome(reply.Code)}, nil
 		}
 		body := &ftpTransferBody{
 			ctx:         ctx,
@@ -202,9 +208,20 @@ func (f *FTP) operate(ctx context.Context, method, resource string, _ string, bo
 			stopControl: stopControlCancellation,
 		}
 		transferOwned = true
-		return operation.Result{Status: 226, Body: body}, nil
+		return operation.Result{Outcome: operation.OutcomeSuccess, Body: body}, nil
 	}
 	return operation.Result{}, fmt.Errorf("unsupported ftp command %q", command)
+}
+
+func ftpOutcome(code int) operation.Outcome {
+	switch code {
+	case 530, 532:
+		return operation.OutcomePermissionDenied
+	case 550:
+		return operation.OutcomeNotFound
+	default:
+		return operation.OutcomeUpstreamFailure
+	}
 }
 
 type ftpTransferBody struct {
