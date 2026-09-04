@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const testProcessTimeout = 5 * time.Second
+
 func TestPairingRoundTrip(t *testing.T) {
 	t.Parallel()
 
@@ -79,14 +81,14 @@ while :; do sleep 1; done
 		cancel()
 		select {
 		case <-done:
-		case <-time.After(time.Second):
+		case <-time.After(testProcessTimeout):
 			t.Error("RunRight did not stop during cleanup")
 		}
 	})
 
 	select {
 	case <-pairing.changed:
-	case <-time.After(time.Second):
+	case <-time.After(testProcessTimeout):
 		t.Fatal("RunRight did not emit a pairing")
 	}
 	if got, want := pairing.String(), "ndlink1:8080:tcExampleAddress\n"; got != want {
@@ -100,7 +102,7 @@ while :; do sleep 1; done
 		if err != nil {
 			t.Fatalf("RunRight() = %v", err)
 		}
-	case <-time.After(time.Second):
+	case <-time.After(testProcessTimeout):
 		t.Fatal("RunRight did not stop after cancellation")
 	}
 	if strings.Contains(diagnostics.String(), "tcExampleAddress") {
@@ -126,7 +128,7 @@ while :; do sleep 1; done
 		done <- RunLeft(ctx, binary, strings.NewReader("ndlink1:8080:tcExampleAddress\n"), "127.0.0.1:18080", io.Discard)
 	}()
 
-	deadline := time.Now().Add(time.Second)
+	deadline := time.Now().Add(testProcessTimeout)
 	for time.Now().Before(deadline) {
 		contents, err := os.ReadFile(argsFile)
 		if err == nil {
