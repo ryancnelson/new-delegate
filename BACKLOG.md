@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 100 - HTTP-to-FTP outcome acceptance)
+**Last Updated:** 2026-09-04 (Iteration 101 - accept semantic FTP translation)
 
 ---
 
@@ -200,7 +200,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-035: Make FTP-to-HTTP translation semantic and fail closed
 
-- [IN PROGRESS] Depends on P1-034. Files: `operation/operation.go`,
+- [DONE] Depends on P1-034. Files: `operation/operation.go`,
   `connector/ftp.go`, `server/http.go`, related connector/server tests.
 - Evidence: FTP completion codes such as 226 are returned as HTTP status codes;
   unknown methods silently become RETR. Operation fields remain HTTP-shaped.
@@ -230,7 +230,8 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   200, PUT 204, missing 404, permission 403, and upstream 502 behavior. HEAD,
   POST, and DELETE return 405 without opening an FTP control connection. The
   focused tests and full race plus Darwin/arm64 and Linux/amd64 gate pass.
-  Awaiting exact-commit Woodpecker acceptance.
+  Push-triggered Woodpecker pipeline 98 passed all stages at exact commit
+  `075c7a2`, completing P1-035.
 
 ### P1-036: Own and drain CONNECT and bridge sessions
 

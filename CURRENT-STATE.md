@@ -15,7 +15,9 @@ Last verified: 2026-09-04
   selector, and HTTP/FTP connectors. A real loopback HTTP-to-FTP matrix proves
   GET 200, LIST 200, PUT 204, missing 404, permission 403, and upstream 502;
   HEAD, POST, and DELETE return 405 without an FTP control connection. The full
-  race and Darwin/arm64 plus Linux/amd64 gate pass locally.
+  race and Darwin/arm64 plus Linux/amd64 gate pass locally. Push-triggered
+  Woodpecker pipeline 98 passed all stages at exact commit `075c7a2`, completing
+  P1-035.
 - FTP control setup now uses bounded dial contexts, rolling socket deadlines,
   and context-triggered connection closure. Replies are decoded as complete
   single- or multiline FTP records with a 64 KiB aggregate limit; malformed,
