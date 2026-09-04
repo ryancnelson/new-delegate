@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -67,6 +68,77 @@ func TestHTTPHandlerProxiesAuthorizedFetch(t *testing.T) {
 	}
 	if calls := backendCalls.Load(); calls != 1 {
 		t.Fatalf("backend calls = %d, want 1", calls)
+	}
+}
+
+func TestHTTPProxyStripsHopByHopHeadersAndCredentials(t *testing.T) {
+	var backendHeaders http.Header
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		backendHeaders = request.Header.Clone()
+		w.Header().Set("Connection", "X-Backend-Remove")
+		w.Header().Set("X-Backend-Remove", "secret")
+		w.Header().Set("Proxy-Authenticate", "Basic realm=backend")
+		w.Header().Set("X-End-Response", "kept")
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer backend.Close()
+	handler := NewHTTPHandler(
+		[]mount.Mount{{Source: "http://origin.invalid:8080/*", Target: backend.URL + "/*"}},
+		[]policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "*"}},
+		connector.NewHTTP(backend.Client()),
+	)
+	frontend := httptest.NewServer(handler)
+	defer frontend.Close()
+	proxyURL, err := url.Parse(frontend.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	request, err := http.NewRequest(http.MethodGet, "http://origin.invalid:8080/report", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	request.Header.Set("Proxy-Authorization", "Basic should-not-leak")
+	request.Header.Add("Connection", "X-Remove")
+	request.Header.Add("Connection", "x-remove-too")
+	request.Header.Set("X-Remove", "secret")
+	request.Header.Set("X-Remove-Too", "secret")
+	request.Header.Set("Keep-Alive", "timeout=5")
+	request.Header.Set("X-End-Request", "kept")
+	response, err := client.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = response.Body.Close()
+	for _, name := range []string{"Proxy-Authorization", "Connection", "X-Remove", "X-Remove-Too", "Keep-Alive"} {
+		if backendHeaders.Get(name) != "" {
+			t.Errorf("backend received %s=%q", name, backendHeaders.Values(name))
+		}
+	}
+	if backendHeaders.Get("X-End-Request") != "kept" {
+		t.Errorf("backend lost end-to-end request header: %v", backendHeaders)
+	}
+	for _, name := range []string{"Proxy-Authenticate", "Connection", "X-Backend-Remove"} {
+		if response.Header.Get(name) != "" {
+			t.Errorf("frontend response leaked %s=%q", name, response.Header.Values(name))
+		}
+	}
+	if response.Header.Get("X-End-Response") != "kept" {
+		t.Errorf("frontend lost end-to-end response header: %v", response.Header)
+	}
+}
+
+func TestSanitizeHeaderExpandsConnectionTokensCaseInsensitively(t *testing.T) {
+	got := sanitizeHeader(map[string][]string{
+		"connection":          {"X-One", " x-Two , X-Three"},
+		"x-one":               {"remove"},
+		"X-TWO":               {"remove"},
+		"X-Three":             {"remove"},
+		"proxy-authorization": {"remove"},
+		"X-Keep":              {"one", "two"},
+	})
+	if len(got) != 1 || len(got["X-Keep"]) != 2 {
+		t.Fatalf("sanitizeHeader() = %#v, want only end-to-end values", got)
 	}
 }
 

@@ -190,11 +190,7 @@ func remoteHost(address string) string {
 }
 
 func cloneHeader(source http.Header) map[string][]string {
-	result := make(map[string][]string, len(source))
-	for key, values := range source {
-		result[key] = append([]string(nil), values...)
-	}
-	return result
+	return sanitizeHeader(source)
 }
 
 var hopByHopHeaders = map[string]struct{}{
@@ -202,29 +198,47 @@ var hopByHopHeaders = map[string]struct{}{
 	"Keep-Alive":          {},
 	"Proxy-Authenticate":  {},
 	"Proxy-Authorization": {},
+	"Proxy-Connection":    {},
 	"Te":                  {},
 	"Trailer":             {},
 	"Transfer-Encoding":   {},
 	"Upgrade":             {},
 }
 
-func copyResponseHeader(destination http.Header, source map[string][]string) {
+func sanitizeHeader(source map[string][]string) map[string][]string {
 	connectionHeaders := make(map[string]struct{})
-	for _, value := range source["Connection"] {
-		for _, name := range strings.Split(value, ",") {
-			connectionHeaders[http.CanonicalHeaderKey(strings.TrimSpace(name))] = struct{}{}
+	for key, values := range source {
+		if !strings.EqualFold(key, "Connection") {
+			continue
+		}
+		for _, value := range values {
+			for _, name := range strings.Split(value, ",") {
+				canonical := http.CanonicalHeaderKey(strings.TrimSpace(name))
+				if canonical != "" {
+					connectionHeaders[canonical] = struct{}{}
+				}
+			}
 		}
 	}
+	result := make(map[string][]string, len(source))
 	for key, values := range source {
 		canonical := http.CanonicalHeaderKey(key)
+		if canonical == "" {
+			continue
+		}
 		if _, skip := hopByHopHeaders[canonical]; skip {
 			continue
 		}
 		if _, skip := connectionHeaders[canonical]; skip {
 			continue
 		}
-		for _, value := range values {
-			destination.Add(canonical, value)
-		}
+		result[canonical] = append(result[canonical], values...)
+	}
+	return result
+}
+
+func copyResponseHeader(destination http.Header, source map[string][]string) {
+	for key, values := range sanitizeHeader(source) {
+		destination[key] = append(destination[key], values...)
 	}
 }

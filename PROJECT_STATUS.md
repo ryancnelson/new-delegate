@@ -84,7 +84,20 @@ Running changelog, updated automatically every 10 minutes.
   absolute-form requests and `delegate explain --url` share the resolver.
 - All tests, race detection, static checks, and portability builds pass. A
   bounded URL-source fuzz run completed 393,080 executions without a panic.
-  Remote CI is pending. Next gate: strip hop-by-hop headers and proxy credentials.
+  Manual Woodpecker pipeline #23 accepted exact commit `9b53249` after the push
+  webhook was missed. Next gate: strip hop-by-hop headers and proxy credentials.
+
+## 2026-09-03 21:45
+
+- Iteration 23 enforces a symmetric HTTP metadata boundary. Requests and
+  responses remove standard hop-by-hop fields, `Proxy-Connection`, proxy
+  credentials/challenges, and every repeated case-insensitive header nominated
+  by `Connection`; end-to-end values remain intact.
+- A real `http.Client` proxy integration test proves an absolute-form request's
+  `Proxy-Authorization` and connection-scoped fields never reach the backend,
+  and backend hop-by-hop fields never return to the caller.
+- The full local test/race/static/CGO-free portability gate passes. Remote CI is
+  pending. Next gate: authorized bounded HTTP `CONNECT` relay.
 
 ## 2026-09-03 18:46
 
@@ -344,4 +357,10 @@ Running changelog, updated automatically every 10 minutes.
 - New commit: `ebb1046 [iter-21] build reproducible release archives`. Matches the iteration-21 summary already logged out-of-band at 21:31 in this file: `scripts/release.sh` produces deterministic CGO-free zip archives for Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64, and Windows/amd64 with trimmed paths, no VCS metadata, empty build ID, link-time version stamp, and a stable SHA-256 manifest; two real builds produced identical manifests, all checksums verified, and the extracted Darwin binary reported its version and passed `check` against the canonical example.
 - **Release packaging** is `[DONE]` (BACKLOG.md line 205/321). All Priority 1 and TLS-related work through checksummed release archives is now complete.
 - New current gate per CURRENT-STATE.md: add fail-closed URL-authority source patterns to `MOUNT` as the routing prerequisite for HTTP forward proxying. Working tree already has in-progress, uncommitted work toward it: modified `BACKLOG.md`, `config/legacy_test.go`, `mount/mount_test.go`, `mount/resolve_test.go`.
+- Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
+
+## 2026-09-03 21:44
+
+- New commit: `9b53249 [iter-22] match absolute URL mount sources`. Matches the iteration-22 summary already logged out-of-band at 21:39 in this file: `MOUNT` extended with absolute HTTP/HTTPS source URLs in both strict TOML and legacy directives while preserving path mounts; resolution compares scheme/authority without DNS, folds host case, distinguishes explicit ports, and fails closed on userinfo, query, fragment, escaping, traversal, malformed authority, and non-canonical paths; live absolute-form requests and `delegate explain --url` share the resolver; a bounded URL-source fuzz run completed 393,080 executions without a panic.
+- New `[IN PROGRESS]` item (BACKLOG.md line 224): strip proxy credentials and hop-by-hop headers on both sides of the connection — this is the current gate per CURRENT-STATE.md, a prerequisite before expanding forward-proxy behavior. Working tree already has uncommitted work toward it: modified `BACKLOG.md`, `server/http.go`, `server/http_test.go`.
 - Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.

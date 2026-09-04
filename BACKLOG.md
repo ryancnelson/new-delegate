@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 22 - URL-authority mounts)
+**Last Updated:** 2026-09-03 (Iteration 23 - HTTP hop-by-hop boundary)
 
 ---
 
@@ -221,13 +221,23 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-025: HTTP hop-by-hop boundary
 
-- [READY] Strip proxy credentials and hop-by-hop headers on both sides of the
+- [DONE] Strip proxy credentials and hop-by-hop headers on both sides of the
   HTTP Fetch boundary before expanding forward-proxy behavior.
 - Acceptance: standard hop-by-hop fields and every header nominated by
   `Connection` are removed from backend requests and frontend responses;
   `Proxy-Authorization` and `Proxy-Authenticate` never cross the gateway;
   end-to-end headers remain intact; casing and repeated values are covered;
   an absolute-form proxy-client integration test proves no credential leakage.
+
+### P1-026: Authorized HTTP CONNECT relay
+
+- [READY] Add a bounded byte-stream relay for authorized HTTP `CONNECT`
+  requests without conflating it with semantic Fetch translation.
+- Acceptance: authority syntax and ports validate before dialing; mount and
+  policy approval precede all network activity; denial makes zero dials;
+  successful loopback tunnels support bidirectional traffic and half-close;
+  handshake/idle limits are bounded; hijacked connections are always closed;
+  `explain` can report the CONNECT route without opening a socket.
 
 ---
 
@@ -333,6 +343,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 22 (2026-09-03)
 - [DONE] ✅ Added original-style URL-authority mount sources
 
+### Iteration 23 (2026-09-03)
+- [DONE] ✅ Enforced the HTTP hop-by-hop metadata boundary
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -360,5 +373,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Enforce the HTTP hop-by-hop boundary, especially proxy
-credentials, before expanding forward-proxy behavior.
+**Next step:** Add authorized, bounded HTTP `CONNECT` as a byte-stream relay
+separate from semantic Fetch translation.

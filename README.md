@@ -120,6 +120,12 @@ go run ./cmd/delegate explain \
 For an absolute URL source, replace `--path` with
 `--url http://example.com:8080/docs/index.html`.
 
+At the HTTP boundary, proxy credentials and hop-by-hop metadata are never
+forwarded. Requests and responses drop `Connection`, every header it names,
+`Proxy-Authorization`, `Proxy-Authenticate`, `Proxy-Connection`, `Keep-Alive`,
+`TE`, `Trailer`, `Transfer-Encoding`, and `Upgrade`; end-to-end metadata is
+preserved.
+
 The JSON result distinguishes `permit`, `reject`, `no_mount`, `unsafe_path`,
 and `ambiguous_mount`, and includes the winning policy rule index when policy
 evaluation occurs. Original-style configuration directives can be supplied in

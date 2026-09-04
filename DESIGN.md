@@ -57,6 +57,8 @@ approval. It does not manufacture semantic operations.
 - Backend TLS verification cannot be disabled by configuration.
 - Runtime TLS material is loaded before listeners bind; backend transport
   choice comes from the resolver-selected mount, never request metadata.
+- Proxy credentials, standard hop-by-hop headers, and `Connection`-nominated
+  fields never cross the HTTP frontend/backend boundary.
 
 ## Portability
 

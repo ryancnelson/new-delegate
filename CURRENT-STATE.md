@@ -134,6 +134,12 @@ Last verified: 2026-09-03
   and unsupported schemes fail closed. Live absolute-form HTTP requests and
   `delegate explain --url` use this same resolver. A bounded fuzz run completed
   393,080 executions without a panic.
+- HTTP request and response metadata is sanitized symmetrically. Standard
+  hop-by-hop headers, the non-standard `Proxy-Connection`, proxy credentials
+  and challenges, and every repeated/mixed-case `Connection` nominee are
+  removed; end-to-end fields retain all values. A real absolute-form request
+  sent through an `http.Client` proxy proves credentials and connection-scoped
+  fields do not reach the backend or return to the caller.
 
 ## Unverified
 
@@ -143,5 +149,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Strip proxy credentials and all HTTP hop-by-hop headers on requests and
-responses before expanding forward-proxy behavior.
+Add authorized, bounded HTTP `CONNECT` as a byte-stream relay separate from
+semantic Fetch translation.
