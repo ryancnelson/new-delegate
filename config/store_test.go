@@ -49,6 +49,8 @@ func TestStoreRejectsInvalidReplacementWithoutChangingSnapshot(t *testing.T) {
 
 func TestStoreSnapshotsDoNotExposeMutableState(t *testing.T) {
 	initial := storeTestConfig("old.internal", 8080)
+	initial.Servers[0].ClientIPHeader = "X-Forwarded-For"
+	initial.Servers[0].TrustedProxies = []string{"10.0.0.0/8"}
 	store, err := NewStore(initial)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
@@ -56,6 +58,7 @@ func TestStoreSnapshotsDoNotExposeMutableState(t *testing.T) {
 
 	snapshot := store.Snapshot()
 	snapshot.Servers[0].Name = "mutated"
+	snapshot.Servers[0].TrustedProxies[0] = "192.0.2.0/24"
 	snapshot.Mounts[0].Target = "http://mutated.invalid/*"
 	snapshot.Policies[0].Effect = policy.Reject
 	if got := store.Snapshot(); !reflect.DeepEqual(got, initial) {

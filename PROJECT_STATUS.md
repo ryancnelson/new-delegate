@@ -2,6 +2,21 @@
 
 Running changelog, updated automatically every 10 minutes.
 
+## 2026-09-03 20:48
+
+- Iteration 17 implements the explicit trusted-proxy boundary: the direct peer
+  remains authoritative unless the current listener names a client-address
+  header and trusted CIDRs. Trusted chains are evaluated right to left;
+  untrusted headers are ignored and malformed trusted chains return HTTP 400
+  without invoking a backend.
+- The complete local gate passes, including race detection and the CGO-free
+  portability matrix. Coverage includes spoof rejection, malformed-chain
+  rejection before backend invocation, immutable CIDR snapshots, strict TOML
+  decoding, IPv4-mapped peer handling, and live trust-policy reload without a
+  listener restart. Remote CI acceptance is still pending for this iteration.
+- Next gate: model independent frontend and backend TLS settings with strict,
+  side-effect-free validation.
+
 ## 2026-09-03 18:46
 
 - Initial snapshot.
@@ -135,6 +150,14 @@ Running changelog, updated automatically every 10 minutes.
 - **Atomic config snapshot publication** is `[DONE]` (BACKLOG.md line 148/227) — runtime config is published through an atomic immutable snapshot store; invalid candidates leave the previous snapshot active; inputs/outputs can't mutate stored slices; concurrent replace/read passes the race detector; each HTTP request reads exactly one snapshot for routing and authorization.
 - New current gate per CURRENT-STATE.md: reload canonical files into the atomic store while requiring a restart for listener-topology changes (i.e. live config reload, short of changing which ports are bound).
 - Remaining unverified unchanged: legacy syntax outside the verified `SERVER`/`-P`/practical scoped `MOUNT`/`PERMIT`/`REJECT` subset. Noted addition: the legacy adapter still describes one server per process invocation — multiple listeners require canonical (TOML) configuration.
+
+## 2026-09-03 20:44
+
+- Two new commits: `f56724b [iter-15] reload canonical config atomically`, `d31c45c [iter-16] reload runtime config on signal`. This closes the "reload canonical files into the atomic store" gate from the last entry.
+- **Atomic canonical-file reload** is `[DONE]` (BACKLOG.md line 157/240) and **signal-driven runtime reload** is `[DONE]` (line 169/243): canonical-file runtimes reload routing and policy atomically on `SIGHUP` on Darwin and other Unix-family targets; invalid files and listener-topology changes are reported and leave the prior snapshot active; the watcher stops with the server context; Windows keeps the same portable build with signal reload disabled.
+- New current gate per CURRENT-STATE.md: add explicit trusted-proxy CIDRs before honoring forwarded client addresses. Matches new untracked `clientaddr/` directory in the working tree — work on this has already started.
+- Working tree has in-progress, uncommitted changes: modified `config/config.go`, `config/config_test.go`, `config/store.go`, plus untracked `clientaddr/`.
+- Remaining unverified unchanged: legacy syntax outside the verified subset; the legacy adapter still describes one server per process invocation.
 
 ## 2026-09-03 19:56
 

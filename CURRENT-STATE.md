@@ -87,6 +87,12 @@ Last verified: 2026-09-03
   changes are reported and leave the prior snapshot active. The watcher stops
   with the server context; Windows keeps the same portable build with signal
   reload disabled.
+- HTTP policy uses the direct socket peer as its source by default. A canonical
+  listener can explicitly pair a client-address header with trusted-proxy
+  CIDRs. Headers from untrusted peers are ignored; trusted chains are walked
+  right to left, malformed chains return HTTP 400 before backend invocation,
+  and IPv4-mapped peers match IPv4 CIDRs. These settings participate in strict
+  TOML decoding, immutable configuration snapshots, and atomic live reload.
 
 ## Unverified
 
@@ -96,4 +102,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Add explicit trusted-proxy CIDRs before honoring forwarded client addresses.
+Define independent frontend and backend TLS configuration with strict
+validation before adding certificate loading or network side effects.

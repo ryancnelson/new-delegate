@@ -60,6 +60,29 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: "duplicate listen address",
 		},
 		{
+			name: "forwarded header without trusted proxy",
+			config: Config{Servers: []Server{{
+				Name: "public", Protocol: "http", Listen: ":8080", ClientIPHeader: "X-Forwarded-For",
+			}}},
+			wantErr: "trusted",
+		},
+		{
+			name: "invalid trusted proxy CIDR",
+			config: Config{Servers: []Server{{
+				Name: "public", Protocol: "http", Listen: ":8080",
+				ClientIPHeader: "X-Forwarded-For", TrustedProxies: []string{"not-a-cidr"},
+			}}},
+			wantErr: "CIDR",
+		},
+		{
+			name: "invalid client IP header name",
+			config: Config{Servers: []Server{{
+				Name: "public", Protocol: "http", Listen: ":8080",
+				ClientIPHeader: "Forwarded Client", TrustedProxies: []string{"10.0.0.0/8"},
+			}}},
+			wantErr: "header",
+		},
+		{
 			name: "mount references unknown server",
 			config: Config{
 				Servers: []Server{{Name: "public", Protocol: "http", Listen: ":8080"}},

@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 16 - Signal-driven configuration reload)
+**Last Updated:** 2026-09-03 (Iteration 17 - Explicit trusted proxies)
 
 ---
 
@@ -161,6 +161,16 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   builds register `SIGHUP`; Windows compiles with reload signals disabled;
   listener topology changes remain restart-required.
 
+### P1-019: Explicit trusted proxy boundary
+
+- [DONE] Resolve forwarded client addresses only for explicitly trusted peers.
+- Acceptance: direct peers remain authoritative by default; each listener
+  couples its chosen header to validated trusted-proxy CIDRs; untrusted peers
+  cannot spoof policy identity; trusted chains are walked from right to left;
+  malformed chains return HTTP 400 without contacting a backend; immutable
+  config snapshots deep-copy the CIDR list; trust settings reload without
+  treating them as listener-topology changes.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -168,8 +178,9 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 - Independent frontend/backend TLS configuration.
 - [DONE] Atomic configuration reload for canonical files, with rollback and an
   explicit restart requirement for listener-topology changes.
-- Trusted-proxy CIDRs for accepting forwarded client addresses; direct peer
-  address remains the default and untrusted forwarding headers are ignored.
+- [DONE] Trusted-proxy CIDRs for accepting forwarded client addresses; direct
+  peer address remains the default and untrusted forwarding headers are
+  ignored.
 - HTTP/FTP Fetch and Store translation.
 - Differential compatibility harness for an original DeleGate executable.
 
@@ -242,6 +253,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 16 (2026-09-03)
 - [DONE] ✅ Wired portable signal-driven runtime reload
 
+### Iteration 17 (2026-09-03)
+- [DONE] ✅ Added explicit forwarded-client trust boundaries
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -269,5 +283,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add explicit trusted-proxy CIDRs before honoring forwarded
-client addresses.
+**Next step:** Define independent frontend and backend TLS configuration with
+strict validation before adding certificate loading or network side effects.

@@ -161,3 +161,50 @@ func TestHTTPHandlerReloadsRoutingAndPolicyFromOneSnapshot(t *testing.T) {
 		t.Fatalf("after reload = %d %q, want new backend", response.Code, response.Body.String())
 	}
 }
+
+func TestHTTPHandlerTrustsForwardedClientOnlyFromConfiguredProxy(t *testing.T) {
+	backendCalls := atomic.Int32{}
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		backendCalls.Add(1)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer backend.Close()
+	configured := config.Config{
+		Servers: []config.Server{{
+			Name: "public", Protocol: "http", Listen: ":8080",
+			ClientIPHeader: "X-Forwarded-For", TrustedProxies: []string{"10.0.0.0/8"},
+		}},
+		Mounts:   []mount.Mount{{Path: "/*", Target: backend.URL + "/*"}},
+		Policies: []policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "203.0.113.7"}},
+	}
+	store, err := config.NewStore(configured)
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := NewReloadableHTTPHandler("public", store.Snapshot, connector.NewHTTP(backend.Client()))
+
+	for _, tt := range []struct {
+		name       string
+		remote     string
+		forwarded  string
+		wantStatus int
+	}{
+		{name: "trusted proxy", remote: "10.0.0.2:1234", forwarded: "203.0.113.7", wantStatus: http.StatusNoContent},
+		{name: "untrusted peer cannot spoof", remote: "192.0.2.2:1234", forwarded: "203.0.113.7", wantStatus: http.StatusForbidden},
+		{name: "malformed trusted chain", remote: "10.0.0.2:1234", forwarded: "not-an-address", wantStatus: http.StatusBadRequest},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "http://frontend/resource", nil)
+			request.RemoteAddr = tt.remote
+			request.Header.Set("X-Forwarded-For", tt.forwarded)
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != tt.wantStatus {
+				t.Fatalf("status = %d, want %d; body=%q", response.Code, tt.wantStatus, response.Body.String())
+			}
+		})
+	}
+	if got := backendCalls.Load(); got != 1 {
+		t.Fatalf("backend calls = %d, want exactly one trusted request", got)
+	}
+}

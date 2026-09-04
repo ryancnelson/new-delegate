@@ -16,6 +16,7 @@ Only passing tests may move an item to `verified`.
 | Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT`, `PERMIT`, `REJECT` |
 | Modern TOML | Strict canonical configuration file | verified: server, mount, and policy model |
 | Decision inspection | Side-effect-free effective routing/policy explanation | verified: JSON `explain` command |
+| Forwarded client identity | Per-listener header and trusted-proxy CIDRs | verified: HTTP, right-to-left trust chain |
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | planned |
 | SOCKS5 | CONNECT and bounded relay | planned |
@@ -33,3 +34,5 @@ Intentional differences:
 - Modern TOML is canonical; legacy syntax is an adapter onto the same model.
 - Unknown TOML keys are fatal and configuration is fully validated before
   runtime resources are opened.
+- Forwarded client addresses are ignored unless the immediate peer is within a
+  trusted CIDR configured on that listener.

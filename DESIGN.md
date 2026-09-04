@@ -44,6 +44,8 @@ approval. It does not manufacture semantic operations.
 - Reload failure leaves the previous configuration active.
 - Paths are normalized and validated before mount matching.
 - A request cannot reach a connector without an affirmative policy decision.
+- The direct peer is authoritative unless it is an explicitly trusted proxy;
+  malformed client-address chains from trusted proxies fail closed.
 - Equal-specificity mounts require distinct priorities or validation fails.
 - Protocol decoding is bounded by configured sizes and deadlines.
 - Secret values never enter the canonical configuration or observability

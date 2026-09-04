@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"reflect"
 )
 
 // ReloadTOMLFile parses and validates a complete canonical file before
@@ -25,11 +24,28 @@ func ReloadTOMLFile(store *Store, path string) error {
 	if closeErr != nil {
 		return fmt.Errorf("close reload configuration %q: %w", path, closeErr)
 	}
-	if !reflect.DeepEqual(store.Snapshot().Servers, candidate.Servers) {
+	if !sameListenerTopology(store.Snapshot().Servers, candidate.Servers) {
 		return fmt.Errorf("listener topology changed; restart required")
 	}
 	if err := store.Replace(candidate); err != nil {
 		return fmt.Errorf("publish reload configuration: %w", err)
 	}
 	return nil
+}
+
+func sameListenerTopology(current, candidate []Server) bool {
+	if len(current) != len(candidate) {
+		return false
+	}
+	listeners := make(map[string]Server, len(current))
+	for _, server := range current {
+		listeners[server.Name] = server
+	}
+	for _, server := range candidate {
+		existing, ok := listeners[server.Name]
+		if !ok || existing.Protocol != server.Protocol || existing.Listen != server.Listen {
+			return false
+		}
+	}
+	return true
 }

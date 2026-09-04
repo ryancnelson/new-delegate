@@ -15,6 +15,8 @@ func TestParseTOMLReturnsValidatedCanonicalConfig(t *testing.T) {
 name = "public"
 protocol = "http"
 listen = ":8080"
+client_ip_header = "X-Forwarded-For"
+trusted_proxies = ["10.0.0.0/8", "192.168.0.0/16"]
 
 [[mounts]]
 path = "/*"
@@ -38,7 +40,11 @@ mount = "/*"
 		t.Fatalf("ParseTOML() error = %v", err)
 	}
 	want := Config{
-		Servers: []Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+		Servers: []Server{{
+			Name: "public", Protocol: "http", Listen: ":8080",
+			ClientIPHeader: "X-Forwarded-For",
+			TrustedProxies: []string{"10.0.0.0/8", "192.168.0.0/16"},
+		}},
 		Mounts: []mount.Mount{{
 			Path: "/*", Target: "http://backend.internal/*", Priority: 10,
 			Server: "public", Protocol: "http",

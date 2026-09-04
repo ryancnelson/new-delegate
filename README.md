@@ -57,6 +57,20 @@ canonical TOML file. Invalid changes are reported and the previous snapshot
 stays active. Listener names, protocols, and addresses require a restart;
 routing and policy changes reload live. Signal reload is disabled on Windows.
 
+The direct socket peer is the policy source by default. A listener may opt in
+to a forwarded client-address header only alongside explicit trusted-proxy
+CIDRs:
+
+```toml
+client_ip_header = "X-Forwarded-For"
+trusted_proxies = ["127.0.0.1/32", "10.0.0.0/8"]
+```
+
+Headers from peers outside those CIDRs are ignored. For a trusted peer, the
+chain is evaluated from right to left until the first untrusted address;
+malformed chains fail with HTTP 400 before routing reaches a backend. These
+settings are request policy and may be changed by an atomic `SIGHUP` reload.
+
 Explain the effective routing and policy result without opening a listener or
 contacting the backend:
 

@@ -8,9 +8,11 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strings"
 
+	"gitea.local/ryan/new-delegate/clientaddr"
 	"gitea.local/ryan/new-delegate/config"
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/operation"
@@ -69,8 +71,13 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		return
 	}
 
+	source, err := policySource(configured, h.server, request)
+	if err != nil {
+		http.Error(response, "invalid client address", http.StatusBadRequest)
+		return
+	}
 	decision := policy.Evaluate(configured.Policies, policy.Request{
-		Source:      remoteHost(request.RemoteAddr),
+		Source:      source,
 		Protocol:    "http",
 		Destination: targetHostname(matched.Target),
 		Method:      request.Method,
@@ -107,6 +114,25 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	if result.Body != nil {
 		_, _ = io.Copy(response, result.Body)
 	}
+}
+
+func policySource(configured config.Config, serverName string, request *http.Request) (string, error) {
+	for _, frontend := range configured.Servers {
+		if frontend.Name != serverName || frontend.ClientIPHeader == "" {
+			continue
+		}
+		prefixes := make([]netip.Prefix, 0, len(frontend.TrustedProxies))
+		for _, text := range frontend.TrustedProxies {
+			prefix, err := netip.ParsePrefix(text)
+			if err != nil {
+				return "", err
+			}
+			prefixes = append(prefixes, prefix)
+		}
+		forwarded := strings.Join(request.Header.Values(frontend.ClientIPHeader), ",")
+		return clientaddr.Resolve(request.RemoteAddr, forwarded, prefixes)
+	}
+	return remoteHost(request.RemoteAddr), nil
 }
 
 func targetHostname(target string) string {

@@ -61,6 +61,30 @@ func TestReloadTOMLFileRejectsListenerTopologyChange(t *testing.T) {
 	}
 }
 
+func TestReloadTOMLFileAllowsTrustedProxyPolicyChange(t *testing.T) {
+	initial := storeTestConfig("old.internal", 8080)
+	initial.Servers[0].ClientIPHeader = "X-Forwarded-For"
+	initial.Servers[0].TrustedProxies = []string{"10.0.0.0/8"}
+	store, err := NewStore(initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "delegate.toml")
+	text := strings.ReplaceAll(reloadTOML, "HOST", "old.internal")
+	text = strings.Replace(text, "listen = \":8080\"", `listen = ":8080"
+client_ip_header = "X-Forwarded-For"
+trusted_proxies = ["192.168.0.0/16"]`, 1)
+	if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := ReloadTOMLFile(store, path); err != nil {
+		t.Fatalf("ReloadTOMLFile() error = %v", err)
+	}
+	if got := store.Snapshot().Servers[0].TrustedProxies; len(got) != 1 || got[0] != "192.168.0.0/16" {
+		t.Fatalf("trusted proxies = %v, want reloaded policy", got)
+	}
+}
+
 const reloadTOML = `
 [[servers]]
 name = "public"

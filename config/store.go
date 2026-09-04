@@ -47,6 +47,9 @@ func (s *Store) Snapshot() Config {
 func clone(source Config) Config {
 	result := source
 	result.Servers = append([]Server(nil), source.Servers...)
+	for i := range result.Servers {
+		result.Servers[i].TrustedProxies = append([]string(nil), source.Servers[i].TrustedProxies...)
+	}
 	result.Mounts = append([]mount.Mount(nil), source.Mounts...)
 	result.Policies = append([]policy.Rule(nil), source.Policies...)
 	return result

@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"strings"
 
 	"gitea.local/ryan/new-delegate/mount"
@@ -18,9 +19,11 @@ type Config struct {
 
 // Server describes a named protocol listener.
 type Server struct {
-	Name     string `json:"name" toml:"name"`
-	Protocol string `json:"protocol" toml:"protocol"`
-	Listen   string `json:"listen" toml:"listen"`
+	Name           string   `json:"name" toml:"name"`
+	Protocol       string   `json:"protocol" toml:"protocol"`
+	Listen         string   `json:"listen" toml:"listen"`
+	ClientIPHeader string   `json:"client_ip_header,omitempty" toml:"client_ip_header"`
+	TrustedProxies []string `json:"trusted_proxies,omitempty" toml:"trusted_proxies"`
 }
 
 // Validate reports configuration errors without modifying the receiver.
@@ -39,6 +42,20 @@ func (c Config) Validate() error {
 		}
 		if strings.TrimSpace(server.Listen) == "" {
 			return fmt.Errorf("server %q: listen address is required", server.Name)
+		}
+		if server.ClientIPHeader != "" && len(server.TrustedProxies) == 0 {
+			return fmt.Errorf("server %q: client IP header requires trusted proxy CIDRs", server.Name)
+		}
+		if len(server.TrustedProxies) > 0 && server.ClientIPHeader == "" {
+			return fmt.Errorf("server %q: trusted proxy CIDRs require a client IP header", server.Name)
+		}
+		if server.ClientIPHeader != "" && !validHeaderName(server.ClientIPHeader) {
+			return fmt.Errorf("server %q: invalid client IP header %q", server.Name, server.ClientIPHeader)
+		}
+		for _, prefix := range server.TrustedProxies {
+			if _, err := netip.ParsePrefix(prefix); err != nil {
+				return fmt.Errorf("server %q: invalid trusted proxy CIDR %q", server.Name, prefix)
+			}
 		}
 		if _, ok := seen[server.Name]; ok {
 			return fmt.Errorf("duplicate server name %q", server.Name)
@@ -86,4 +103,17 @@ func (c Config) Validate() error {
 		}
 	}
 	return nil
+}
+
+func validHeaderName(name string) bool {
+	for _, character := range name {
+		if (character >= 'a' && character <= 'z') ||
+			(character >= 'A' && character <= 'Z') ||
+			(character >= '0' && character <= '9') ||
+			strings.ContainsRune("!#$%&'*+-.^_`|~", character) {
+			continue
+		}
+		return false
+	}
+	return name != ""
 }
