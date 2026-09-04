@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 98 - semantic FTP outcomes)
+**Last Updated:** 2026-09-04 (Iteration 99 - accept semantic FTP outcomes)
 
 ---
 
@@ -221,8 +221,9 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   403, and 502, while invalid outcomes/statuses fail closed. FTP success no
   longer exposes 226, rejected reply classes map semantically, and GET/LIST or
   PUT method validation happens before dialing. Focused connector/server tests
-  and the complete ordinary suite pass. The real HTTP-to-FTP outcome matrix
-  and full race/portability gate remain before acceptance.
+  and the full race/portability gate pass. Push-triggered Woodpecker pipeline
+  96 passed all stages at exact commit `4e9efe1`. The real HTTP-to-FTP outcome
+  matrix remains before P1-035 acceptance.
 
 ### P1-036: Own and drain CONNECT and bridge sessions
 

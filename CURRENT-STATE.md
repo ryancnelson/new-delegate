@@ -9,8 +9,9 @@ Last verified: 2026-09-04
   HTTP frontend maps those semantic outcomes to 200/204, 404, 403, and 502 and
   rejects unknown or invalid results as 502. FTP no longer returns raw 226
   statuses, and unsupported FTP Fetch/Store methods fail before any dial.
-  Focused connector/server tests and the complete ordinary suite pass locally;
-  real HTTP-to-FTP outcome acceptance remains in P1-035.
+  Focused connector/server tests and the full local gate pass. Push-triggered
+  Woodpecker pipeline 96 passed all stages at exact commit `4e9efe1`; real
+  HTTP-to-FTP outcome acceptance remains in P1-035.
 - FTP control setup now uses bounded dial contexts, rolling socket deadlines,
   and context-triggered connection closure. Replies are decoded as complete
   single- or multiline FTP records with a 64 KiB aggregate limit; malformed,
