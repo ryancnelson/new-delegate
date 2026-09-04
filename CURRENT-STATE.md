@@ -179,6 +179,8 @@ Last verified: 2026-09-04
   coverage with TCP target support and protocol-aware permit/reject metadata.
 - The compatibility fixture corpus now includes protocol case normalization checks
   for `SERVER=HTTP` and uppercase `PERMIT` selectors.
+- The compatibility fixture corpus now includes protocol-case normalization checks
+  for `SERVER=FTP` and uppercase `PERMIT` selectors with FTP mounts.
 
 ## Unverified
 

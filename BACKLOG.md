@@ -407,6 +407,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 38 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for legacy protocol case normalization in `SERVER` and policy selectors
 
+### Iteration 39 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for uppercase `SERVER=FTP` and uppercase policy selectors
+
 ---
 
 ## Ideas Inbox (Unsorted)

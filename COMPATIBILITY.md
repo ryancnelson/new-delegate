@@ -52,3 +52,5 @@ Intentional differences:
   mount and protocol metadata.
 - Legacy compatibility fixtures now include protocol-case normalization for
   uppercase `SERVER=` and uppercase protocol selectors in `PERMIT`/`REJECT`.
+- Legacy compatibility fixtures now include protocol-case normalization for
+  uppercase `SERVER=FTP` and matching `PERMIT`/`REJECT` selectors.

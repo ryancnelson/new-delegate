@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=FTP uppercase protocol normalization",
+  "args": [
+    "SERVER=FTP",
+    "MOUNT=\"/data/* ftp://backend.internal/pub/*\"",
+    "PERMIT=FTP:backend.internal:127.0.0.1",
+    "REJECT=HttP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/data/*",
+        "target": "ftp://backend.internal/pub/*"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "ftp",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
