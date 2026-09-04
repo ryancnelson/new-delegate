@@ -31,16 +31,24 @@ Last verified: 2026-09-03
   constraints, chooses highest priority, and gives rejection precedence at an
   equal priority. Decisions carry stable reason codes, and enforcement tests
   prove a denied callback cannot execute.
+- An HTTP frontend now maps a request to a protocol-neutral Fetch operation,
+  authorizes it, invokes the HTTP connector, and propagates the backend status,
+  end-to-end headers, and body. An in-process acceptance test verifies path and
+  query rewriting. A denial test verifies HTTP 403 and zero backend calls.
+- Biggie Woodpecker repository 5 tracks a private GitHub CI mirror while the
+  canonical `origin` remains `ryan/new-delegate` on Gitea. The local-backend
+  pipeline bootstraps a checksum-pinned Go 1.25.6 toolchain in `/tmp` because
+  the intentionally small agent image does not contain Go.
 
 ## Unverified
 
-- Woodpecker repository activation and pipeline execution.
+- A green Woodpecker pipeline; repository activation and webhook delivery are
+  verified, and the checksum-pinned runner fix awaits its first execution.
 - Legacy syntax other than the verified `SERVER`, `-P`, and practical `MOUNT`
   subset, plus gateway runtime behavior. Legacy `PERMIT`/`REJECT` parsing and
   mount scoping by named server/protocol remain deferred.
 
 ## Current gate
 
-Connect Biggie's Gitea forge to Woodpecker and obtain a green remote build.
-Local red/green iterations may proceed, but are not accepted until that remote
-gate validates the accumulated commits.
+Push iteration 6 to both Gitea and the private GitHub CI mirror, then require a
+green Biggie Woodpecker build before accepting the batch.

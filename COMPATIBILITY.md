@@ -14,7 +14,7 @@ Only passing tests may move an item to `verified`.
 | `CACHE` | Explicit response cache policy | planned |
 | Proxy chaining | Backend connector targeting another delegate | planned |
 | Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT` |
-| HTTP frontend/backend | Typed codec and connector | planned |
+| HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | planned |
 | SOCKS5 | CONNECT and bounded relay | planned |
 | SMTP, POP3, IMAP, NNTP, LDAP, DNS | Later protocol packages | research |

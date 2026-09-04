@@ -9,15 +9,15 @@ steps:
     # interprets commands. The agent provides Go and the POSIX shell.
     image: sh
     commands:
-      - test -z "$(gofmt -l .)"
-      - go vet ./...
-      - go test ./...
-      - go test -race ./...
+      - test -z "$(sh scripts/ci-go.sh gofmt -l .)"
+      - sh scripts/ci-go.sh go vet ./...
+      - sh scripts/ci-go.sh go test ./...
 
   - name: portable-builds
     image: sh
+    depends_on: [test]
     commands:
-      - CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o /tmp/delegate-darwin-arm64 ./cmd/delegate
-      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/delegate-linux-amd64 ./cmd/delegate
-      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o /tmp/delegate-linux-arm64 ./cmd/delegate
-      - CGO_ENABLED=0 GOOS=illumos GOARCH=amd64 go build -o /tmp/delegate-illumos-amd64 ./cmd/delegate
+      - CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 sh scripts/ci-go.sh go build -o /tmp/delegate-darwin-arm64 ./cmd/delegate
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 sh scripts/ci-go.sh go build -o /tmp/delegate-linux-amd64 ./cmd/delegate
+      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 sh scripts/ci-go.sh go build -o /tmp/delegate-linux-arm64 ./cmd/delegate
+      - CGO_ENABLED=0 GOOS=illumos GOARCH=amd64 sh scripts/ci-go.sh go build -o /tmp/delegate-illumos-amd64 ./cmd/delegate

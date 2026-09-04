@@ -23,3 +23,6 @@ Development is organized as small iterate-bot sessions. Each session takes the
 highest-priority ready item from `BACKLOG.md`, begins with a failing test, makes
 the smallest implementation that passes, updates verified state, and commits.
 
+The canonical private origin is Gitea on Biggie. A private GitHub mirror feeds
+Biggie's existing Woodpecker forge integration; it is CI transport, not a
+second source of truth.

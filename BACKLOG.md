@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 5 - Policy kernel)
+**Last Updated:** 2026-09-03 (Iteration 6 - HTTP acceptance slice)
 
 ---
 
@@ -76,7 +76,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-009: HTTP-to-HTTP vertical slice
 
-- [READY] Proxy one request through server, mount, policy, and connector.
+- [DONE] Proxy one request through server, mount, policy, and connector.
 - Acceptance: an in-process backend observes the rewritten request; response
   status, headers, and body return to the client; denial produces 403 and zero
   backend connections.
@@ -127,6 +127,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 5 (2026-09-03)
 - [DONE] ✅ Added typed default-deny permit/reject decisions and enforcement
 
+### Iteration 6 (2026-09-03)
+- [DONE] ✅ Proxied an authorized HTTP Fetch operation end to end
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -149,6 +152,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Build the HTTP-to-HTTP acceptance slice while the Gitea forge is
-connected to Woodpecker; remote CI remains required before the batch is
-accepted.
+**Next step:** Obtain the first green Biggie Woodpecker run, then add legacy
+`PERMIT`/`REJECT` parsing and a runnable configuration loader.
