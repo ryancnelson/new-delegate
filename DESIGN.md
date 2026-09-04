@@ -53,6 +53,8 @@ approval. It does not manufacture semantic operations.
 - Secret values never enter the canonical configuration or observability
   event model.
 - Backend TLS verification cannot be disabled by configuration.
+- Runtime TLS material is loaded before listeners bind; backend transport
+  choice comes from the resolver-selected mount, never request metadata.
 
 ## Portability
 

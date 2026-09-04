@@ -20,12 +20,8 @@ func LoadFrontend(config tlsconfig.Frontend) (*tls.Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load frontend TLS identity: %w", err)
 	}
-	minimum := uint16(tls.VersionTLS12)
-	if config.MinimumVersion == "1.3" {
-		minimum = tls.VersionTLS13
-	}
 	return &tls.Config{
 		Certificates: []tls.Certificate{identity},
-		MinVersion:   minimum,
+		MinVersion:   minimumVersion(config.MinimumVersion),
 	}, nil
 }

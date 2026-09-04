@@ -84,8 +84,12 @@ TLS listeners can coexist under the same bounded shutdown lifecycle. An
 unspecified frontend minimum defaults to TLS 1.2, while `1.3` is enforced when
 requested. Backend policy may name a CA file, verification name, and paired
 client certificate/private-key references. There is intentionally no insecure
-verification bypass. Custom backend TLS remains fail-closed at startup and
-reload until the per-mount transport adapter lands.
+verification bypass. Each distinct backend policy is loaded before listeners
+bind and selected only from the resolver's winning mount; the semantic Fetch
+operation contains no TLS fields. System roots remain the default, custom roots
+are appended when configured, and mutual TLS identities are supported. Changing
+the set of backend TLS policies requires a restart; routing among already
+loaded policies may still reload atomically.
 
 Explain the effective routing and policy result without opening a listener or
 contacting the backend:

@@ -106,7 +106,16 @@ Last verified: 2026-09-03
   default minimum is TLS 1.2 and a configured TLS 1.3 minimum is enforced.
   Generated-certificate loopback tests prove both protocols, version rejection,
   zero binds on identity failure, and closure of earlier sockets on later bind
-  failure. Custom backend TLS still fails before startup or reload publication.
+  failure.
+- HTTPS mounts select preloaded backend transports after mount resolution and
+  authorization without putting TLS details into the protocol-neutral Fetch.
+  System roots are the default; custom CA files are appended, explicit server
+  names and TLS minimums are applied, and optional client identities support
+  mutual TLS. Generated loopback tests prove private-CA and client-certificate
+  verification through the full gateway. Invalid backend material causes zero
+  listener binds, unknown transport policies fail before dialing, idle pools
+  close at shutdown, and changing the preloaded backend TLS-policy set requires
+  a restart while routing among the existing set may reload.
 
 ## Unverified
 
@@ -116,5 +125,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Build per-mount backend TLS transports without leaking transport policy into
-protocol-neutral Fetch operations.
+Package the portable gateway as checksummed single-binary release artifacts and
+smoke-test the native archive.

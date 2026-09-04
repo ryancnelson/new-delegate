@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 19 - Frontend TLS runtime)
+**Last Updated:** 2026-09-03 (Iteration 20 - Per-mount backend TLS)
 
 ---
 
@@ -192,13 +192,22 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-022: Per-mount backend TLS runtime
 
-- [READY] Apply each HTTPS mount's validated backend trust and optional client
+- [DONE] Apply each HTTPS mount's validated backend trust and optional client
   identity to the selected Fetch without weakening default verification.
 - Acceptance: all referenced CA and client identities load before listeners
   bind; system roots remain the default when no CA file is set; server-name and
   TLS minimum settings are enforced per selected mount; mutual TLS is covered
   with generated loopback fixtures; invalid material causes zero backend and
   frontend connections; transports have bounded idle pools and close cleanly.
+
+### P1-023: Self-contained release artifacts
+
+- [READY] Produce checksummed single-binary archives for every supported target.
+- Acceptance: one deterministic script builds Darwin/arm64, Linux/amd64,
+  Linux/arm64, illumos/amd64, and Windows/amd64 with `CGO_ENABLED=0`; archives
+  contain only the executable plus essential notices; SHA-256 checksums are
+  emitted; the native artifact passes `delegate check` against the example;
+  tests use a temporary output directory and never depend on public networks.
 
 ---
 
@@ -208,7 +217,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   certificate loading, frontend termination, and custom backend transports are
   tracked separately.
 - [DONE] Frontend TLS termination from validated file references.
-- Per-mount backend TLS verification and optional client identity.
+- [DONE] Per-mount backend TLS verification and optional client identity.
 - [DONE] Atomic configuration reload for canonical files, with rollback and an
   explicit restart requirement for listener-topology changes.
 - [DONE] Trusted-proxy CIDRs for accepting forwarded client addresses; direct
@@ -295,6 +304,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 19 (2026-09-03)
 - [DONE] ✅ Terminated frontend TLS with atomic startup
 
+### Iteration 20 (2026-09-03)
+- [DONE] ✅ Routed per-mount backend TLS and mutual TLS
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -322,5 +334,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Build per-mount backend TLS transports without leaking transport
-policy into protocol-neutral Fetch operations.
+**Next step:** Package the portable gateway as checksummed single-binary release
+artifacts and smoke-test the native archive.

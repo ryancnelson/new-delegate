@@ -23,10 +23,14 @@ type fetchConnector interface {
 	Fetch(context.Context, operation.Fetch) (operation.Result, error)
 }
 
+type mountFetchConnector interface {
+	FetchForMount(context.Context, mount.Mount, operation.Fetch) (operation.Result, error)
+}
+
 type httpHandler struct {
 	server    string
 	snapshot  func() config.Config
-	connector fetchConnector
+	connector mountFetchConnector
 }
 
 // NewHTTPHandler constructs an HTTP frontend for an already-validated runtime
@@ -47,6 +51,12 @@ func NewHTTPHandlerForServer(server string, mounts []mount.Mount, rules []policy
 // NewReloadableHTTPHandler reads exactly one complete configuration snapshot
 // for each request, keeping routing and policy evaluation on the same version.
 func NewReloadableHTTPHandler(server string, snapshot func() config.Config, connector fetchConnector) http.Handler {
+	return NewReloadableHTTPHandlerWithRoutes(server, snapshot, fixedMountConnector{connector})
+}
+
+// NewReloadableHTTPHandlerWithRoutes passes the resolver-selected mount to a
+// connector router without adding transport policy to the semantic operation.
+func NewReloadableHTTPHandlerWithRoutes(server string, snapshot func() config.Config, connector mountFetchConnector) http.Handler {
 	return &httpHandler{
 		server:    server,
 		snapshot:  snapshot,
@@ -90,7 +100,7 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		if buildErr != nil {
 			return buildErr
 		}
-		result, buildErr = h.connector.Fetch(request.Context(), operation.Fetch{
+		result, buildErr = h.connector.FetchForMount(request.Context(), matched.Mount, operation.Fetch{
 			Method:   request.Method,
 			Resource: resource,
 			Metadata: cloneHeader(request.Header),
@@ -114,6 +124,14 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	if result.Body != nil {
 		_, _ = io.Copy(response, result.Body)
 	}
+}
+
+type fixedMountConnector struct {
+	fetchConnector
+}
+
+func (f fixedMountConnector) FetchForMount(ctx context.Context, _ mount.Mount, fetch operation.Fetch) (operation.Result, error) {
+	return f.Fetch(ctx, fetch)
 }
 
 func policySource(configured config.Config, serverName string, request *http.Request) (string, error) {

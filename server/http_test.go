@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,9 @@ import (
 	"gitea.local/ryan/new-delegate/config"
 	"gitea.local/ryan/new-delegate/connector"
 	"gitea.local/ryan/new-delegate/mount"
+	"gitea.local/ryan/new-delegate/operation"
 	"gitea.local/ryan/new-delegate/policy"
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 func TestHTTPHandlerProxiesAuthorizedFetch(t *testing.T) {
@@ -65,6 +68,47 @@ func TestHTTPHandlerProxiesAuthorizedFetch(t *testing.T) {
 	if calls := backendCalls.Load(); calls != 1 {
 		t.Fatalf("backend calls = %d, want 1", calls)
 	}
+}
+
+func TestHTTPHandlerRoutesFetchWithSelectedMount(t *testing.T) {
+	tlsPolicy := &tlsconfig.Backend{CAFile: "ca.pem", ServerName: "backend.internal"}
+	configured := config.Config{
+		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+		Mounts: []mount.Mount{{
+			Path: "/secure/*", Target: "https://backend.internal/*", TLS: tlsPolicy,
+		}},
+		Policies: []policy.Rule{{
+			Effect: policy.Permit, Protocol: "http", Destination: "backend.internal", Source: "*",
+		}},
+	}
+	router := &recordingMountConnector{}
+	handler := NewReloadableHTTPHandlerWithRoutes("public", func() config.Config { return configured }, router)
+	request := httptest.NewRequest(http.MethodGet, "http://frontend/secure/report", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent || router.calls != 1 {
+		t.Fatalf("response = %d, calls=%d", response.Code, router.calls)
+	}
+	if router.mapping.TLS == nil || *router.mapping.TLS != *tlsPolicy {
+		t.Fatalf("routed mount = %#v, want selected TLS policy", router.mapping)
+	}
+	if router.fetch.Resource != "https://backend.internal/report" {
+		t.Fatalf("Fetch resource = %q", router.fetch.Resource)
+	}
+}
+
+type recordingMountConnector struct {
+	calls   int
+	mapping mount.Mount
+	fetch   operation.Fetch
+}
+
+func (r *recordingMountConnector) FetchForMount(_ context.Context, mapping mount.Mount, fetch operation.Fetch) (operation.Result, error) {
+	r.calls++
+	r.mapping = mapping
+	r.fetch = fetch
+	return operation.Result{Status: http.StatusNoContent}, nil
 }
 
 func TestHTTPHandlerDenialNeverContactsBackend(t *testing.T) {

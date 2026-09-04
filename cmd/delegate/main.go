@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"gitea.local/ryan/new-delegate/config"
-	"gitea.local/ryan/new-delegate/connector"
 	"gitea.local/ryan/new-delegate/explain"
 	gatewayserver "gitea.local/ryan/new-delegate/server"
 )
@@ -95,11 +94,6 @@ func validateRuntimeSupport(configured config.Config) error {
 	for _, frontend := range configured.Servers {
 		if !strings.EqualFold(frontend.Protocol, "http") {
 			return fmt.Errorf("unsupported frontend protocol: the runnable slice currently supports HTTP servers")
-		}
-	}
-	for _, mounted := range configured.Mounts {
-		if mounted.TLS != nil {
-			return fmt.Errorf("unsupported TLS runtime: backend TLS policy is configured but not implemented")
 		}
 	}
 	return nil
@@ -233,7 +227,7 @@ func serveHTTP(configured config.Config, reloadPath string, logOutput io.Writer)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	backend := connector.NewHTTP(&http.Client{Timeout: 60 * time.Second})
+	backendClient := &http.Client{Timeout: 60 * time.Second}
 	configStore, err := config.NewStore(configured)
 	if err != nil {
 		return fmt.Errorf("initialize configuration store: %w", err)
@@ -253,10 +247,11 @@ func serveHTTP(configured config.Config, reloadPath string, logOutput io.Writer)
 			})
 		}
 	}
-	httpServers, listeners, err := prepareHTTPRuntime(configured, configStore.Snapshot, backend, net.Listen)
+	httpServers, listeners, routes, err := prepareHTTPRuntime(configured, configStore.Snapshot, backendClient, net.Listen)
 	if err != nil {
 		return err
 	}
+	defer routes.CloseIdleConnections()
 	return gatewayserver.ServeAll(ctx, httpServers, listeners, 10*time.Second)
 }
 

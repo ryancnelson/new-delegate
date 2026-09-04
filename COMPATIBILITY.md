@@ -9,7 +9,7 @@ Only passing tests may move an item to `verified`.
 | `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: practical syntax, frontend scoping, and resolver kernel |
 | `PERMIT` / `REJECT` | Fail-closed policy rules | verified: basic legacy selectors and canonical kernel |
 | `RELAY` | Authorized transparent byte-stream forwarding | planned |
-| `STLS` | Independent readable frontend/backend TLS settings | partial: frontend termination verified; backend runtime planned |
+| `STLS` | Independent readable frontend/backend TLS settings | partial: HTTP frontend/backend and mutual TLS verified |
 | `FCL` | Bounded typed request/response transformations | planned |
 | `CACHE` | Explicit response cache policy | planned |
 | Proxy chaining | Backend connector targeting another delegate | planned |

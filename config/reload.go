@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+
+	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
 // ReloadTOMLFile parses and validates a complete canonical file before
@@ -35,13 +37,40 @@ func ReloadTOMLFileWithValidation(store *Store, path string, validate func(Confi
 			return err
 		}
 	}
-	if !sameListenerTopology(store.Snapshot().Servers, candidate.Servers) {
+	current := store.Snapshot()
+	if !sameListenerTopology(current.Servers, candidate.Servers) {
 		return fmt.Errorf("listener topology changed; restart required")
+	}
+	if !sameBackendTLSPolicies(current, candidate) {
+		return fmt.Errorf("backend TLS policy changed; restart required")
 	}
 	if err := store.Replace(candidate); err != nil {
 		return fmt.Errorf("publish reload configuration: %w", err)
 	}
 	return nil
+}
+
+func sameBackendTLSPolicies(current, candidate Config) bool {
+	collect := func(configured Config) map[tlsconfig.Backend]struct{} {
+		policies := make(map[tlsconfig.Backend]struct{})
+		for _, mounted := range configured.Mounts {
+			if mounted.TLS != nil {
+				policies[*mounted.TLS] = struct{}{}
+			}
+		}
+		return policies
+	}
+	currentPolicies := collect(current)
+	candidatePolicies := collect(candidate)
+	if len(currentPolicies) != len(candidatePolicies) {
+		return false
+	}
+	for policy := range currentPolicies {
+		if _, ok := candidatePolicies[policy]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func sameListenerTopology(current, candidate []Server) bool {

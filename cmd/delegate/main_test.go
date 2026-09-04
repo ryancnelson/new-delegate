@@ -289,7 +289,7 @@ listen = "127.0.0.1:8081"
 	}
 }
 
-func TestRunChecksButRefusesUnimplementedTLSBeforeServing(t *testing.T) {
+func TestRunChecksAndPassesTLSConfigToRuntime(t *testing.T) {
 	directory := t.TempDir()
 	path := filepath.Join(directory, "delegate.toml")
 	contents := []byte(`
@@ -330,12 +330,12 @@ minimum_version = "1.2"
 		serveCalls++
 		return nil
 	})
-	if got != 2 || serveCalls != 0 || !strings.Contains(stderr.String(), "TLS runtime") {
-		t.Fatalf("serve = %d, calls=%d, stderr=%q; want fail-closed TLS rejection", got, serveCalls, stderr.String())
+	if got != 0 || serveCalls != 1 {
+		t.Fatalf("serve = %d, calls=%d, stderr=%q; want runtime handoff", got, serveCalls, stderr.String())
 	}
 }
 
-func TestRuntimeSupportRejectsBackendTLSIndependently(t *testing.T) {
+func TestRuntimeSupportAcceptsBackendTLSIndependently(t *testing.T) {
 	configured := config.Config{
 		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
 		Mounts: []mount.Mount{{
@@ -344,8 +344,8 @@ func TestRuntimeSupportRejectsBackendTLSIndependently(t *testing.T) {
 		}},
 	}
 	err := validateRuntimeSupport(configured)
-	if err == nil || !strings.Contains(err.Error(), "backend TLS") {
-		t.Fatalf("validateRuntimeSupport() error = %v, want backend TLS rejection", err)
+	if err != nil {
+		t.Fatalf("validateRuntimeSupport() error = %v", err)
 	}
 }
 

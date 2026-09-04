@@ -9,17 +9,21 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"io"
 	"math/big"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"gitea.local/ryan/new-delegate/config"
-	"gitea.local/ryan/new-delegate/connector"
+	"gitea.local/ryan/new-delegate/mount"
+	"gitea.local/ryan/new-delegate/policy"
 	gatewayserver "gitea.local/ryan/new-delegate/server"
 	"gitea.local/ryan/new-delegate/tlsconfig"
 )
@@ -39,12 +43,13 @@ func TestPrepareHTTPRuntimeServesPlaintextAndTLSWithMinimumVersion(t *testing.T)
 	listen := func(_, _ string) (net.Listener, error) {
 		return net.Listen("tcp", "127.0.0.1:0")
 	}
-	servers, listeners, err := prepareHTTPRuntime(
-		configured, store.Snapshot, connector.NewHTTP(nil), listen,
+	servers, listeners, routes, err := prepareHTTPRuntime(
+		configured, store.Snapshot, &http.Client{Timeout: time.Second}, listen,
 	)
 	if err != nil {
 		t.Fatalf("prepareHTTPRuntime() error = %v", err)
 	}
+	defer routes.CloseIdleConnections()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
@@ -97,7 +102,7 @@ func TestPrepareHTTPRuntimeLoadsEveryCertificateBeforeBinding(t *testing.T) {
 		t.Fatal(err)
 	}
 	bindCalls := 0
-	_, _, err = prepareHTTPRuntime(configured, store.Snapshot, connector.NewHTTP(nil), func(_, _ string) (net.Listener, error) {
+	_, _, _, err = prepareHTTPRuntime(configured, store.Snapshot, &http.Client{Timeout: time.Second}, func(_, _ string) (net.Listener, error) {
 		bindCalls++
 		return nil, errors.New("unexpected bind")
 	})
@@ -106,6 +111,31 @@ func TestPrepareHTTPRuntimeLoadsEveryCertificateBeforeBinding(t *testing.T) {
 	}
 	if bindCalls != 0 {
 		t.Fatalf("bind calls = %d, want zero before all identities load", bindCalls)
+	}
+}
+
+func TestPrepareHTTPRuntimeLoadsBackendTLSBeforeBinding(t *testing.T) {
+	configured := config.Config{
+		Servers: []config.Server{{Name: "plain", Protocol: "http", Listen: "127.0.0.1:10001"}},
+		Mounts: []mount.Mount{{
+			Path: "/*", Target: "https://backend.internal/*",
+			TLS: &tlsconfig.Backend{CAFile: "missing-ca.pem"},
+		}},
+	}
+	store, err := config.NewStore(configured)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bindCalls := 0
+	_, _, _, err = prepareHTTPRuntime(configured, store.Snapshot, &http.Client{Timeout: time.Second}, func(_, _ string) (net.Listener, error) {
+		bindCalls++
+		return nil, errors.New("unexpected bind")
+	})
+	if err == nil || !strings.Contains(err.Error(), "backend TLS") {
+		t.Fatalf("prepareHTTPRuntime() error = %v, want backend TLS load failure", err)
+	}
+	if bindCalls != 0 {
+		t.Fatalf("bind calls = %d, want zero before backend TLS loads", bindCalls)
 	}
 }
 
@@ -128,12 +158,76 @@ func TestPrepareHTTPRuntimeClosesEarlierListenerOnBindFailure(t *testing.T) {
 		first, err = net.Listen("tcp", "127.0.0.1:0")
 		return first, err
 	}
-	_, _, err = prepareHTTPRuntime(configured, store.Snapshot, connector.NewHTTP(nil), listen)
+	_, _, _, err = prepareHTTPRuntime(configured, store.Snapshot, &http.Client{Timeout: time.Second}, listen)
 	if err == nil || !strings.Contains(err.Error(), "second bind failed") {
 		t.Fatalf("prepareHTTPRuntime() error = %v", err)
 	}
 	if closeErr := first.Close(); !errors.Is(closeErr, net.ErrClosed) {
 		t.Fatalf("first listener remained open; second close error = %v", closeErr)
+	}
+}
+
+func TestPrepareHTTPRuntimeRoutesCustomBackendTLS(t *testing.T) {
+	certificateFile, privateKeyFile, roots := writeRuntimeCertificate(t)
+	identity, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	backendCalls := atomic.Int32{}
+	backend := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		backendCalls.Add(1)
+		if request.TLS == nil || len(request.TLS.PeerCertificates) != 1 {
+			t.Error("backend did not verify one client certificate")
+		}
+		_, _ = io.WriteString(w, "private backend")
+	}))
+	backend.TLS = &tls.Config{
+		Certificates: []tls.Certificate{identity},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    roots,
+		MinVersion:   tls.VersionTLS12,
+	}
+	backend.StartTLS()
+	defer backend.Close()
+	tlsPolicy := &tlsconfig.Backend{
+		CAFile: certificateFile, ClientCertificateFile: certificateFile,
+		ClientPrivateKeyFile: privateKeyFile, MinimumVersion: "1.2",
+	}
+	configured := config.Config{
+		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: "127.0.0.1:10001"}},
+		Mounts: []mount.Mount{{
+			Path: "/*", Target: backend.URL + "/*", Server: "public", Protocol: "http", TLS: tlsPolicy,
+		}},
+		Policies: []policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "*", Destination: "127.0.0.1"}},
+	}
+	store, err := config.NewStore(configured)
+	if err != nil {
+		t.Fatal(err)
+	}
+	servers, listeners, routes, err := prepareHTTPRuntime(
+		configured, store.Snapshot, &http.Client{Timeout: time.Second},
+		func(_, _ string) (net.Listener, error) { return net.Listen("tcp", "127.0.0.1:0") },
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer routes.CloseIdleConnections()
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- gatewayserver.ServeAll(ctx, servers, listeners, time.Second) }()
+
+	response, err := (&http.Client{Timeout: time.Second}).Get("http://" + listeners[0].Addr().String() + "/report")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, readErr := io.ReadAll(response.Body)
+	_ = response.Body.Close()
+	if readErr != nil || response.StatusCode != http.StatusOK || string(body) != "private backend" || backendCalls.Load() != 1 {
+		t.Fatalf("gateway response = %d %q, read=%v, backend calls=%d", response.StatusCode, body, readErr, backendCalls.Load())
+	}
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -155,7 +249,10 @@ func writeRuntimeCertificate(t *testing.T) (string, string, *x509.CertPool) {
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "localhost"},
 		NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
-		KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		KeyUsage: x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth,
+		},
 		DNSNames: []string{"localhost"}, IPAddresses: []net.IP{net.ParseIP("127.0.0.1")},
 	}
 	certificateDER, err := x509.CreateCertificate(rand.Reader, template, template, publicKey, privateKey)

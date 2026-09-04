@@ -10,6 +10,7 @@ import (
 	"gitea.local/ryan/new-delegate/config"
 	"gitea.local/ryan/new-delegate/connector"
 	gatewayserver "gitea.local/ryan/new-delegate/server"
+	"gitea.local/ryan/new-delegate/tlsconfig"
 	"gitea.local/ryan/new-delegate/tlsruntime"
 )
 
@@ -20,9 +21,26 @@ type listenFunction func(network, address string) (net.Listener, error)
 func prepareHTTPRuntime(
 	configured config.Config,
 	snapshot func() config.Config,
-	backend *connector.HTTP,
+	backendClient *http.Client,
 	listen listenFunction,
-) ([]*http.Server, []net.Listener, error) {
+) ([]*http.Server, []net.Listener, *connector.HTTPRoutes, error) {
+	backendPolicies := make(map[tlsconfig.Backend]*tls.Config)
+	for _, mounted := range configured.Mounts {
+		if mounted.TLS == nil {
+			continue
+		}
+		policy := *mounted.TLS
+		if _, loaded := backendPolicies[policy]; loaded {
+			continue
+		}
+		tlsConfig, err := tlsruntime.LoadBackend(policy)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("load backend TLS policy: %w", err)
+		}
+		backendPolicies[policy] = tlsConfig
+	}
+	routes := connector.NewHTTPRoutes(backendClient, backendPolicies)
+
 	tlsConfigs := make([]*tls.Config, len(configured.Servers))
 	for i, frontend := range configured.Servers {
 		if frontend.TLS == nil {
@@ -30,7 +48,8 @@ func prepareHTTPRuntime(
 		}
 		loaded, err := tlsruntime.LoadFrontend(*frontend.TLS)
 		if err != nil {
-			return nil, nil, fmt.Errorf("load TLS for server %q: %w", frontend.Name, err)
+			routes.CloseIdleConnections()
+			return nil, nil, nil, fmt.Errorf("load TLS for server %q: %w", frontend.Name, err)
 		}
 		tlsConfigs[i] = loaded
 	}
@@ -38,7 +57,7 @@ func prepareHTTPRuntime(
 	httpServers := make([]*http.Server, 0, len(configured.Servers))
 	listeners := make([]net.Listener, 0, len(configured.Servers))
 	for i, frontend := range configured.Servers {
-		handler := gatewayserver.NewReloadableHTTPHandler(frontend.Name, snapshot, backend)
+		handler := gatewayserver.NewReloadableHTTPHandlerWithRoutes(frontend.Name, snapshot, routes)
 		httpServer := &http.Server{
 			Addr:              frontend.Listen,
 			Handler:           handler,
@@ -52,7 +71,8 @@ func prepareHTTPRuntime(
 			for _, opened := range listeners {
 				_ = opened.Close()
 			}
-			return nil, nil, fmt.Errorf("listen for server %q: %w", frontend.Name, err)
+			routes.CloseIdleConnections()
+			return nil, nil, nil, fmt.Errorf("listen for server %q: %w", frontend.Name, err)
 		}
 		if tlsConfigs[i] != nil {
 			listener = tls.NewListener(listener, tlsConfigs[i])
@@ -60,5 +80,5 @@ func prepareHTTPRuntime(
 		httpServers = append(httpServers, httpServer)
 		listeners = append(listeners, listener)
 	}
-	return httpServers, listeners, nil
+	return httpServers, listeners, routes, nil
 }

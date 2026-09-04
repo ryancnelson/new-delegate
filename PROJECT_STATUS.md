@@ -40,9 +40,24 @@ Running changelog, updated automatically every 10 minutes.
 - Generated loopback fixtures prove successful TLS 1.3 service, rejection of a
   TLS 1.2-only client, the secure TLS 1.2 default, zero binds on certificate
   failure, and closure of earlier sockets when a later bind fails.
-- The complete local race/static/CGO-free portability gate passes. Remote CI is
-  pending. Next gate: per-mount backend TLS transports with custom roots and
+- The complete local race/static/CGO-free portability gate passes. Woodpecker
+  pipeline #20 accepted commit `37ef906`. Next gate: per-mount backend TLS transports with custom roots and
   optional mutual-TLS identity.
+
+## 2026-09-03 21:22
+
+- Iteration 20 implements per-mount backend TLS without adding transport fields
+  to protocol-neutral Fetch operations. The handler passes the resolver-selected
+  mount to a routed connector, which chooses only among transports preloaded at
+  startup.
+- System roots remain the default; configured CA files append trust, explicit
+  verification names and TLS minimums are applied, and optional client identity
+  enables mutual TLS. A generated loopback backend verifies the client
+  certificate through the full gateway path.
+- Invalid backend material causes zero binds, unknown policies cause zero
+  backend calls, idle pools close at shutdown, and changes to the preloaded TLS
+  policy set require restart. The full local gate passes; remote CI is pending.
+  Next gate: checksummed self-contained release artifacts.
 
 ## 2026-09-03 18:46
 
@@ -198,6 +213,12 @@ Running changelog, updated automatically every 10 minutes.
 - New commit: `2431284 [iter-18] model independent TLS policy`. Matches the iteration-18 summary already logged out-of-band at 21:00 in this file: canonical TOML models frontend TLS termination independently from backend verification/client identity; cert/key references must be paired; minimum versions restricted to TLS 1.2/1.3; backend TLS only legal for HTTPS targets; no insecure-verification bypass exists; validation reads no referenced files; `check` exposes the model while startup/reload still reject configured TLS until runtime adapters land; TLS pointers are deep-copied in immutable snapshots and are part of listener topology.
 - New `[IN PROGRESS]` item (BACKLOG.md line 186): implement actual frontend TLS termination from the validated model, preloading every certificate before any listener begins serving — this is the current gate per CURRENT-STATE.md. Working tree has this in progress, uncommitted: modified `tlsconfig/tlsconfig.go`, `tlsconfig/tlsconfig_test.go`, `BACKLOG.md`.
 - Remaining unverified unchanged.
+
+## 2026-09-03 21:14
+
+- New commit: `37ef906 [iter-19] terminate frontend TLS atomically`. Matches the iteration-19 summary already logged out-of-band at 21:08 in this file: frontend TLS termination uses only the standard library; every identity loads before the first bind; plaintext and TLS listeners coexist under the existing coordinated shutdown lifecycle; loopback fixtures prove TLS 1.3 service, TLS-1.2-only client rejection, the secure TLS 1.2 default, zero binds on cert failure, and closure of earlier sockets when a later bind fails.
+- New `[IN PROGRESS]` item (BACKLOG.md line 195): apply each HTTPS mount's validated backend trust and optional client identity — this is the current gate per CURRENT-STATE.md ("build per-mount backend TLS transports without leaking transport policy into protocol-neutral Fetch operations"). Work has already started uncommitted: modified `tlsruntime/frontend.go`, `BACKLOG.md`; untracked `tlsruntime/backend.go`, `tlsruntime/backend_test.go`, `connector/routes.go`, `connector/routes_test.go`.
+- Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
 
 ## 2026-09-03 19:56
 
