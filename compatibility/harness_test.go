@@ -161,6 +161,26 @@ func TestLoadFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFixture() = %v", err)
 	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-connect-protocol-server-uppercase.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-connect-protocol-server-uppercase.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-connect-protocol-server-uppercase.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-connect-protocol-server-uppercase.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
 }
 
 func TestLoadFixtureRejectsEmptyArgs(t *testing.T) {

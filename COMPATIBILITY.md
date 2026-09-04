@@ -84,6 +84,9 @@ Intentional differences:
   legacy `MOUNT` protocol options.
 - Legacy compatibility fixtures now include protocol-case normalization for CONNECT
   `MOUNT` protocol and `server=` options on uppercase server flows.
+- Legacy compatibility fixtures now include protocol- and server-option
+  case-normalization for CONNECT `MOUNT`s across HTTPS, Gopher, FTP, and SOCKS
+  when `SERVER=` is uppercase.
 - Legacy compatibility fixtures now include uppercase `SERVER=HTTPS` `CONNECT`
   metadata and selector normalization.
 - Legacy compatibility fixtures now include uppercase `SERVER=SOCKS` `CONNECT`

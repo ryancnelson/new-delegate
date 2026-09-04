@@ -1,0 +1,43 @@
+{
+  "name": "SERVER=GOPHER protocol and server option case normalization for CONNECT mount",
+  "args": [
+    "SERVER=GOPHER",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:70 server=default protocol=GoPhEr priority=10\"",
+    "PERMIT=GoPhEr:Tunnel.Internal:127.0.0.1",
+    "REJECT=GOPHER:Legacy.INTERNAL:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://example.com:443/",
+        "target": "tcp://tunnel.internal:70",
+        "priority": 10,
+        "server": "default",
+        "protocol": "gopher"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "gopher",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
