@@ -59,6 +59,12 @@ approval. It does not manufacture semantic operations.
   choice comes from the resolver-selected mount, never request metadata.
 - Proxy credentials, standard hop-by-hop headers, and `Connection`-nominated
   fields never cross the HTTP frontend/backend boundary.
+- HTTP CONNECT authority and TCP target ports are validated without DNS before
+  routing; a resolver-selected mount and affirmative policy decision precede
+  every relay dial.
+- CONNECT relays have bounded dialing, response-handshake, and rolling idle
+  deadlines; EOF propagates as a TCP half-close and both hijacked connections
+  are closed when the relay ends.
 
 ## Portability
 

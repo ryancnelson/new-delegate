@@ -12,6 +12,13 @@ type Fetch struct {
 	Body     io.Reader
 }
 
+// Relay asks a connector to open one bounded transparent byte stream. It is
+// intentionally separate from semantic Fetch translation.
+type Relay struct {
+	Network string
+	Address string
+}
+
 // Result is a connector's response to an operation.
 type Result struct {
 	Status   int

@@ -29,6 +29,14 @@ func TestMountValidate(t *testing.T) {
 			name:  "absolute HTTP source",
 			mount: Mount{Source: "http://Example.COM:8080/docs/*", Target: "https://docs.internal/*"},
 		},
+		{
+			name:  "CONNECT authority to TCP target",
+			mount: Mount{Source: "connect://Example.COM:443/", Target: "tcp://tunnel.internal:8443"},
+		},
+		{name: "CONNECT source missing port", mount: Mount{Source: "connect://example.com/", Target: "tcp://backend:443"}, wantErr: "port"},
+		{name: "CONNECT source with path", mount: Mount{Source: "connect://example.com:443/docs", Target: "tcp://backend:443"}, wantErr: "path"},
+		{name: "TCP target missing port", mount: Mount{Source: "connect://example.com:443/", Target: "tcp://backend"}, wantErr: "port"},
+		{name: "TCP target with path", mount: Mount{Source: "connect://example.com:443/", Target: "tcp://backend:443/data"}, wantErr: "path"},
 		{name: "path and URL source", mount: Mount{Path: "/*", Source: "http://example.com/*", Target: "http://backend/*"}, wantErr: "exactly one"},
 		{name: "source userinfo", mount: Mount{Source: "http://user@example.com/*", Target: "http://backend/*"}, wantErr: "userinfo"},
 		{name: "source query", mount: Mount{Source: "http://example.com/*?x=1", Target: "http://backend/*"}, wantErr: "query"},
@@ -71,6 +79,34 @@ func TestMountValidate(t *testing.T) {
 			}
 			if tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)) {
 				t.Fatalf("Validate() error = %v, want error containing %q", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidateConnectAuthority(t *testing.T) {
+	tests := []struct {
+		authority string
+		valid     bool
+	}{
+		{authority: "example.com:443", valid: true},
+		{authority: "[::1]:443", valid: true},
+		{authority: "example.com"},
+		{authority: "example.com:notaport"},
+		{authority: "example.com:0"},
+		{authority: "example.com:65536"},
+		{authority: "example.com:0443"},
+		{authority: "user@example.com:443"},
+		{authority: "[fe80::1%lo0]:443"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.authority, func(t *testing.T) {
+			err := ValidateConnectAuthority(tt.authority)
+			if tt.valid && err != nil {
+				t.Fatalf("ValidateConnectAuthority() error = %v", err)
+			}
+			if !tt.valid && err == nil {
+				t.Fatal("ValidateConnectAuthority() error = nil")
 			}
 		})
 	}

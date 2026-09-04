@@ -126,6 +126,35 @@ forwarded. Requests and responses drop `Connection`, every header it names,
 `TE`, `Trailer`, `Transfer-Encoding`, and `Upgrade`; end-to-end metadata is
 preserved.
 
+HTTP `CONNECT` is an explicit, fail-closed byte-stream route. It does not dial
+the client-supplied authority directly: a `connect://host:port/` source must
+select a `tcp://host:port` target, and policy must permit method `CONNECT`
+before the TCP connector runs. For example:
+
+```toml
+[[mounts]]
+source = "connect://origin.example:443/"
+target = "tcp://127.0.0.1:9443"
+
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "127.0.0.1"
+source = "127.0.0.1"
+method = "CONNECT"
+```
+
+The relay does not intercept TLS. It validates explicit ports without DNS,
+uses bounded handshakes and rolling idle deadlines, supports TCP half-close,
+and always closes both sides when the tunnel ends. The same route can be
+inspected without dialing:
+
+```sh
+go run ./cmd/delegate explain --config examples/connect.toml \
+  --url connect://origin.example:443/ --source 127.0.0.1 \
+  --method CONNECT
+```
+
 The JSON result distinguishes `permit`, `reject`, `no_mount`, `unsafe_path`,
 and `ambiguous_mount`, and includes the winning policy rule index when policy
 evaluation occurs. Original-style configuration directives can be supplied in

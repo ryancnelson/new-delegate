@@ -231,13 +231,22 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-026: Authorized HTTP CONNECT relay
 
-- [READY] Add a bounded byte-stream relay for authorized HTTP `CONNECT`
+- [DONE] Add a bounded byte-stream relay for authorized HTTP `CONNECT`
   requests without conflating it with semantic Fetch translation.
 - Acceptance: authority syntax and ports validate before dialing; mount and
   policy approval precede all network activity; denial makes zero dials;
   successful loopback tunnels support bidirectional traffic and half-close;
   handshake/idle limits are bounded; hijacked connections are always closed;
   `explain` can report the CONNECT route without opening a socket.
+
+### P1-027: Typed HTTP Store operation
+
+- [READY] Route authorized HTTP `PUT` through a protocol-neutral Store
+  operation instead of representing writes as Fetch requests.
+- Acceptance: routing and policy remain shared with Fetch; the selected mount
+  rewrites the destination deterministically; metadata and bounded request
+  bodies reach the HTTP connector; denial invokes no connector; existing Fetch
+  and CONNECT behavior remains unchanged; loopback tests prove the full slice.
 
 ---
 
@@ -346,6 +355,12 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 23 (2026-09-03)
 - [DONE] ✅ Enforced the HTTP hop-by-hop metadata boundary
 
+### Iteration 24 (2026-09-03)
+- [DONE] ✅ Narrowed active builds to Darwin/arm64 and Linux/amd64
+
+### Iteration 25 (2026-09-03)
+- [DONE] ✅ Added authorized, bounded HTTP CONNECT relaying
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -373,5 +388,4 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add authorized, bounded HTTP `CONNECT` as a byte-stream relay
-separate from semantic Fetch translation.
+**Next step:** Route authorized HTTP `PUT` through a typed Store operation.

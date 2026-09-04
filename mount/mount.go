@@ -3,7 +3,9 @@ package mount
 
 import (
 	"fmt"
+	"net"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"gitea.local/ryan/new-delegate/tlsconfig"
@@ -25,6 +27,7 @@ var supportedTargetSchemes = map[string]struct{}{
 	"ftp":      {},
 	"http":     {},
 	"https":    {},
+	"tcp":      {},
 }
 
 // Validate checks one mapping without modifying it.
@@ -50,6 +53,14 @@ func (m Mount) Validate() error {
 		sourcePath = parsed.EscapedPath()
 		if sourcePath == "" {
 			sourcePath = "/"
+		}
+		if strings.EqualFold(parsed.Scheme, "connect") {
+			if err := ValidateConnectAuthority(parsed.Host); err != nil {
+				return fmt.Errorf("mount CONNECT source: %w", err)
+			}
+			if sourcePath != "/" {
+				return fmt.Errorf("mount CONNECT source path must be /")
+			}
 		}
 		if strings.Contains(sourcePath, "%") {
 			return fmt.Errorf("mount source path %q uses ambiguous escaping", sourcePath)
@@ -77,6 +88,17 @@ func (m Mount) Validate() error {
 	}
 	if target.Host == "" {
 		return fmt.Errorf("mount target %q requires a host", m.Target)
+	}
+	if strings.EqualFold(target.Scheme, "tcp") {
+		if target.User != nil || target.RawQuery != "" || target.ForceQuery || target.Fragment != "" {
+			return fmt.Errorf("mount TCP target cannot contain userinfo, query, or fragment")
+		}
+		if target.Path != "" && target.Path != "/" {
+			return fmt.Errorf("mount TCP target path must be empty or /")
+		}
+		if err := ValidateConnectAuthority(target.Host); err != nil {
+			return fmt.Errorf("mount TCP target: %w", err)
+		}
 	}
 	if strings.Count(target.Path, "*") > 1 || (strings.Contains(target.Path, "*") && !strings.HasSuffix(target.Path, "*")) {
 		return fmt.Errorf("mount target %q has an invalid wildcard", m.Target)
@@ -109,7 +131,7 @@ func parseSourceURL(source string) (*url.URL, error) {
 	if !parsed.IsAbs() || parsed.Host == "" || parsed.Opaque != "" {
 		return nil, fmt.Errorf("mount source %q requires an absolute authority", source)
 	}
-	if !strings.EqualFold(parsed.Scheme, "http") && !strings.EqualFold(parsed.Scheme, "https") {
+	if !strings.EqualFold(parsed.Scheme, "http") && !strings.EqualFold(parsed.Scheme, "https") && !strings.EqualFold(parsed.Scheme, "connect") {
 		return nil, fmt.Errorf("mount source scheme %q is unsupported", parsed.Scheme)
 	}
 	if parsed.User != nil {
@@ -122,4 +144,24 @@ func parseSourceURL(source string) (*url.URL, error) {
 		return nil, fmt.Errorf("mount source URL cannot contain a fragment")
 	}
 	return parsed, nil
+}
+
+// ValidateConnectAuthority checks an HTTP CONNECT authority without resolving
+// its host or opening a network connection.
+func ValidateConnectAuthority(authority string) error {
+	if authority == "" || authority != strings.TrimSpace(authority) || strings.ContainsAny(authority, "@/?#") {
+		return fmt.Errorf("invalid CONNECT authority %q", authority)
+	}
+	host, port, err := net.SplitHostPort(authority)
+	if err != nil || host == "" || port == "" {
+		return fmt.Errorf("CONNECT authority %q requires host and port", authority)
+	}
+	if strings.ContainsAny(host, " \t\r\n%") {
+		return fmt.Errorf("CONNECT authority %q has an invalid host", authority)
+	}
+	number, err := strconv.Atoi(port)
+	if err != nil || number < 1 || number > 65535 || strconv.Itoa(number) != port {
+		return fmt.Errorf("CONNECT authority %q has an invalid port", authority)
+	}
+	return nil
 }

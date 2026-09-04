@@ -1,14 +1,18 @@
 package server
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"gitea.local/ryan/new-delegate/config"
 	"gitea.local/ryan/new-delegate/connector"
@@ -17,6 +21,151 @@ import (
 	"gitea.local/ryan/new-delegate/policy"
 	"gitea.local/ryan/new-delegate/tlsconfig"
 )
+
+func TestHTTPConnectDenialAndInvalidAuthorityNeverDial(t *testing.T) {
+	relay := &recordingRelayConnector{}
+	configured := config.Config{
+		Servers: []config.Server{{Name: "proxy", Protocol: "http", Listen: ":8080"}},
+		Mounts:  []mount.Mount{{Source: "connect://example.com:443/", Target: "tcp://127.0.0.1:8443"}},
+	}
+	handler := NewReloadableHTTPHandlerWithRoutesAndRelay(
+		"proxy", func() config.Config { return configured }, &recordingMountConnector{}, relay,
+	)
+	for _, target := range []string{"example.com:443", "example.com", "example.com:notaport", "user@example.com:443"} {
+		request := httptest.NewRequest(http.MethodConnect, "http://proxy/", nil)
+		request.RequestURI = target
+		request.URL.Host = target
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		want := http.StatusForbidden
+		if target != "example.com:443" {
+			want = http.StatusBadRequest
+		}
+		if response.Code != want {
+			t.Errorf("CONNECT %q status = %d, want %d; body=%q", target, response.Code, want, response.Body.String())
+		}
+	}
+	if relay.calls != 0 {
+		t.Fatalf("relay calls = %d, want zero", relay.calls)
+	}
+}
+
+func TestHTTPConnectRelaysBidirectionallyWithHalfClose(t *testing.T) {
+	backend, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer backend.Close()
+	backendDone := make(chan error, 1)
+	go func() {
+		connection, acceptErr := backend.Accept()
+		if acceptErr != nil {
+			backendDone <- acceptErr
+			return
+		}
+		defer connection.Close()
+		payload, readErr := io.ReadAll(connection)
+		if readErr != nil {
+			backendDone <- readErr
+			return
+		}
+		if string(payload) != "ping" {
+			backendDone <- fmt.Errorf("backend payload = %q", payload)
+			return
+		}
+		_, writeErr := io.WriteString(connection, "pong")
+		backendDone <- writeErr
+	}()
+
+	configured := config.Config{
+		Servers: []config.Server{{Name: "proxy", Protocol: "http", Listen: ":8080"}},
+		Mounts: []mount.Mount{{
+			Source: "connect://origin.example:443/", Target: "tcp://" + backend.Addr().String(),
+		}},
+		Policies: []policy.Rule{{
+			Effect: policy.Permit, Protocol: "http", Destination: "127.0.0.1",
+			Source: "127.0.0.1", Method: "CONNECT",
+		}},
+	}
+	handler := NewReloadableHTTPHandlerWithRoutesAndRelay(
+		"proxy", func() config.Config { return configured }, &recordingMountConnector{},
+		connector.NewTCP(&net.Dialer{Timeout: time.Second}),
+	)
+	frontend := httptest.NewServer(handler)
+	defer frontend.Close()
+	frontendURL, err := url.Parse(frontend.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	clientConnection, err := net.DialTimeout("tcp", frontendURL.Host, time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer clientConnection.Close()
+	if _, err := fmt.Fprintf(clientConnection, "CONNECT origin.example:443 HTTP/1.1\r\nHost: origin.example:443\r\n\r\n"); err != nil {
+		t.Fatal(err)
+	}
+	reader := bufio.NewReader(clientConnection)
+	status, err := reader.ReadString('\n')
+	if err != nil || !strings.Contains(status, " 200 ") {
+		t.Fatalf("CONNECT response = %q, error=%v", status, err)
+	}
+	for {
+		line, readErr := reader.ReadString('\n')
+		if readErr != nil {
+			t.Fatal(readErr)
+		}
+		if line == "\r\n" {
+			break
+		}
+	}
+	if _, err := io.WriteString(clientConnection, "ping"); err != nil {
+		t.Fatal(err)
+	}
+	if err := clientConnection.(*net.TCPConn).CloseWrite(); err != nil {
+		t.Fatal(err)
+	}
+	reply, err := io.ReadAll(reader)
+	if err != nil || string(reply) != "pong" {
+		t.Fatalf("tunnel reply = %q, error=%v", reply, err)
+	}
+	select {
+	case err := <-backendDone:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("backend did not observe client half-close")
+	}
+}
+
+func TestRelayStreamsClosesIdleDirections(t *testing.T) {
+	client, clientPeer := net.Pipe()
+	backend, backendPeer := net.Pipe()
+	defer client.Close()
+	defer clientPeer.Close()
+	defer backend.Close()
+	defer backendPeer.Close()
+	done := make(chan struct{})
+	go func() {
+		relayStreams(client, client, backend, 20*time.Millisecond)
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("idle relay did not stop at its deadline")
+	}
+}
+
+type recordingRelayConnector struct {
+	calls int
+}
+
+func (r *recordingRelayConnector) Connect(context.Context, operation.Relay) (net.Conn, error) {
+	r.calls++
+	return nil, fmt.Errorf("unexpected relay dial")
+}
 
 func TestHTTPHandlerProxiesAuthorizedFetch(t *testing.T) {
 	var backendCalls atomic.Int32

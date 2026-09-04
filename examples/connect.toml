@@ -1,0 +1,18 @@
+[[servers]]
+name = "proxy"
+protocol = "http"
+listen = "127.0.0.1:8080"
+
+[[mounts]]
+source = "connect://origin.example:443/"
+target = "tcp://127.0.0.1:9443"
+server = "proxy"
+protocol = "http"
+
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "127.0.0.1"
+source = "127.0.0.1"
+method = "CONNECT"
+mount = "connect://origin.example:443/"

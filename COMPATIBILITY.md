@@ -6,9 +6,9 @@ Only passing tests may move an item to `verified`.
 | Original concept | Intended modern form | State |
 | --- | --- | --- |
 | `SERVER` | Named frontend listener and protocol | verified: basic protocol, port, and coordinated HTTP listeners |
-| `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: path/absolute-HTTP sources, legacy syntax, frontend scoping, resolver kernel |
+| `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: path/absolute-HTTP/CONNECT sources, legacy syntax, frontend scoping, resolver kernel |
 | `PERMIT` / `REJECT` | Fail-closed policy rules | verified: basic legacy selectors and canonical kernel |
-| `RELAY` | Authorized transparent byte-stream forwarding | planned |
+| `RELAY` | Authorized transparent byte-stream forwarding | partial: HTTP CONNECT over TCP verified |
 | `STLS` | Independent readable frontend/backend TLS settings | partial: HTTP frontend/backend and mutual TLS verified |
 | `FCL` | Bounded typed request/response transformations | planned |
 | `CACHE` | Explicit response cache policy | planned |
@@ -18,7 +18,7 @@ Only passing tests may move an item to `verified`.
 | Decision inspection | Side-effect-free effective routing/policy explanation | verified: JSON `explain` command |
 | Forwarded client identity | Per-listener header and trusted-proxy CIDRs | verified: HTTP, right-to-left trust chain |
 | Portable distribution | Checksummed self-contained executable archives | verified: Darwin/arm64 and Linux/amd64 |
-| HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |
+| HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch and CONNECT slices |
 | HTTP proxy metadata boundary | Hop-by-hop and proxy-credential stripping | verified: requests and responses |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | planned |
 | SOCKS5 | CONNECT and bounded relay | planned |

@@ -146,3 +146,16 @@ func TestResolveForMatchesURLAuthorityWithoutDNS(t *testing.T) {
 		t.Fatalf("port-mismatched target = %q, want path fallback", got.Target)
 	}
 }
+
+func TestResolveForMatchesCONNECTAuthority(t *testing.T) {
+	got, err := ResolveFor(
+		[]Mount{{Source: "connect://Example.COM:443/", Target: "tcp://127.0.0.1:8443"}},
+		Request{Path: "/", Scheme: "CONNECT", Authority: "example.com:443", Protocol: "http"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Target != "tcp://127.0.0.1:8443" {
+		t.Fatalf("ResolveFor().Target = %q", got.Target)
+	}
+}

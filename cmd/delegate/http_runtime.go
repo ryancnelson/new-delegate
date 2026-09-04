@@ -57,7 +57,8 @@ func prepareHTTPRuntime(
 	httpServers := make([]*http.Server, 0, len(configured.Servers))
 	listeners := make([]net.Listener, 0, len(configured.Servers))
 	for i, frontend := range configured.Servers {
-		handler := gatewayserver.NewReloadableHTTPHandlerWithRoutes(frontend.Name, snapshot, routes)
+		relay := connector.NewTCP(&net.Dialer{Timeout: 10 * time.Second})
+		handler := gatewayserver.NewReloadableHTTPHandlerWithRoutesAndRelay(frontend.Name, snapshot, routes, relay)
 		httpServer := &http.Server{
 			Addr:              frontend.Listen,
 			Handler:           handler,

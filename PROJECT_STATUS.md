@@ -384,3 +384,22 @@ Running changelog, updated automatically every 10 minutes.
   until further notice. Local checks, Woodpecker, release packaging, and the
   standing agent constraint now use exactly that matrix; prior broader builds
   remain historical facts only.
+
+## 2026-09-03 22:14
+
+- New commit: `6730dba [iter-24] narrow active build matrix` — the code-level counterpart of the matrix decision already logged out-of-band at 22:07 in this file.
+- **New `[IN PROGRESS]` item** (BACKLOG.md line 234): add a bounded byte-stream relay for authorized HTTP `CONNECT`, separate from semantic Fetch translation — this is the current gate per CURRENT-STATE.md. Work has visibly started: untracked `connector/tcp.go`, `connector/tcp_test.go`; modified (uncommitted) `cmd/delegate/http_runtime.go`, `explain/explain_test.go`, `mount/mount.go`, `mount/mount_test.go`, `mount/resolve_test.go`, `mount/source_fuzz_test.go`, `operation/operation.go`, `server/http.go`, `server/http_test.go`, `BACKLOG.md`.
+- Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
+
+## 2026-09-03 22:18
+
+- Iteration 25 adds explicit `connect://host:port/` to `tcp://host:port`
+  mappings for authorized HTTP CONNECT. Authority validation, mount resolution,
+  and policy approval all precede dialing; the byte relay has bounded dial,
+  handshake, and rolling idle limits, propagates half-close, and closes both
+  hijacked connections. Loopback tests prove bidirectional traffic and denial
+  with zero dials; `explain` evaluates the route without network activity.
+- The complete local gate passes on the owner-selected Darwin/arm64 and
+  Linux/amd64 matrix. A bounded source-validation fuzz run completed 557,516
+  executions and a dedicated CONNECT-authority run completed 187,611
+  executions without a panic. Remote Woodpecker acceptance remains.

@@ -140,6 +140,17 @@ Last verified: 2026-09-03
   removed; end-to-end fields retain all values. A real absolute-form request
   sent through an `http.Client` proxy proves credentials and connection-scoped
   fields do not reach the backend or return to the caller.
+- HTTP `CONNECT` uses explicit `connect://host:port/` mount sources and
+  `tcp://host:port` targets. Authority and port syntax validate without DNS;
+  mount resolution and an affirmative HTTP/CONNECT policy decision occur
+  before dialing. The transparent relay is separate from Fetch, applies a
+  bounded dial and handshake plus rolling idle deadlines, propagates TCP
+  half-closes, and closes both hijacked connections. Loopback tests prove
+  bidirectional traffic, client half-close, denial with zero dials, malformed
+  authority rejection, and idle expiry. `explain` evaluates the same route
+  without opening a socket. A bounded source-validation fuzz run completed
+  557,516 executions and a dedicated CONNECT-authority run completed 187,611
+  executions without a panic.
 
 ## Unverified
 
@@ -149,8 +160,8 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Add authorized, bounded HTTP `CONNECT` as a byte-stream relay separate from
-semantic Fetch translation.
+Route authorized HTTP `PUT` through a typed Store operation rather than
+representing writes as Fetch requests.
 
 Active verification and release builds target only Darwin/arm64 and Linux/amd64
 until the owner expands the matrix.

@@ -11,6 +11,8 @@ import (
 	"net/netip"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"gitea.local/ryan/new-delegate/clientaddr"
 	"gitea.local/ryan/new-delegate/config"
@@ -27,10 +29,15 @@ type mountFetchConnector interface {
 	FetchForMount(context.Context, mount.Mount, operation.Fetch) (operation.Result, error)
 }
 
+type relayConnector interface {
+	Connect(context.Context, operation.Relay) (net.Conn, error)
+}
+
 type httpHandler struct {
 	server    string
 	snapshot  func() config.Config
 	connector mountFetchConnector
+	relay     relayConnector
 }
 
 // NewHTTPHandler constructs an HTTP frontend for an already-validated runtime
@@ -57,14 +64,25 @@ func NewReloadableHTTPHandler(server string, snapshot func() config.Config, conn
 // NewReloadableHTTPHandlerWithRoutes passes the resolver-selected mount to a
 // connector router without adding transport policy to the semantic operation.
 func NewReloadableHTTPHandlerWithRoutes(server string, snapshot func() config.Config, connector mountFetchConnector) http.Handler {
+	return NewReloadableHTTPHandlerWithRoutesAndRelay(server, snapshot, connector, nil)
+}
+
+// NewReloadableHTTPHandlerWithRoutesAndRelay adds a transparent relay
+// connector without mixing byte streams into semantic Fetch operations.
+func NewReloadableHTTPHandlerWithRoutesAndRelay(server string, snapshot func() config.Config, connector mountFetchConnector, relay relayConnector) http.Handler {
 	return &httpHandler{
 		server:    server,
 		snapshot:  snapshot,
 		connector: connector,
+		relay:     relay,
 	}
 }
 
 func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	if request.Method == http.MethodConnect {
+		h.serveCONNECT(response, request)
+		return
+	}
 	if request.URL.IsAbs() && (request.URL.User != nil || request.URL.Fragment != "") {
 		http.Error(response, "invalid absolute request target", http.StatusBadRequest)
 		return
@@ -129,6 +147,138 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	if result.Body != nil {
 		_, _ = io.Copy(response, result.Body)
 	}
+}
+
+const (
+	connectHandshakeTimeout = 10 * time.Second
+	connectIdleTimeout      = 2 * time.Minute
+)
+
+func (h *httpHandler) serveCONNECT(response http.ResponseWriter, request *http.Request) {
+	authority := request.RequestURI
+	if authority == "" {
+		authority = request.URL.Host
+	}
+	if err := mount.ValidateConnectAuthority(authority); err != nil {
+		http.Error(response, "invalid CONNECT authority", http.StatusBadRequest)
+		return
+	}
+	configured := h.snapshot()
+	matched, err := mount.ResolveFor(configured.Mounts, mount.Request{
+		Path: "/", Scheme: "connect", Authority: authority, Server: h.server, Protocol: "http",
+	})
+	if err != nil {
+		if errors.Is(err, mount.ErrNoMatch) {
+			http.Error(response, mount.ErrNoMatch.Error(), http.StatusNotFound)
+		} else {
+			http.Error(response, "mount resolution failed", http.StatusInternalServerError)
+		}
+		return
+	}
+	source, err := policySource(configured, h.server, request)
+	if err != nil {
+		http.Error(response, "invalid client address", http.StatusBadRequest)
+		return
+	}
+	decision := policy.Evaluate(configured.Policies, policy.Request{
+		Source: source, Protocol: "http", Destination: targetHostname(matched.Target),
+		Method: http.MethodConnect, Mount: matched.Mount.Pattern(),
+	})
+	if !decision.Allowed {
+		http.Error(response, string(decision.Reason), http.StatusForbidden)
+		return
+	}
+	hijacker, ok := response.(http.Hijacker)
+	if !ok {
+		http.Error(response, "CONNECT relay unavailable", http.StatusNotImplemented)
+		return
+	}
+	if h.relay == nil {
+		http.Error(response, "CONNECT relay unavailable", http.StatusNotImplemented)
+		return
+	}
+	relay, err := relayOperation(matched.Target)
+	if err != nil {
+		http.Error(response, "invalid relay target", http.StatusBadGateway)
+		return
+	}
+	backend, err := h.relay.Connect(request.Context(), relay)
+	if err != nil {
+		http.Error(response, "backend relay failed", http.StatusBadGateway)
+		return
+	}
+	client, buffered, err := hijacker.Hijack()
+	if err != nil {
+		_ = backend.Close()
+		return
+	}
+	defer client.Close()
+	defer backend.Close()
+	_ = client.SetDeadline(time.Time{})
+	_ = backend.SetDeadline(time.Time{})
+	_ = client.SetWriteDeadline(time.Now().Add(connectHandshakeTimeout))
+	if _, err := buffered.WriteString("HTTP/1.1 200 Connection Established\r\n\r\n"); err != nil {
+		return
+	}
+	if err := buffered.Flush(); err != nil {
+		return
+	}
+	_ = client.SetWriteDeadline(time.Time{})
+	relayStreams(client, buffered.Reader, backend, connectIdleTimeout)
+}
+
+func relayOperation(target string) (operation.Relay, error) {
+	parsed, err := url.Parse(target)
+	if err != nil || !strings.EqualFold(parsed.Scheme, "tcp") || parsed.Host == "" {
+		return operation.Relay{}, fmt.Errorf("invalid TCP relay target %q", target)
+	}
+	if err := mount.ValidateConnectAuthority(parsed.Host); err != nil {
+		return operation.Relay{}, err
+	}
+	return operation.Relay{Network: "tcp", Address: parsed.Host}, nil
+}
+
+func relayStreams(client net.Conn, clientReader io.Reader, backend net.Conn, idle time.Duration) {
+	var wait sync.WaitGroup
+	wait.Add(2)
+	go copyRelay(&wait, backend, clientReader, client, backend, idle)
+	go copyRelay(&wait, client, backend, backend, client, idle)
+	wait.Wait()
+}
+
+func copyRelay(wait *sync.WaitGroup, destination net.Conn, source io.Reader, sourceConn, destinationConn net.Conn, idle time.Duration) {
+	defer wait.Done()
+	_, _ = io.Copy(
+		deadlineWriter{connection: destination, idle: idle},
+		deadlineReader{connection: sourceConn, reader: source, idle: idle},
+	)
+	if closeWrite, ok := destinationConn.(interface{ CloseWrite() error }); ok {
+		_ = closeWrite.CloseWrite()
+	}
+	if closeRead, ok := sourceConn.(interface{ CloseRead() error }); ok {
+		_ = closeRead.CloseRead()
+	}
+}
+
+type deadlineReader struct {
+	connection net.Conn
+	reader     io.Reader
+	idle       time.Duration
+}
+
+func (r deadlineReader) Read(buffer []byte) (int, error) {
+	_ = r.connection.SetReadDeadline(time.Now().Add(r.idle))
+	return r.reader.Read(buffer)
+}
+
+type deadlineWriter struct {
+	connection net.Conn
+	idle       time.Duration
+}
+
+func (w deadlineWriter) Write(buffer []byte) (int, error) {
+	_ = w.connection.SetWriteDeadline(time.Now().Add(w.idle))
+	return w.connection.Write(buffer)
 }
 
 type fixedMountConnector struct {

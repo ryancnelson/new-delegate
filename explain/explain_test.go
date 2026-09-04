@@ -55,6 +55,27 @@ func TestEvaluateExplainsURLAuthorityMount(t *testing.T) {
 	}
 }
 
+func TestEvaluateExplainsCONNECTWithoutDialing(t *testing.T) {
+	configured := config.Config{
+		Servers: []config.Server{{Name: "proxy", Protocol: "http", Listen: ":8080"}},
+		Mounts:  []mount.Mount{{Source: "connect://db.example:443/", Target: "tcp://db.internal:8443"}},
+		Policies: []policy.Rule{{
+			Effect: policy.Permit, Protocol: "http", Destination: "db.internal",
+			Source: "192.0.2.10", Method: "CONNECT",
+		}},
+	}
+	got, err := Evaluate(configured, Request{
+		URL: "connect://db.example:443/", Source: "192.0.2.10",
+		Server: "proxy", Protocol: "http", Method: "CONNECT",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Outcome != OutcomePermit || got.Mount == nil || got.Mount.Target != "tcp://db.internal:8443" {
+		t.Fatalf("Evaluate() = %#v, want permitted CONNECT route", got)
+	}
+}
+
 func TestEvaluateExplainsDefaultDeny(t *testing.T) {
 	configured := config.Config{
 		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
