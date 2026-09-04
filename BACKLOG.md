@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 50 - HTTPS CONNECT MOUNT protocol-option case-normalization fixture)
+**Last Updated:** 2026-09-04 (Iteration 51 - HTTP CONNECT MOUNT protocol-option case-normalization fixture)
 
 ---
 
@@ -442,6 +442,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 50 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for HTTPS `CONNECT` `MOUNT` protocol scope case normalization
+
+### Iteration 51 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for HTTP `CONNECT` `MOUNT` protocol scope case normalization
 
 ---
 

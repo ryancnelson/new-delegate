@@ -203,6 +203,8 @@ Last verified: 2026-09-04
   for URL-source legacy `MOUNT` directives with mixed-case protocol scope.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for HTTPS `CONNECT` `MOUNT` metadata with mixed-case protocol.
+- The compatibility fixture corpus now includes protocol-option case-normalization
+  for HTTP `CONNECT` `MOUNT` metadata with mixed-case protocol.
 
 ## Unverified
 
