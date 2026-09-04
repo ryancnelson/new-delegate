@@ -66,5 +66,7 @@ Intentional differences:
   legacy `MOUNT` protocol options.
 - Legacy compatibility fixtures now include protocol-case normalization for FTP
   legacy `MOUNT` protocol options.
+- Legacy compatibility fixtures now include protocol-case normalization for Gopher
+  legacy `MOUNT` protocol options.
 - Legacy compatibility fixtures now include mount protocol-scope normalization in
   `MOUNT` options.

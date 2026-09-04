@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 46 - FTP MOUNT protocol option case-normalization fixture)
+**Last Updated:** 2026-09-04 (Iteration 47 - Gopher MOUNT protocol option case-normalization fixture)
 
 ---
 
@@ -430,6 +430,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 46 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for uppercase FTP `MOUNT` protocol scope values
+
+### Iteration 47 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for uppercase Gopher `MOUNT` protocol scope values
 
 ---
 

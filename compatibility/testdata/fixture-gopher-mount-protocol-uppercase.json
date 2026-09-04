@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT protocol scope uppercase protocol option for Gopher",
+  "args": [
+    "SERVER=gopher",
+    "MOUNT=\"/gopher/* http://backend.internal/gopher/* server=default protocol=GOPHER priority=9\"",
+    "PERMIT=GoPhEr:backend.internal:127.0.0.1",
+    "REJECT=GOPHEr:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/gopher/*",
+        "target": "http://backend.internal/gopher/*",
+        "priority": 9,
+        "server": "default",
+        "protocol": "gopher"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "gopher",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
