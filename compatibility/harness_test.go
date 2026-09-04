@@ -7,274 +7,37 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 )
 
 func TestLoadFixture(t *testing.T) {
-	_, err := LoadFixture(filepath.Join("testdata", "fixture-server-8080.json"))
+	entries, err := os.ReadDir(filepath.Join("testdata"))
 	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
+		t.Fatalf("os.ReadDir(testdata) = %v", err)
 	}
 
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-mount-permit.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
+	names := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+		names = append(names, entry.Name())
+	}
+	sort.Strings(names)
+
+	if len(names) == 0 {
+		t.Fatal("no fixture files found in testdata")
 	}
 
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-mount-scoped.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-connect-mount.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-connect-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-server-default.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-server-default.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-server-default.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-server-default.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-connect-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-mount-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-mount-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-mount-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-mount-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-mount-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-mount-url-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-mount-url-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-mount-url-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-mount-url-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-mount-url-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-mount-url-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-mount-url-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-mount-url-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-connect-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-connect-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-connect-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-connect-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-connect-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-mount-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-mount-url-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-mount-url-option-keys-case.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-connect-mount-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-connect-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-connect-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-connect-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-connect-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-connect-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-connect-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-connect-protocol-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-connect-protocol-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-connect-protocol-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-connect-protocol-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-connect-protocol-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
-	}
-
-	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-connect-protocol-server-uppercase.json"))
-	if err != nil {
-		t.Fatalf("LoadFixture() = %v", err)
+	for _, name := range names {
+		t.Run(name, func(t *testing.T) {
+			_, err := LoadFixture(filepath.Join("testdata", name))
+			if err != nil {
+				t.Fatalf("LoadFixture(%q) = %v", name, err)
+			}
+		})
 	}
 }
 
