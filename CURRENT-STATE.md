@@ -163,6 +163,8 @@ Last verified: 2026-09-04
 - A differential compatibility harness now executes fixture suites over
   canonical baseline JSON and supports an optional reference executable/path for
   actual behavior comparisons against original DeleGate output.
+- The compatibility fixture corpus now includes mount/policy parity coverage with a
+  MOUNT + PERMIT/REJECT legacy fixture.
 
 ## Unverified
 

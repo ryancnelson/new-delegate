@@ -1,0 +1,41 @@
+{
+  "name": "SERVER=http -P8080 MOUNT=\"/docs/* http://backend.local/*\" PERMIT=http:backend.local:127.0.0.1 REJECT=ftp:admin.local:*",
+  "args": [
+    "SERVER=http",
+    "-P8080",
+    "MOUNT=\"/docs/* http://backend.local/*\"",
+    "PERMIT=http:backend.local:127.0.0.1",
+    "REJECT=ftp:admin.local:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":8080"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/docs/*",
+        "target": "http://backend.local/*"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "http",
+        "destination": "backend.local"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "ftp",
+        "destination": "admin.local"
+      }
+    ]
+  }
+}

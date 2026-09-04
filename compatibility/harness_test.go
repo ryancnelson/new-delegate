@@ -16,6 +16,11 @@ func TestLoadFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFixture() = %v", err)
 	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-mount-permit.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
 }
 
 func TestLoadFixtureRejectsEmptyArgs(t *testing.T) {
@@ -154,6 +159,43 @@ func TestRunFixtureSuiteReportsMismatch(t *testing.T) {
 	}
 	if mismatches[0].Name != "SERVER=http with -P8080" {
 		t.Fatalf("mismatch name = %q, want %q", mismatches[0].Name, "SERVER=http with -P8080")
+	}
+}
+
+func TestRunFixtureSuiteAggregatesMultipleResults(t *testing.T) {
+	tempDir := t.TempDir()
+
+	rawGood, err := os.ReadFile(filepath.Join("testdata", "fixture-server-8080.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tempDir, "a-base.json"), rawGood, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var mismatch Fixture
+	if err := json.Unmarshal(rawGood, &mismatch); err != nil {
+		t.Fatal(err)
+	}
+	mismatch.Name = "A mismatched fixture"
+	mismatch.ReferenceConfig.Servers[0].Listen = ":9090"
+	mutated, err := json.Marshal(mismatch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tempDir, "z-bad.json"), mutated, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	mismatches, err := RunFixtureSuite(context.Background(), tempDir, CompareOptions{})
+	if err != nil {
+		t.Fatalf("RunFixtureSuite() = %v, want nil", err)
+	}
+	if len(mismatches) != 1 {
+		t.Fatalf("RunFixtureSuite() mismatches = %d, want 1", len(mismatches))
+	}
+	if mismatches[0].Name != "A mismatched fixture" {
+		t.Fatalf("mismatch name = %q, want %q", mismatches[0].Name, "A mismatched fixture")
 	}
 }
 
