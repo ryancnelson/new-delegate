@@ -1,0 +1,42 @@
+{
+  "name": "SERVER=HTTPS uppercase protocol option for CONNECT mount source",
+  "args": [
+    "SERVER=HTTPS",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:8443 protocol=Https priority=7\"",
+    "PERMIT=Https:tunnel.internal:127.0.0.1",
+    "REJECT=HTTPS:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "https",
+        "listen": ":443"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://Example.COM:443/",
+        "target": "tcp://tunnel.internal:8443",
+        "priority": 7,
+        "protocol": "https"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "https",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "https",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
