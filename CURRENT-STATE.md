@@ -193,6 +193,8 @@ Last verified: 2026-09-04
   normalization for legacy `MOUNT` directives.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for HTTPS legacy `MOUNT` directives with `protocol=HTTPS`.
+- The compatibility fixture corpus now includes protocol-option case-normalization
+  for FTP legacy `MOUNT` directives with `protocol=FTP`.
 
 ## Unverified
 

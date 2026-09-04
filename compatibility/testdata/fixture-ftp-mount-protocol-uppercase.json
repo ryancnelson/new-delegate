@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT protocol scope uppercase protocol option for FTP",
+  "args": [
+    "SERVER=FTP",
+    "MOUNT=\"/files/* ftp://backend.internal/files/* server=default protocol=FTP priority=15\"",
+    "PERMIT=FTP:backend.internal:127.0.0.1",
+    "REJECT=FtP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/files/*",
+        "target": "ftp://backend.internal/files/*",
+        "priority": 15,
+        "server": "default",
+        "protocol": "ftp"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "ftp",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "ftp",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
