@@ -1,0 +1,42 @@
+{
+  "name": "SERVER=SOCKS protocol scope uppercase for CONNECT mount",
+  "args": [
+    "SERVER=SOCKS",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:1080 protocol=sOcKs priority=6\"",
+    "PERMIT=SOcKs:Tunnel.Internal:203.0.113.5",
+    "REJECT=SOCKS:Legacy.INTERNAL:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "socks",
+        "listen": ":1080"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://example.com:443/",
+        "target": "tcp://tunnel.internal:1080",
+        "priority": 6,
+        "protocol": "socks"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "203.0.113.5",
+        "protocol": "socks",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "socks",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
