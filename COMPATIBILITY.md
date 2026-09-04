@@ -18,7 +18,7 @@ Only passing tests may move an item to `verified`.
 | Decision inspection | Side-effect-free effective routing/policy explanation | verified: JSON `explain` command |
 | Forwarded client identity | Per-listener header and trusted-proxy CIDRs | verified: HTTP, right-to-left trust chain |
 | Portable distribution | Checksummed self-contained executable archives | verified: Darwin/arm64 and Linux/amd64 |
-| HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch, Store (PUT), CONNECT, and FTP Fetch/Store/List; differential harness suite is runnable against baselines |
+| HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch, Store (PUT), CONNECT, and FTP Fetch/Store/List; late streamed backend failures abort the HTTP response; differential harness suite is runnable against baselines |
 | HTTP proxy metadata boundary | Hop-by-hop and proxy-credential stripping | verified: requests and responses |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | partial: passive peer pinning, EPSV-first operation, bounded control/data I/O, streaming Fetch/List ownership, completion checks, and cancellation verified; semantic HTTP outcomes remain in progress |
 | SOCKS5 | CONNECT and bounded relay | partial: fail-closed no-auth greeting, CONNECT request, and reply wire framing verified; listener, policy, and relay integration pending |

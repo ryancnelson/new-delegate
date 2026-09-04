@@ -170,7 +170,9 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	copyResponseHeader(response.Header(), result.Metadata)
 	response.WriteHeader(result.Status)
 	if result.Body != nil {
-		_, _ = io.Copy(response, result.Body)
+		if _, err := io.Copy(response, result.Body); err != nil {
+			panic(http.ErrAbortHandler)
+		}
 	}
 }
 

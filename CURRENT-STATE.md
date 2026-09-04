@@ -18,8 +18,12 @@ Last verified: 2026-09-04
   resources. STOR also rejects failed completion replies. Large staged payload,
   late-failure, early-close, timeout, cancellation, and existing route tests
   pass locally. Push-triggered Woodpecker pipeline 92 passed all stages at
-  exact commit `ad9b9e8`. HTTP-side late-failure propagation remains the final
-  P1-034 sub-step.
+  exact commit `ad9b9e8`.
+- The HTTP frontend now aborts a partially written response when its streamed
+  backend body fails. It does not turn a truncated transfer into a clean EOF or
+  try to overwrite an already-committed status. A real HTTP client regression
+  test observes the late failure after 32 KiB; focused, server, race, and full
+  Darwin/arm64 plus Linux/amd64 gates pass locally.
 - FTP passive data connections prefer EPSV and derive the data destination from
   the established control connection's numeric peer address. PASV is used only
   for explicit EPSV capability failures; all six PASV fields and the resulting

@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -218,6 +219,63 @@ func TestHTTPHandlerProxiesAuthorizedFetch(t *testing.T) {
 	if calls := backendCalls.Load(); calls != 1 {
 		t.Fatalf("backend calls = %d, want 1", calls)
 	}
+}
+
+func TestHTTPHandlerAbortsPartiallyWrittenResponseOnLateBackendFailure(t *testing.T) {
+	lateFailure := errors.New("late backend transfer failure")
+	payload := strings.Repeat("x", 32<<10)
+	handler := NewReloadableHTTPHandlerWithRoutes(
+		"public",
+		func() config.Config {
+			return config.Config{
+				Mounts:   []mount.Mount{{Path: "/*", Target: "ftp://backend.invalid/*"}},
+				Policies: []policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "*"}},
+			}
+		},
+		resultMountConnector{result: operation.Result{
+			Status: http.StatusOK,
+			Body: io.NopCloser(&terminalErrorReader{
+				Reader: strings.NewReader(payload),
+				err:    lateFailure,
+			}),
+		}},
+	)
+	frontend := httptest.NewServer(handler)
+	defer frontend.Close()
+
+	response, err := frontend.Client().Get(frontend.URL + "/object")
+	if err != nil {
+		t.Fatalf("request failed before receiving the partial response: %v", err)
+	}
+	defer response.Body.Close()
+	body, err := io.ReadAll(response.Body)
+	if err == nil {
+		t.Fatalf("read %d response bytes without error after the backend failed", len(body))
+	}
+	if len(body) == 0 || !strings.HasPrefix(payload, string(body)) {
+		t.Fatalf("partial body is not a prefix of the streamed payload: %d bytes", len(body))
+	}
+}
+
+type terminalErrorReader struct {
+	io.Reader
+	err error
+}
+
+func (r *terminalErrorReader) Read(buffer []byte) (int, error) {
+	read, err := r.Reader.Read(buffer)
+	if errors.Is(err, io.EOF) {
+		return 0, r.err
+	}
+	return read, err
+}
+
+type resultMountConnector struct {
+	result operation.Result
+}
+
+func (r resultMountConnector) FetchForMount(context.Context, mount.Mount, operation.Fetch) (operation.Result, error) {
+	return r.result, nil
 }
 
 func TestHTTPProxyStripsHopByHopHeadersAndCredentials(t *testing.T) {

@@ -73,6 +73,9 @@ approval. It does not manufacture semantic operations.
   through final completion validation. EOF, cancellation, timeout, transfer
   failure, and early Close each converge on one idempotent cleanup path; STOR
   validates completion before returning.
+- Once an HTTP response is committed, a streamed backend read failure aborts
+  the connection with `http.ErrAbortHandler`. It never fabricates a clean EOF
+  and never tries to replace the already-sent status code.
 - HTTP CONNECT authority and TCP target ports are validated without DNS before
   routing; a resolver-selected mount and affirmative policy decision precede
   every relay dial.
