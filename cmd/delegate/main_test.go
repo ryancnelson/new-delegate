@@ -79,6 +79,89 @@ source = "*"
 	}
 }
 
+func TestRunExplainPrintsDecisionWithoutServing(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "delegate.toml")
+	contents := []byte(`
+[[servers]]
+name = "public"
+protocol = "http"
+listen = ":8080"
+
+[[mounts]]
+path = "/api/*"
+target = "http://api.internal/v1/*"
+
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "api.internal"
+source = "10.0.0.0/8"
+method = "GET"
+mount = "/api/*"
+`)
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	serveCalls := 0
+	exitCode := run([]string{
+		"explain", "--config", path, "--path", "/api/users",
+		"--source", "10.20.30.40", "--method", "GET",
+	}, &stdout, &stderr, func(config.Config) error {
+		serveCalls++
+		return nil
+	})
+
+	if exitCode != 0 {
+		t.Fatalf("run() exit code = %d, want 0; stderr=%q", exitCode, stderr.String())
+	}
+	if serveCalls != 0 {
+		t.Fatalf("serve calls = %d, want zero", serveCalls)
+	}
+	for _, fragment := range []string{`"outcome": "permit"`, `"target": "http://api.internal/v1/users"`, `"rule_index": 0`} {
+		if !strings.Contains(stdout.String(), fragment) {
+			t.Fatalf("stdout missing %q:\n%s", fragment, stdout.String())
+		}
+	}
+}
+
+func TestRunExplainRejectsMissingRequestInputs(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	exitCode := run([]string{"explain", "SERVER=http", "--path", "/"}, &stdout, &stderr, func(config.Config) error {
+		t.Fatal("serve called by explain")
+		return nil
+	})
+	if exitCode != 2 || !strings.Contains(stderr.String(), "--source") {
+		t.Fatalf("run() = %d, stderr=%q; want missing source error", exitCode, stderr.String())
+	}
+}
+
+func TestRunExplainAcceptsLegacyDirectives(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	serveCalls := 0
+	exitCode := run([]string{
+		"explain",
+		"SERVER=http", "-P8080",
+		`MOUNT="/* http://backend.internal/*"`,
+		`PERMIT="http:backend.internal:*"`,
+		"--path", "/docs", "--source", "192.0.2.4", "--method", "GET",
+	}, &stdout, &stderr, func(config.Config) error {
+		serveCalls++
+		return nil
+	})
+	if exitCode != 0 {
+		t.Fatalf("run() = %d, stderr=%q; want success", exitCode, stderr.String())
+	}
+	if serveCalls != 0 {
+		t.Fatalf("serve calls = %d, want zero", serveCalls)
+	}
+	if !strings.Contains(stdout.String(), `"outcome": "permit"`) {
+		t.Fatalf("stdout = %q, want permit explanation", stdout.String())
+	}
+}
+
 func TestRunRejectsConfigFileMixedWithLegacyDirectives(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	exitCode := run([]string{"check", "--config", "delegate.toml", "SERVER=http"}, &stdout, &stderr, func(config.Config) error {

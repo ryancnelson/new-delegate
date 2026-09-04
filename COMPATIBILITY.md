@@ -15,6 +15,7 @@ Only passing tests may move an item to `verified`.
 | Proxy chaining | Backend connector targeting another delegate | planned |
 | Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT`, `PERMIT`, `REJECT` |
 | Modern TOML | Strict canonical configuration file | verified: server, mount, and policy model |
+| Decision inspection | Side-effect-free effective routing/policy explanation | verified: JSON `explain` command |
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | planned |
 | SOCKS5 | CONNECT and bounded relay | planned |

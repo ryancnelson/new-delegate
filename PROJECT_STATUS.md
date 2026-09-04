@@ -113,6 +113,13 @@ Running changelog, updated automatically every 10 minutes.
 - New current gate per CURRENT-STATE.md: add a side-effect-free explanation command for effective mount and policy decisions (this matches the Priority 2 backlog idea "config check and effective-policy explanation command").
 - Remaining unverified: legacy syntax outside `SERVER`/`-P`/practical `MOUNT`/`PERMIT`/`REJECT`, and mount scoping by named server/protocol.
 
+## 2026-09-03 20:14
+
+- Two new commits close out and accept the TOML work: `364497a [iter-10] load strict canonical TOML`, `50a99c8 [status] accept iteration 10 in CI`.
+- **New in the working tree (uncommitted):** the `delegate explain` command (`explain/` directory, untracked) — BACKLOG.md line 120/189 marks it `[DONE]`: runs the production mount resolver and policy kernel against a fully specified path/source/method without opening a listener or contacting a backend; JSON output distinguishes permitted, rejected, no-mount, unsafe-path, and ambiguous-mount outcomes, records the rewritten target and winning rule, and works with canonical TOML or the verified legacy directive subset. Modified-but-uncommitted: `BACKLOG.md`, `COMPATIBILITY.md`, `CURRENT-STATE.md`, `README.md`, `cmd/delegate/main.go`, `cmd/delegate/main_test.go`.
+- New current gate per CURRENT-STATE.md: scope mounts to named servers and frontend protocols for the multi-listener model.
+- Remaining unverified unchanged: legacy syntax outside the verified `SERVER`/`-P`/practical `MOUNT`/`PERMIT`/`REJECT` subset, and mount scoping by named server/protocol (this is now the active gate rather than just a deferred item).
+
 ## 2026-09-03 19:56
 
 - The iteration-9 work described as in progress above is now committed as
@@ -132,3 +139,22 @@ Running changelog, updated automatically every 10 minutes.
   CGO-free builds for Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64,
   and Windows/amd64. Biggie Woodpecker pipeline 10 passed in 13 seconds at
   `364497a`.
+
+## 2026-09-03 20:12
+
+- Iteration 11 adds `delegate explain`, a side-effect-free evaluation path
+  using the same mount resolver and policy engine as the HTTP frontend.
+- Structured results cover permit, reject, no-mount, unsafe-path, and
+  ambiguous-mount outcomes; successful routing includes the rewritten target
+  and policy rule index.
+- The complete local gate passes, including race tests and all five portable
+  compile targets. Remote Woodpecker acceptance remains to be run.
+- A side review of copyparty added design guardrails for self-contained
+  deployment, mount-adjacent authorization, explicit trusted-proxy boundaries,
+  and atomic whole-config reloads. It also added trusted-proxy and packaging
+  follow-ups without expanding iteration 11's implementation scope.
+- Its comparison with adjacent tools reinforced multiple listeners, virtual
+  namespaces, reverse-proxy placement, runtime reload, and genuinely portable
+  release artifacts as the operational capabilities worth measuring; the
+  existing compatibility ledger remains test-backed rather than a feature
+  count.

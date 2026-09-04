@@ -61,6 +61,12 @@ Last verified: 2026-09-03
   `--config PATH` and `--config=PATH`, but rejects mixing either with legacy
   directives. The pinned decoder is pure Go and has no transitive runtime
   dependencies.
+- `delegate explain` runs the production mount resolver and policy kernel
+  against a fully specified path, source, and method without opening a
+  listener or contacting a backend. Its JSON output distinguishes permitted,
+  rejected, no-mount, unsafe-path, and ambiguous-mount outcomes and records
+  the rewritten target and winning policy rule when applicable. It works with
+  canonical TOML or the verified legacy directive subset.
 
 ## Unverified
 
@@ -70,5 +76,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Add a side-effect-free explanation command for effective mount and policy
-decisions.
+Scope mounts to named servers and frontend protocols for the multi-listener
+model.

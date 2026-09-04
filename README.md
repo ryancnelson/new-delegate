@@ -44,6 +44,22 @@ go run ./cmd/delegate serve --config examples/delegate.toml
 `--config=examples/delegate.toml` is also accepted. A TOML file cannot be
 combined with legacy directives on the same invocation.
 
+Explain the effective routing and policy result without opening a listener or
+contacting the backend:
+
+```sh
+go run ./cmd/delegate explain \
+  --config examples/delegate.toml \
+  --path /docs/index.html \
+  --source 127.0.0.1 \
+  --method GET
+```
+
+The JSON result distinguishes `permit`, `reject`, `no_mount`, `unsafe_path`,
+and `ambiguous_mount`, and includes the winning policy rule index when policy
+evaluation occurs. Original-style configuration directives can be supplied in
+place of `--config`.
+
 Development is organized as small iterate-bot sessions. Each session takes the
 highest-priority ready item from `BACKLOG.md`, begins with a failing test, makes
 the smallest implementation that passes, updates verified state, and commits.

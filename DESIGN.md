@@ -54,3 +54,22 @@ approval. It does not manufacture semantic operations.
 Darwin/arm64 is the primary development platform. Linux/amd64 and Linux/arm64
 are runtime targets. illumos/amd64 and Windows/amd64 are compile-checked. The
 default build uses pure Go and no assembly.
+
+## Reference-derived guardrails
+
+Copyparty demonstrates that a broad, multi-protocol service can remain useful
+when it is a drop-in artifact with minimal mandatory dependencies. Its volume
+permissions, reverse-proxy warnings, optional feature boundaries, and reload
+model are useful comparisons for this project:
+
+- Keep the default distribution self-contained; integrations may add optional
+  capabilities but must not make the core gateway depend on external services.
+- Keep authorization close to the selected mount while retaining one typed,
+  protocol-neutral policy engine.
+- Treat proxy-supplied client addresses as untrusted unless the immediate peer
+  is in an explicitly configured trusted-proxy set.
+- Reload the complete validated configuration atomically; never leave a mix of
+  old and new configuration sections active.
+
+References: [9001/copyparty](https://github.com/9001/copyparty) and its
+[comparison of adjacent tools](https://github.com/9001/copyparty/blob/hovudstraum/docs/versus.md).

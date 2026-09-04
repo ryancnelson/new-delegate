@@ -15,6 +15,7 @@ import (
 
 	"gitea.local/ryan/new-delegate/config"
 	"gitea.local/ryan/new-delegate/connector"
+	"gitea.local/ryan/new-delegate/explain"
 	gatewayserver "gitea.local/ryan/new-delegate/server"
 )
 
@@ -23,9 +24,28 @@ func main() {
 }
 
 func run(args []string, stdout, stderr io.Writer, serve func(config.Config) error) int {
-	checkOnly := len(args) > 0 && args[0] == "check"
-	if checkOnly || (len(args) > 0 && args[0] == "serve") {
+	mode := "serve"
+	if len(args) > 0 && (args[0] == "check" || args[0] == "serve" || args[0] == "explain") {
+		mode = args[0]
 		args = args[1:]
+	}
+
+	if mode == "explain" {
+		configured, request, err := loadExplanation(args)
+		if err != nil {
+			fmt.Fprintf(stderr, "invalid explanation: %v\n", err)
+			return 2
+		}
+		result, err := explain.Evaluate(configured, request)
+		if err != nil {
+			fmt.Fprintf(stderr, "explain: %v\n", err)
+			return 2
+		}
+		if err := writeJSON(stdout, result); err != nil {
+			fmt.Fprintf(stderr, "write explanation: %v\n", err)
+			return 1
+		}
+		return 0
 	}
 
 	configured, err := loadConfiguration(args)
@@ -37,10 +57,8 @@ func run(args []string, stdout, stderr io.Writer, serve func(config.Config) erro
 		fmt.Fprintf(stderr, "invalid configuration: %v\n", err)
 		return 2
 	}
-	if checkOnly {
-		encoder := json.NewEncoder(stdout)
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(configured); err != nil {
+	if mode == "check" {
+		if err := writeJSON(stdout, configured); err != nil {
 			fmt.Fprintf(stderr, "write canonical configuration: %v\n", err)
 			return 1
 		}
@@ -55,6 +73,82 @@ func run(args []string, stdout, stderr io.Writer, serve func(config.Config) erro
 		return 1
 	}
 	return 0
+}
+
+func writeJSON(output io.Writer, value any) error {
+	encoder := json.NewEncoder(output)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(value)
+}
+
+func loadExplanation(args []string) (config.Config, explain.Request, error) {
+	var request explain.Request
+	var configArgs []string
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		value := func(name string) (string, error) {
+			if i+1 >= len(args) || strings.TrimSpace(args[i+1]) == "" {
+				return "", fmt.Errorf("%s requires a value", name)
+			}
+			i++
+			return args[i], nil
+		}
+		switch {
+		case arg == "--path":
+			parsed, err := value("--path")
+			if err != nil {
+				return config.Config{}, explain.Request{}, err
+			}
+			request.Path = parsed
+		case strings.HasPrefix(arg, "--path="):
+			request.Path = strings.TrimPrefix(arg, "--path=")
+		case arg == "--source":
+			parsed, err := value("--source")
+			if err != nil {
+				return config.Config{}, explain.Request{}, err
+			}
+			request.Source = parsed
+		case strings.HasPrefix(arg, "--source="):
+			request.Source = strings.TrimPrefix(arg, "--source=")
+		case arg == "--method":
+			parsed, err := value("--method")
+			if err != nil {
+				return config.Config{}, explain.Request{}, err
+			}
+			request.Method = parsed
+		case strings.HasPrefix(arg, "--method="):
+			request.Method = strings.TrimPrefix(arg, "--method=")
+		case arg == "--config":
+			parsed, err := value("--config")
+			if err != nil {
+				return config.Config{}, explain.Request{}, err
+			}
+			configArgs = append(configArgs, "--config", parsed)
+		case strings.HasPrefix(arg, "--config="):
+			configArgs = append(configArgs, arg)
+		default:
+			configArgs = append(configArgs, arg)
+		}
+	}
+	if strings.TrimSpace(request.Path) == "" {
+		return config.Config{}, explain.Request{}, fmt.Errorf("--path is required")
+	}
+	if strings.TrimSpace(request.Source) == "" {
+		return config.Config{}, explain.Request{}, fmt.Errorf("--source is required")
+	}
+	if strings.TrimSpace(request.Method) == "" {
+		return config.Config{}, explain.Request{}, fmt.Errorf("--method is required")
+	}
+
+	configured, err := loadConfiguration(configArgs)
+	if err != nil {
+		return config.Config{}, explain.Request{}, err
+	}
+	if len(configured.Servers) != 1 {
+		return config.Config{}, explain.Request{}, fmt.Errorf("explain currently requires exactly one configured server")
+	}
+	request.Protocol = configured.Servers[0].Protocol
+	return configured, request, nil
 }
 
 func loadConfiguration(args []string) (config.Config, error) {

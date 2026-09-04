@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 10 - Canonical TOML loading)
+**Last Updated:** 2026-09-03 (Iteration 11 - Effective-decision explanation)
 
 ---
 
@@ -115,13 +115,23 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   invalid canonical values are fatal; `check` and `serve` accept `--config`
   without permitting mixed legacy arguments.
 
+### P1-014: Effective-decision explanation
+
+- [DONE] Explain mount resolution and policy evaluation without starting a
+  listener or contacting a backend.
+- Acceptance: canonical TOML and legacy configuration use the production
+  resolver and policy kernel; JSON distinguishes permit, reject, no-mount,
+  unsafe-path, and ambiguous-mount outcomes; a winning policy rule index and
+  rewritten target are included when applicable; incomplete requests fail.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
 
 - Independent frontend/backend TLS configuration.
-- Config check and effective-policy explanation command.
 - Atomic configuration reload.
+- Trusted-proxy CIDRs for accepting forwarded client addresses; direct peer
+  address remains the default and untrusted forwarding headers are ignored.
 - HTTP/FTP Fetch and Store translation.
 - Differential compatibility harness for an original DeleGate executable.
 
@@ -176,11 +186,19 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 10 (2026-09-03)
 - [DONE] ✅ Added strict canonical TOML parsing and command file loading
 
+### Iteration 11 (2026-09-03)
+- [DONE] ✅ Added side-effect-free effective routing and policy explanation
+
 ---
 
 ## Ideas Inbox (Unsorted)
 
 New ideas get added here during iterations. Sort into priority sections during strategic reviews.
+
+- Unix-domain listener support where the host platform provides it.
+- Release packaging that preserves the one-self-contained-artifact deployment
+  experience across supported targets, with smoke tests against the packaged
+  artifacts rather than only cross-compilation.
 
 ---
 
@@ -198,5 +216,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Explain effective mount and policy decisions without opening a
-listener.
+**Next step:** Scope mounts to named servers and frontend protocols for the
+multi-listener model.
