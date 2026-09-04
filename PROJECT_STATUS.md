@@ -130,4 +130,5 @@ Running changelog, updated automatically every 10 minutes.
   listener activity.
 - The complete local gate passes: formatting, vet, unit tests, race tests, and
   CGO-free builds for Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64,
-  and Windows/amd64. Remote Woodpecker acceptance remains to be run.
+  and Windows/amd64. Biggie Woodpecker pipeline 10 passed in 13 seconds at
+  `364497a`.
