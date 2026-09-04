@@ -389,6 +389,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 32 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for scoped legacy `MOUNT` options (`server=`, `protocol=`, `priority=`)
 
+### Iteration 33 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for legacy `CONNECT` mount mapping with fallback policy
+
 ---
 
 ## Ideas Inbox (Unsorted)

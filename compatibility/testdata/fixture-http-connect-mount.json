@@ -1,0 +1,44 @@
+{
+  "name": "SERVER=http -P8080 CONNECT mount",
+  "args": [
+    "SERVER=http",
+    "-P8080",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:8443 server=default protocol=http priority=10\"",
+    "PERMIT=http:tunnel.internal:192.0.2.1",
+    "REJECT=*:*:198.51.100.0/24"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":8080"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://Example.COM:443/",
+        "target": "tcp://tunnel.internal:8443",
+        "priority": 10,
+        "server": "default",
+        "protocol": "http"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "192.0.2.1",
+        "protocol": "http",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "198.51.100.0/24",
+        "protocol": "*",
+        "destination": "*"
+      }
+    ]
+  }
+}

@@ -167,6 +167,8 @@ Last verified: 2026-09-04
   MOUNT + PERMIT/REJECT legacy fixture.
 - The compatibility fixture corpus now includes scoped legacy `MOUNT` option
   coverage for `server=`, `protocol=`, and `priority=` metadata.
+- The compatibility fixture corpus now includes a legacy `CONNECT` mount fixture
+  with protocol-scoped mapping and explicit legacy policy.
 
 ## Unverified
 
