@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>new-delegate — a modern DeleGate-compatible gateway</title>
+<meta name="description" content="new-delegate is a portable, DeleGate-compatible application gateway written in Go: fail-closed policy, protocol translation, and a differential compatibility harness.">
+<style>
+  :root {
+    --bg: #0b0e14;
+    --bg-panel: #12151c;
+    --border: #232733;
+    --text: #e6e8eb;
+    --text-dim: #9aa3b2;
+    --accent: #6ee7c7;
+    --accent-dim: #2f6e5a;
+    --code-bg: #0d1016;
+    --verified: #6ee7c7;
+    --partial: #f2c96d;
+    --planned: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    font-size: 0.9em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.88em;
+    line-height: 1.5;
+  }
+  pre code { background: none; border: none; padding: 0; }
+
+  header {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 64px 24px 32px;
+  }
+  header h1 {
+    font-size: 2.2em;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header .tagline {
+    color: var(--text-dim);
+    font-size: 1.15em;
+    margin: 0 0 20px;
+    max-width: 640px;
+  }
+  .badges { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .badges img { height: 20px; }
+  .badges a { display: inline-flex; }
+
+  main { max-width: 900px; margin: 0 auto; padding: 0 24px 96px; }
+  section { margin-top: 56px; }
+  section h2 {
+    font-size: 1.4em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  section h3 { font-size: 1.1em; margin-top: 28px; color: var(--text); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .card h4 { margin: 0 0 8px; font-size: 1em; color: var(--accent); }
+  .card p { margin: 0; color: var(--text-dim); font-size: 0.94em; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--text-dim); font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.03em; }
+  tr:last-child td { border-bottom: none; }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.78em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill.verified { background: rgba(110, 231, 199, 0.12); color: var(--verified); border: 1px solid rgba(110,231,199,0.35); }
+  .pill.partial { background: rgba(242, 201, 109, 0.12); color: var(--partial); border: 1px solid rgba(242,201,109,0.35); }
+  .pill.planned { background: rgba(107, 114, 128, 0.15); color: var(--planned); border: 1px solid rgba(107,114,128,0.35); }
+
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .steps li { margin-bottom: 24px; }
+  .steps .step-label { color: var(--text-dim); font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+
+  .arch {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88em;
+  }
+  .arch span.node {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    color: var(--text);
+  }
+  .arch span.arrow { color: var(--text-dim); }
+
+  footer {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 64px;
+    color: var(--text-dim);
+    font-size: 0.9em;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>new-delegate</h1>
+  <p class="tagline">A portable, DeleGate-compatible application gateway written in Go — fail-closed policy, protocol translation, and a differential compatibility harness against the original.</p>
+  <div class="badges">
+    <a href="http://biggie.lynx-eagle.ts.net:8110/repos/5"><img src="http://biggie.lynx-eagle.ts.net:8110/api/badges/5/status.svg" alt="Woodpecker CI status"></a>
+    <a href="https://github.com/ryancnelson/new-delegate">GitHub repo</a>
+    ·
+    <a href="https://github.com/ryancnelson/new-delegate/blob/main/COMPATIBILITY.md">Full compatibility ledger</a>
+    ·
+    <a href="https://github.com/ryancnelson/new-delegate/blob/main/DESIGN.md">Design doc</a>
+  </div>
+</header>
+
+<main>
+
+<section>
+  <h2>What it is</h2>
+  <p>
+    <strong>new-delegate</strong> reimplements the strongest ideas from the original
+    <a href="https://www.delegate.org/delegate/">DeleGate</a> application gateway as a
+    single, portable Go binary: a daemon presents one protocol on its client side, maps
+    virtual resources with <code>MOUNT</code>, applies fail-closed access policy, and reaches
+    a different protocol on its server side. Protocol translation is built around typed
+    semantic operations (Fetch, Store, Connect) rather than a bag of protocol-specific
+    optional fields, so new frontends and backends compose instead of special-casing each
+    other.
+  </p>
+  <div class="grid">
+    <div class="card">
+      <h4>Fail-closed by default</h4>
+      <p>No matching mount or permit rule denies the request. Unknown configuration keys and directives are fatal, not ignored.</p>
+    </div>
+    <div class="card">
+      <h4>Legacy-compatible, TOML-native</h4>
+      <p>Original <code>SERVER</code>/<code>MOUNT</code>/<code>PERMIT</code>/<code>REJECT</code> directives parse onto the same canonical model as strict, validated TOML.</p>
+    </div>
+    <div class="card">
+      <h4>Reproducible, self-contained releases</h4>
+      <p>Checksummed archives for Darwin/arm64 and Linux/amd64; the same source/version pair always produces the same SHA-256 manifest.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Try it now</h2>
+  <p>Everything below runs from a checkout with just <code>go</code> installed — no external services required.</p>
+
+  <ol class="steps">
+    <li>
+      <div class="step-label">1 · Validate a legacy directive line without opening a socket</div>
+<pre><code>go run ./cmd/delegate check \
+  SERVER=http -P8080 \
+  'MOUNT=/* http://127.0.0.1:9000/*' \
+  'PERMIT=http:127.0.0.1:*'</code></pre>
+    </li>
+    <li>
+      <div class="step-label">2 · Run the same thing as strict, canonical TOML</div>
+<pre><code>go run ./cmd/delegate check --config examples/delegate.toml
+go run ./cmd/delegate serve --config examples/delegate.toml</code></pre>
+      <p style="color:var(--text-dim); margin-top:8px;">Unknown keys and invalid values are fatal before the listener starts — no silent misconfiguration.</p>
+    </li>
+    <li>
+      <div class="step-label">3 · Ask the gateway what it would do, without a live listener</div>
+<pre><code>go run ./cmd/delegate explain --config examples/delegate.toml \
+  --path /some/path --source 127.0.0.1 --method GET</code></pre>
+      <p style="color:var(--text-dim); margin-top:8px;">Returns JSON distinguishing <code>permitted</code>, <code>rejected</code>, <code>no-mount</code>, <code>unsafe-path</code>, and <code>ambiguous-mount</code> outcomes.</p>
+    </li>
+    <li>
+      <div class="step-label">4 · Run the full test suite, including race detection and the compatibility harness</div>
+<pre><code>go test ./...
+go test -race ./...
+go vet ./...</code></pre>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <h2>Feature status</h2>
+  <p>Straight from the project's own <a href="https://github.com/ryancnelson/new-delegate/blob/main/COMPATIBILITY.md">compatibility ledger</a> — only passing tests move an item to <span class="pill verified">verified</span>.</p>
+
+  <table>
+    <thead>
+      <tr><th>Original concept</th><th>Modern form</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>SERVER</code></td>
+        <td>Named frontend listener and protocol, coordinated multi-listener runtime</td>
+        <td><span class="pill verified">verified</span></td>
+      </tr>
+      <tr>
+        <td><code>MOUNT</code></td>
+        <td>Ordered virtual-resource mapping — path, absolute-HTTP, and CONNECT sources; legacy syntax; frontend scoping</td>
+        <td><span class="pill verified">verified</span></td>
+      </tr>
+      <tr>
+        <td><code>PERMIT</code> / <code>REJECT</code></td>
+        <td>Fail-closed policy rules, legacy and canonical</td>
+        <td><span class="pill verified">verified</span></td>
+      </tr>
+      <tr>
+        <td><code>RELAY</code></td>
+        <td>Authorized transparent byte-stream forwarding</td>
+        <td><span class="pill partial">partial</span> — HTTP CONNECT over TCP verified</td>
+      </tr>
+      <tr>
+        <td><code>STLS</code></td>
+        <td>Independent, readable frontend/backend TLS settings</td>
+        <td><span class="pill partial">partial</span> — frontend/backend + mutual TLS verified</td>
+      </tr>
+      <tr>
+        <td>Legacy command-line directives</td>
+        <td>Compatibility syntax adapter (<code>SERVER</code>, <code>-P</code>, <code>MOUNT</code>, <code>PERMIT</code>, <code>REJECT</code>)</td>
+        <td><span class="pill partial">partial</span> — differential fixture suite against reference execution</td>
+      </tr>
+      <tr>
+        <td>Modern TOML</td>
+        <td>Strict canonical configuration file</td>
+        <td><span class="pill verified">verified</span></td>
+      </tr>
+      <tr>
+        <td>Decision inspection</td>
+        <td>Side-effect-free effective routing/policy explanation</td>
+        <td><span class="pill verified">verified</span> — JSON <code>explain</code> command</td>
+      </tr>
+      <tr>
+        <td>Forwarded client identity</td>
+        <td>Per-listener header + trusted-proxy CIDRs, right-to-left trust chain</td>
+        <td><span class="pill verified">verified</span> — HTTP</td>
+      </tr>
+      <tr>
+        <td>Portable distribution</td>
+        <td>Checksummed, self-contained executable archives</td>
+        <td><span class="pill verified">verified</span> — Darwin/arm64, Linux/amd64</td>
+      </tr>
+      <tr>
+        <td>HTTP frontend/backend</td>
+        <td>Typed codec and connector</td>
+        <td><span class="pill partial">partial</span> — Fetch, Store (PUT), CONNECT</td>
+      </tr>
+      <tr>
+        <td>HTTP proxy metadata boundary</td>
+        <td>Hop-by-hop and proxy-credential stripping</td>
+        <td><span class="pill verified">verified</span> — requests and responses</td>
+      </tr>
+      <tr>
+        <td>FTP frontend/backend</td>
+        <td>Typed codec, Fetch/Store/List connector</td>
+        <td><span class="pill partial">partial</span> — <code>LIST</code> added, differential harness runnable</td>
+      </tr>
+      <tr>
+        <td>SOCKS5</td>
+        <td>CONNECT and bounded relay</td>
+        <td><span class="pill planned">planned</span></td>
+      </tr>
+      <tr>
+        <td>SMTP, POP3, IMAP, NNTP, LDAP, DNS</td>
+        <td>Later protocol packages</td>
+        <td><span class="pill planned">planned</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Architecture</h2>
+  <p>Every request takes the same typed path, regardless of frontend or backend protocol:</p>
+  <div class="arch">
+    <span class="node">connection</span><span class="arrow">→</span>
+    <span class="node">frontend server</span><span class="arrow">→</span>
+    <span class="node">protocol decoder</span><span class="arrow">→</span>
+    <span class="node">typed wire message</span><span class="arrow">→</span>
+    <span class="node">semantic operation</span><span class="arrow">→</span>
+    <span class="node">mount resolver</span><span class="arrow">→</span>
+    <span class="node">policy engine</span><span class="arrow">→</span>
+    <span class="node">backend connector</span><span class="arrow">→</span>
+    <span class="node">semantic result</span><span class="arrow">→</span>
+    <span class="node">protocol encoder</span><span class="arrow">→</span>
+    <span class="node">connection</span>
+  </div>
+  <p style="margin-top:16px; color:var(--text-dim);">
+    Transparent forwarding (CONNECT relays) uses a byte-stream path after routing and
+    policy approval — it never manufactures a semantic operation for traffic it isn't
+    inspecting.
+  </p>
+
+  <h3>Stable module boundaries</h3>
+  <div class="grid">
+    <div class="card"><h4>config</h4><p>Canonical configuration plus TOML and legacy syntax adapters.</p></div>
+    <div class="card"><h4>server</h4><p>Listener lifecycle, limits, deadlines, connection context.</p></div>
+    <div class="card"><h4>protocol</h4><p>Typed frontend and backend wire codecs.</p></div>
+    <div class="card"><h4>operation</h4><p>Protocol-neutral capabilities: Fetch, Store, List, SendMail, Connect, Relay.</p></div>
+    <div class="card"><h4>mount</h4><p>Deterministic mapping from frontend names to backend targets.</p></div>
+    <div class="card"><h4>policy</h4><p>Explicit permit/reject decisions with default deny.</p></div>
+    <div class="card"><h4>tlsconfig / tlsruntime</h4><p>Side-effect-free TLS policy, then explicit certificate loading.</p></div>
+    <div class="card"><h4>connector</h4><p>Backend implementations.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Try the TLS and CONNECT examples</h2>
+  <p>Two more runnable configs from <code>examples/</code>, showing mutual TLS and an HTTP forward proxy:</p>
+
+  <h3>Independent frontend/backend TLS, including mutual TLS</h3>
+<pre><code>[[servers]]
+name = "secure"
+protocol = "http"
+listen = ":8443"
+
+[servers.tls]
+certificate_file = "certs/frontend.pem"
+private_key_file = "certs/frontend-key.pem"
+minimum_version = "1.3"
+
+[[mounts]]
+path = "/*"
+target = "https://backend.internal/*"
+server = "secure"
+protocol = "http"
+
+[mounts.tls]
+ca_file = "certs/backend-ca.pem"
+server_name = "backend.internal"
+client_certificate_file = "certs/client.pem"
+client_private_key_file = "certs/client-key.pem"
+minimum_version = "1.2"</code></pre>
+
+  <h3>Authorized HTTP <code>CONNECT</code> as a bounded TCP relay</h3>
+<pre><code>[[servers]]
+name = "proxy"
+protocol = "http"
+listen = "127.0.0.1:8080"
+
+[[mounts]]
+source = "connect://origin.example:443/"
+target = "tcp://127.0.0.1:9443"
+server = "proxy"
+protocol = "http"
+
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "127.0.0.1"
+source = "127.0.0.1"
+method = "CONNECT"
+mount = "connect://origin.example:443/"</code></pre>
+</section>
+
+<section>
+  <h2>Invariants worth knowing before you poke at it</h2>
+  <ul>
+    <li>Configuration is parsed and validated <em>completely</em> before activation; a failed reload leaves the previous configuration active.</li>
+    <li>A request cannot reach a connector without an affirmative policy decision — deny is the default, not an edge case.</li>
+    <li>The direct socket peer is authoritative unless it's an explicitly trusted proxy; malformed forwarded-client-address chains from trusted proxies fail closed.</li>
+    <li>Backend TLS verification cannot be disabled by configuration — there is no insecure-skip-verify knob.</li>
+    <li>Secret values never enter the canonical configuration or observability event model.</li>
+    <li>CONNECT relays have bounded dial, handshake, and idle deadlines; both hijacked connections close together when the relay ends.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p>
+    <code>new-delegate</code> is developed via small, TDD'd, continuously-verified
+    iterations against a <a href="https://github.com/ryancnelson/new-delegate/blob/main/.woodpecker/test.yml">Woodpecker CI</a>
+    pipeline running <code>gofmt</code>, <code>go vet</code>, <code>go test</code>, <code>go test -race</code>,
+    and CGO-free portable builds on every push.
+  </p>
+  <p>
+    Design references <a href="https://github.com/9001/copyparty">9001/copyparty</a> for
+    guardrails on staying a self-contained, dependency-light distribution.
+  </p>
+</footer>
+
+</body>
+</html>
