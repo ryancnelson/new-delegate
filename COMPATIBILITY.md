@@ -76,6 +76,8 @@ Intentional differences:
   legacy URL-source `MOUNT` protocol options.
 - Legacy compatibility fixtures now include protocol-case normalization for Gopher
   legacy URL-source `MOUNT` protocol options.
+- Legacy compatibility fixtures now include option-key case normalization for Gopher
+  URL-source legacy `MOUNT` directives.
 - Legacy compatibility fixtures now include protocol-case normalization for SOCKS
   legacy URL-source `MOUNT` protocol options.
 - Legacy compatibility fixtures now include protocol-case normalization for FTP

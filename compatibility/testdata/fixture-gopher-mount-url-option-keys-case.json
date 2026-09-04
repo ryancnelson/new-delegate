@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT URL source option key case normalization for Gopher target",
+  "args": [
+    "SERVER=gopher",
+    "MOUNT=\"http://legacy.example:70/files/* https://files.internal/files/* pRiOrItY=19 sErVeR=default pRoToCoL=GoPhEr\"",
+    "PERMIT=GOPHER:files.internal:127.0.0.1",
+    "REJECT=HTTP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "http://legacy.example:70/files/*",
+        "target": "https://files.internal/files/*",
+        "priority": 19,
+        "server": "default",
+        "protocol": "gopher"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "files.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
