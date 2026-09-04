@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 43 - Uppercase CONNECT metadata and selectors fixture)
+**Last Updated:** 2026-09-04 (Iteration 44 - MOUNT protocol option case normalization fixture)
 
 ---
 
@@ -421,6 +421,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 43 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for protocol normalization in `CONNECT` mount metadata and selectors
+
+### Iteration 44 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for uppercase `MOUNT` protocol scope values
 
 ---
 

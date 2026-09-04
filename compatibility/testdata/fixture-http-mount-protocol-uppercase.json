@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT protocol scope uppercase protocol option",
+  "args": [
+    "SERVER=http",
+    "MOUNT=\"/admin/* http://backend.internal/admin/* server=default protocol=HTTP priority=12\"",
+    "PERMIT=HTTP:backend.internal:127.0.0.1",
+    "REJECT=Http:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":80"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/admin/*",
+        "target": "http://backend.internal/admin/*",
+        "priority": 12,
+        "server": "default",
+        "protocol": "http"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "http",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
