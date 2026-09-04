@@ -88,3 +88,23 @@ func TestListFixtureFilesReturnsErrorForNonDirectoryPath(t *testing.T) {
 		t.Fatal("listFixtureFiles() = nil, want error")
 	}
 }
+
+func TestRunFixtureSuitePropagatesInvalidFixtureError(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tempDir, "bad.json"), []byte(`{
+  "name": "bad",
+  "reference_config": {"servers":[{"name":"default","protocol":"http","listen":":8080"}]}
+}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := RunFixtureSuite(context.Background(), tempDir, CompareOptions{})
+	if err == nil {
+		t.Fatal("RunFixtureSuite() = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "fixture \"bad.json\"") || !strings.Contains(err.Error(), "missing args") {
+		t.Fatalf("RunFixtureSuite() error = %v, want %q", err, "fixture \"bad.json\": ... missing args")
+	}
+}
