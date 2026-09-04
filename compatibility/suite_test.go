@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -50,5 +51,19 @@ func TestRunFixtureSuiteLoadsNestedFixtureFiles(t *testing.T) {
 	}
 	if names[0] != "nested/deep.json" || names[1] != "root.json" {
 		t.Fatalf("listFixtureFiles() order = %v, want [nested/deep.json root.json]", names)
+	}
+}
+
+func TestRunFixtureSuiteReturnsErrorWhenNoFixturesExist(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+
+	_, err := RunFixtureSuite(context.Background(), tempDir, CompareOptions{})
+	if err == nil {
+		t.Fatal("RunFixtureSuite() = nil, want error")
+	}
+	if !strings.Contains(err.Error(), "no fixture files found") {
+		t.Fatalf("RunFixtureSuite() error = %v, want contains %q", err, "no fixture files found")
 	}
 }
