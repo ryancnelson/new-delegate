@@ -254,6 +254,37 @@ func TestRunServesValidatedDirectives(t *testing.T) {
 	}
 }
 
+func TestRunServesMultipleValidatedHTTPListeners(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "delegate.toml")
+	contents := []byte(`
+[[servers]]
+name = "public"
+protocol = "http"
+listen = "127.0.0.1:8080"
+
+[[servers]]
+name = "admin"
+protocol = "http"
+listen = "127.0.0.1:8081"
+`)
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	var served config.Config
+	exitCode := run([]string{"serve", "--config", path}, &stdout, &stderr, func(got config.Config) error {
+		served = got
+		return nil
+	})
+	if exitCode != 0 {
+		t.Fatalf("run() = %d, stderr=%q; want success", exitCode, stderr.String())
+	}
+	if len(served.Servers) != 2 {
+		t.Fatalf("served %d servers, want 2", len(served.Servers))
+	}
+}
+
 func TestRunReportsServeFailure(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	exitCode := run([]string{"SERVER=http"}, &stdout, &stderr, func(config.Config) error {

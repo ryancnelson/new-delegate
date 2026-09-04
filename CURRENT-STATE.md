@@ -72,13 +72,18 @@ Last verified: 2026-09-03
   Resolution filters by frontend identity, then uses path specificity,
   explicit priority, and scope specificity deterministically. Both the live
   HTTP frontend and `explain` supply that identity to the same resolver.
+- Canonical configuration can run multiple named HTTP listeners. Duplicate
+  listen addresses fail validation. Runtime startup pre-binds every socket and
+  rolls back partial bind success; one listener failure cancels its peers, and
+  parent cancellation gives every active listener the same bounded graceful
+  drain window.
 
 ## Unverified
 
 - Legacy syntax outside the verified `SERVER`, `-P`, practical scoped `MOUNT`,
-  `PERMIT`, and `REJECT` subset. Coordinated multi-listener runtime remains
-  deferred.
+  `PERMIT`, and `REJECT` subset. The legacy adapter still describes one server
+  per process invocation; multiple listeners use canonical configuration.
 
 ## Current gate
 
-Run multiple validated HTTP listeners under one coordinated lifecycle.
+Add atomic whole-configuration reload with rollback on failure.

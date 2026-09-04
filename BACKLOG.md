@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 12 - Frontend-scoped mounts)
+**Last Updated:** 2026-09-03 (Iteration 13 - Coordinated HTTP listeners)
 
 ---
 
@@ -133,6 +133,16 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   deterministic; equally ranked scoped mounts beat generic fallbacks; the
   explanation and live HTTP paths pass the same frontend identity.
 
+### P1-016: Coordinated HTTP listeners
+
+- [DONE] Run every validated HTTP server under one cancellation and graceful
+  drain lifecycle.
+- Acceptance: duplicate listener addresses fail validation; all sockets are
+  bound before any begins serving and partial bind failure closes earlier
+  sockets; a listener failure cancels its peers; parent cancellation drains
+  every listener; command validation passes multiple HTTP frontends to the
+  runtime and still rejects unsupported protocols.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -201,6 +211,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 12 (2026-09-03)
 - [DONE] ✅ Added validated named-server and protocol mount scoping
 
+### Iteration 13 (2026-09-03)
+- [DONE] ✅ Added coordinated, bounded multi-listener HTTP lifecycle
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -228,5 +241,4 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Run multiple validated HTTP listeners under one coordinated
-lifecycle.
+**Next step:** Add atomic whole-configuration reload with rollback on failure.

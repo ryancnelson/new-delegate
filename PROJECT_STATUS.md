@@ -120,6 +120,14 @@ Running changelog, updated automatically every 10 minutes.
 - New current gate per CURRENT-STATE.md: scope mounts to named servers and frontend protocols for the multi-listener model.
 - Remaining unverified unchanged: legacy syntax outside the verified `SERVER`/`-P`/practical `MOUNT`/`PERMIT`/`REJECT` subset, and mount scoping by named server/protocol (this is now the active gate rather than just a deferred item).
 
+## 2026-09-03 20:24
+
+- Two new commits: `795f81f [iter-11] explain effective gateway decisions`, `1835d58 [iter-12] scope mounts to frontends`. Both close out work previously seen only uncommitted/in-progress.
+- **`delegate explain`** is committed and `[DONE]` (BACKLOG.md line 120/199): runs the production mount resolver and policy kernel against a fully specified path/source/method without opening a listener; JSON output distinguishes permitted/rejected/no-mount/unsafe-path/ambiguous-mount outcomes.
+- **Mount scoping by named server/protocol** is committed and `[DONE]` (BACKLOG.md line 129/202): mounts may be scoped to a named server, frontend protocol, or both; validation rejects unknown servers and contradictory server/protocol pairs; resolution filters by frontend identity then path specificity, priority, and scope specificity — both the live HTTP frontend and `explain` use the same resolver.
+- Working tree has new in-progress work, currently uncommitted: modified `cmd/delegate/main_test.go`, `config/config_test.go`, plus untracked `server/group_test.go` — suggests the next iteration is testing toward the new current gate.
+- New current gate per CURRENT-STATE.md: run multiple validated HTTP listeners under one coordinated lifecycle (multi-listener runtime). Remaining unverified: legacy syntax outside the verified `SERVER`/`-P`/practical scoped `MOUNT`/`PERMIT`/`REJECT` subset, and the coordinated multi-listener runtime itself.
+
 ## 2026-09-03 19:56
 
 - The iteration-9 work described as in progress above is now committed as
@@ -160,7 +168,7 @@ Running changelog, updated automatically every 10 minutes.
   existing compatibility ledger remains test-backed rather than a feature
   count.
 
-## 2026-09-03 20:26
+## 2026-09-03 20:23
 
 - Iteration 12 adds named-server and protocol scopes to mounts in canonical
   TOML and the legacy `MOUNT` adapter.
@@ -168,5 +176,13 @@ Running changelog, updated automatically every 10 minutes.
   explanation, and live HTTP handler all use the same frontend identity and
   deterministic scoped-fallback behavior.
 - The complete local gate passes, including race tests, five portable compile
-  targets, and a scoped explanation smoke test. Remote Woodpecker acceptance
-  remains to be run.
+  targets, and a scoped explanation smoke test. Biggie Woodpecker pipeline 13
+  passed in 10 seconds at `1835d58`.
+
+## 2026-09-03 20:25
+
+- Iteration 13 coordinates multiple canonical HTTP frontends under one
+  lifecycle. Duplicate addresses fail validation, all sockets are pre-bound,
+  partial bind failure rolls back, and cancellation drains every listener.
+- The complete local gate passes, including race tests and all five portable
+  compile targets. Remote Woodpecker acceptance remains to be run.

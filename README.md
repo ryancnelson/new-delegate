@@ -48,6 +48,10 @@ Mounts may be scoped to a named frontend and protocol with `server` and
 `protocol`. Unscoped mounts remain shared fallbacks; an equally ranked scoped
 mount wins over a shared one.
 
+A canonical file may define multiple HTTP servers. The runtime binds all
+configured listeners before serving, then coordinates cancellation and bounded
+graceful shutdown across the group.
+
 Explain the effective routing and policy result without opening a listener or
 contacting the backend:
 

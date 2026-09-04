@@ -29,6 +29,7 @@ func (c Config) Validate() error {
 		return fmt.Errorf("at least one server is required")
 	}
 	seen := make(map[string]struct{}, len(c.Servers))
+	seenListen := make(map[string]struct{}, len(c.Servers))
 	for i, server := range c.Servers {
 		if strings.TrimSpace(server.Name) == "" {
 			return fmt.Errorf("server %d: name is required", i)
@@ -43,6 +44,10 @@ func (c Config) Validate() error {
 			return fmt.Errorf("duplicate server name %q", server.Name)
 		}
 		seen[server.Name] = struct{}{}
+		if _, ok := seenListen[server.Listen]; ok {
+			return fmt.Errorf("duplicate listen address %q", server.Listen)
+		}
+		seenListen[server.Listen] = struct{}{}
 	}
 	for i, mapping := range c.Mounts {
 		if err := mapping.Validate(); err != nil {

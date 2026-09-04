@@ -64,9 +64,11 @@ func run(args []string, stdout, stderr io.Writer, serve func(config.Config) erro
 		}
 		return 0
 	}
-	if len(configured.Servers) != 1 || !strings.EqualFold(configured.Servers[0].Protocol, "http") {
-		fmt.Fprintln(stderr, "unsupported frontend protocol: the runnable slice currently supports exactly one HTTP server")
-		return 2
+	for _, frontend := range configured.Servers {
+		if !strings.EqualFold(frontend.Protocol, "http") {
+			fmt.Fprintln(stderr, "unsupported frontend protocol: the runnable slice currently supports HTTP servers")
+			return 2
+		}
 	}
 	if err := serve(configured); err != nil {
 		fmt.Fprintf(stderr, "serve: %v\n", err)
@@ -204,18 +206,27 @@ func serveHTTP(configured config.Config) error {
 	defer stop()
 
 	backend := connector.NewHTTP(&http.Client{Timeout: 60 * time.Second})
-	handler := gatewayserver.NewHTTPHandlerForServer(configured.Servers[0].Name, configured.Mounts, configured.Policies, backend)
-	httpServer := &http.Server{
-		Addr:              configured.Servers[0].Listen,
-		Handler:           handler,
-		ReadHeaderTimeout: 10 * time.Second,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      60 * time.Second,
-		IdleTimeout:       2 * time.Minute,
+	httpServers := make([]*http.Server, 0, len(configured.Servers))
+	listeners := make([]net.Listener, 0, len(configured.Servers))
+	for _, frontend := range configured.Servers {
+		handler := gatewayserver.NewHTTPHandlerForServer(frontend.Name, configured.Mounts, configured.Policies, backend)
+		httpServer := &http.Server{
+			Addr:              frontend.Listen,
+			Handler:           handler,
+			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       30 * time.Second,
+			WriteTimeout:      60 * time.Second,
+			IdleTimeout:       2 * time.Minute,
+		}
+		listener, err := net.Listen("tcp", httpServer.Addr)
+		if err != nil {
+			for _, opened := range listeners {
+				_ = opened.Close()
+			}
+			return fmt.Errorf("listen for server %q: %w", frontend.Name, err)
+		}
+		httpServers = append(httpServers, httpServer)
+		listeners = append(listeners, listener)
 	}
-	listener, err := net.Listen("tcp", httpServer.Addr)
-	if err != nil {
-		return err
-	}
-	return gatewayserver.Serve(ctx, httpServer, listener, 10*time.Second)
+	return gatewayserver.ServeAll(ctx, httpServers, listeners, 10*time.Second)
 }

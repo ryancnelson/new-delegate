@@ -52,6 +52,14 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: "duplicate server name",
 		},
 		{
+			name: "duplicate listen addresses",
+			config: Config{Servers: []Server{
+				{Name: "public", Protocol: "http", Listen: ":8080"},
+				{Name: "admin", Protocol: "http", Listen: ":8080"},
+			}},
+			wantErr: "duplicate listen address",
+		},
+		{
 			name: "mount references unknown server",
 			config: Config{
 				Servers: []Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
