@@ -52,6 +52,5 @@ approval. It does not manufacture semantic operations.
 ## Portability
 
 Darwin/arm64 is the primary development platform. Linux/amd64 and Linux/arm64
-are runtime targets. illumos/amd64 and Windows remain compile-checked where the
-standard library permits. The default build uses pure Go and no assembly.
-
+are runtime targets. illumos/amd64 and Windows/amd64 are compile-checked. The
+default build uses pure Go and no assembly.

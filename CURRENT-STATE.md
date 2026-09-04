@@ -51,13 +51,18 @@ Last verified: 2026-09-03
   start the tested HTTP slice only after full parsing and validation. Other
   frontend protocols fail before listener startup. HTTP server and backend
   client timeouts are bounded.
+- Listener cancellation stops new accepts and drains active requests for a
+  bounded period. The command converts interrupt and termination signals into
+  graceful cancellation. The local and remote portability matrices now also
+  compile Windows/amd64 with `CGO_ENABLED=0`.
 
 ## Unverified
 
 - Legacy syntax outside the verified `SERVER`, `-P`, practical `MOUNT`,
-  `PERMIT`, and `REJECT` subset. Graceful signal-driven shutdown, canonical
-  TOML loading, and mount scoping by named server/protocol remain deferred.
+  `PERMIT`, and `REJECT` subset. Canonical TOML loading and mount scoping by
+  named server/protocol remain deferred.
 
 ## Current gate
 
-Add graceful shutdown and test listener lifecycle behavior.
+Add canonical TOML loading while keeping the runtime dependency footprint
+small and portable.

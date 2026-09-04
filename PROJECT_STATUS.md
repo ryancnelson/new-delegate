@@ -45,6 +45,14 @@ Running changelog, updated automatically every 10 minutes.
   startup. Runtime server and backend-client timeouts are bounded.
 - The complete local gate passes.
 
+## 2026-09-03 19:54
+
+- Iteration 9 adds context-driven, bounded graceful shutdown with an in-flight
+  request integration test.
+- The command handles interrupt and termination signals through the tested
+  lifecycle primitive.
+- Windows/amd64 joins the CGO-free local and Woodpecker compile matrix.
+
 ## 2026-09-03 18:54
 
 - Two more iterations landed: `2faa643 [iter-1] add canonical server validation`, `b5bef4f [iter-2] parse legacy SERVER directives`.

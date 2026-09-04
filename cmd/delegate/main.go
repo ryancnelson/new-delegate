@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"gitea.local/ryan/new-delegate/config"
@@ -55,9 +58,12 @@ func run(args []string, stdout, stderr io.Writer, serve func(config.Config) erro
 }
 
 func serveHTTP(configured config.Config) error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	backend := connector.NewHTTP(&http.Client{Timeout: 60 * time.Second})
 	handler := gatewayserver.NewHTTPHandler(configured.Mounts, configured.Policies, backend)
-	server := &http.Server{
+	httpServer := &http.Server{
 		Addr:              configured.Servers[0].Listen,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
@@ -65,8 +71,9 @@ func serveHTTP(configured config.Config) error {
 		WriteTimeout:      60 * time.Second,
 		IdleTimeout:       2 * time.Minute,
 	}
-	if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+	listener, err := net.Listen("tcp", httpServer.Addr)
+	if err != nil {
 		return err
 	}
-	return nil
+	return gatewayserver.Serve(ctx, httpServer, listener, 10*time.Second)
 }
