@@ -141,6 +141,11 @@ func TestLoadFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFixture() = %v", err)
 	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-connect-protocol-uppercase.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
 }
 
 func TestLoadFixtureRejectsEmptyArgs(t *testing.T) {

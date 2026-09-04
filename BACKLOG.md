@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 55 - GOPHER CONNECT uppercase metadata and selector normalization)
+**Last Updated:** 2026-09-04 (Iteration 56 - GOPHER CONNECT protocol-scope normalization)
 
 ---
 
@@ -457,6 +457,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 55 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for `SERVER=GOPHER` `CONNECT` metadata and selector normalization
+
+### Iteration 56 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for `SERVER=GOPHER` `CONNECT` `MOUNT` protocol-scope normalization
 
 ---
 

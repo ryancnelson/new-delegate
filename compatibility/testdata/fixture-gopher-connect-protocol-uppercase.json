@@ -1,0 +1,42 @@
+{
+  "name": "SERVER=GOPHER protocol scope uppercase for CONNECT mount",
+  "args": [
+    "SERVER=GOPHER",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:70 protocol=GoPhEr priority=8\"",
+    "PERMIT=GoPhEr:tunnel.internal:127.0.0.1",
+    "REJECT=GOPHER:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://Example.com:443/",
+        "target": "tcp://tunnel.internal:70",
+        "priority": 8,
+        "protocol": "gopher"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "gopher",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
