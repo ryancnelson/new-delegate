@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=ftp default port and legacy ftp mount",
+  "args": [
+    "SERVER=ftp",
+    "MOUNT=\"/ftp/* ftp://backend.internal/content/*\"",
+    "PERMIT=ftp:backend.internal:127.0.0.1",
+    "REJECT=http:*:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/ftp/*",
+        "target": "ftp://backend.internal/content/*"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "ftp",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "*"
+      }
+    ]
+  }
+}

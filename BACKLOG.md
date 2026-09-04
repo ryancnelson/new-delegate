@@ -392,6 +392,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 33 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for legacy `CONNECT` mount mapping with fallback policy
 
+### Iteration 34 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=ftp` and ftp mount translation metadata
+
 ---
 
 ## Ideas Inbox (Unsorted)

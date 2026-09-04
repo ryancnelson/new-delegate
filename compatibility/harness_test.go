@@ -31,6 +31,11 @@ func TestLoadFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadFixture() = %v", err)
 	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-server-default.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
 }
 
 func TestLoadFixtureRejectsEmptyArgs(t *testing.T) {

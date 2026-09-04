@@ -42,3 +42,5 @@ Intentional differences:
   runtime resources are opened.
 - Forwarded client addresses are ignored unless the immediate peer is within a
   trusted CIDR configured on that listener.
+- Legacy compatibility fixtures now include default-port `SERVER=ftp` parsing with
+  ftp mount and protocol-specific policy metadata.

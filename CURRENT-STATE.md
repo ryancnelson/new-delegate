@@ -169,6 +169,8 @@ Last verified: 2026-09-04
   coverage for `server=`, `protocol=`, and `priority=` metadata.
 - The compatibility fixture corpus now includes a legacy `CONNECT` mount fixture
   with protocol-scoped mapping and explicit legacy policy.
+- The compatibility fixture corpus now includes default-port `SERVER=ftp` legacy
+  coverage with ftp mount + mixed protocol policy rules.
 
 ## Unverified
 
