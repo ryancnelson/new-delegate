@@ -98,3 +98,18 @@ Running changelog, updated automatically every 10 minutes.
 - A new backlog item (previously undocumented in earlier snapshots) covering original `PERMIT="protocol:destination:source"`/`REJECT` parsing is `[DONE]`: rules parse with explicit priorities preserving first-match order, and the policy kernel matches IP/CIDR sources and exact or `*.suffix` destinations without DNS or network activity. This matches the iteration-7 work already logged at 19:48 elsewhere in this file (golden/table tests, source CIDRs, destination suffix patterns, race tests, portable builds all passing).
 - New current gate per CURRENT-STATE.md: make the tested HTTP slice runnable from validated legacy configuration (i.e. wire a config loader end-to-end) — mount scoping by named server/protocol remains deferred.
 - All previously tracked Priority 1 items (P1-001–P1-009) remain `[DONE]`; no regressions.
+
+## 2026-09-03 19:54
+
+- New commit: `2a87d19 [iter-8] run validated legacy configuration`. Matches the iteration-8 work already logged at 19:47 elsewhere in this file: `delegate check DIRECTIVE...` validates and prints canonical JSON without opening sockets; `delegate DIRECTIVE...`/`delegate serve DIRECTIVE...` start the tested HTTP slice only after full parsing/validation; other frontend protocols fail before listener startup; HTTP server and backend-client timeouts are bounded.
+- Working tree now has active in-progress work toward iteration 9 (graceful shutdown, also already logged at 19:54 elsewhere in this file): modified `.woodpecker/test.yml`, `BACKLOG.md`, `CURRENT-STATE.md`, `DESIGN.md`, `cmd/delegate/main.go`, `scripts/check.sh`, plus untracked `server/lifecycle.go` and `server/lifecycle_test.go`. Not yet committed as of this snapshot.
+- BACKLOG.md now lists a `[DONE]` item at line 94 for the check-mode/runnable-config work; new current gate per CURRENT-STATE.md is adding canonical TOML config loading while keeping the runtime dependency footprint small and portable.
+- Windows/amd64 has joined the local and remote CGO-free portability compile matrix.
+
+## 2026-09-03 19:56
+
+- The iteration-9 work described as in progress above is now committed as
+  `95c8547 [iter-9] drain listeners gracefully` and pushed to both remotes.
+- Biggie Woodpecker pipeline 8 passed in 20 seconds, including the expanded
+  Windows/amd64 portability build.
+- The next ready slice is canonical TOML loading.
