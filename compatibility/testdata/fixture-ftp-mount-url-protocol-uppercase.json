@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT URL source and protocol scope uppercase protocol for FTP legacy directives",
+  "args": [
+    "SERVER=ftp",
+    "MOUNT=\"http://legacy.example:8080/files/* ftp://files.internal/files/* server=default protocol=FtP priority=23\"",
+    "PERMIT=FTP:files.internal:127.0.0.1",
+    "REJECT=HTTP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "http://legacy.example:8080/files/*",
+        "target": "ftp://files.internal/files/*",
+        "priority": 23,
+        "server": "default",
+        "protocol": "ftp"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "ftp",
+        "destination": "files.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
