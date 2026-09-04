@@ -75,3 +75,16 @@ func TestListFixtureFilesReturnsErrorForMissingDirectory(t *testing.T) {
 		t.Fatal("listFixtureFiles() = nil, want error")
 	}
 }
+
+func TestListFixtureFilesReturnsErrorForNonDirectoryPath(t *testing.T) {
+	t.Parallel()
+
+	tempFile := filepath.Join(t.TempDir(), "not-a-dir.json")
+	if err := os.WriteFile(tempFile, []byte(`{}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := listFixtureFiles(tempFile); err == nil {
+		t.Fatal("listFixtureFiles() = nil, want error")
+	}
+}

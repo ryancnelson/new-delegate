@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -55,6 +56,14 @@ func RunFixtureSuite(ctx context.Context, fixtureDir string, options CompareOpti
 }
 
 func listFixtureFiles(base string) ([]string, error) {
+	info, err := os.Stat(base)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("%q is not a directory", base)
+	}
+
 	var names []string
 	if err := filepath.WalkDir(base, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
