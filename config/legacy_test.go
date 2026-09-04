@@ -101,6 +101,11 @@ func TestParseLegacyMounts(t *testing.T) {
 			args: []string{"SERVER=http", `MOUNT="connect://Example.COM:443/ tcp://tunnel.internal:8443"`},
 			want: []mount.Mount{{Source: "connect://Example.COM:443/", Target: "tcp://tunnel.internal:8443"}},
 		},
+		{
+			name: "option keys are case-insensitive",
+			args: []string{"SERVER=http", `MOUNT="/api/* http://backend/* PrIoRiTy=3 SeRvEr=default PrOtOcOl=HTTp"`},
+			want: []mount.Mount{{Path: "/api/*", Target: "http://backend/*", Priority: 3, Server: "default", Protocol: "http"}},
+		},
 		{name: "missing target", args: []string{"SERVER=http", "MOUNT=/api/*"}, wantErr: "MOUNT"},
 		{name: "unknown option", args: []string{"SERVER=http", "MOUNT=/api/* http://backend/* cache=yes"}, wantErr: "unknown MOUNT option"},
 		{name: "invalid priority", args: []string{"SERVER=http", "MOUNT=/api/* http://backend/* priority=high"}, wantErr: "priority"},

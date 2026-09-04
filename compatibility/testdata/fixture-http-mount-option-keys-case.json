@@ -1,0 +1,25 @@
+{
+  "name": "MOUNT option key case normalization for legacy-style directives",
+  "args": [
+    "SERVER=http",
+    "MOUNT=\"/legacy/* http://backend.internal/weird/* PrIoRiTy=12 SeRvEr=default PrOtOcOl=HtTp\""
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":80"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/legacy/*",
+        "target": "http://backend.internal/weird/*",
+        "priority": 12,
+        "server": "default",
+        "protocol": "http"
+      }
+    ]
+  }
+}
