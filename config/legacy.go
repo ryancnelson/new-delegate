@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"gitea.local/ryan/new-delegate/mount"
 )
 
 var legacyDefaultPorts = map[string]int{
@@ -20,6 +22,7 @@ var legacyDefaultPorts = map[string]int{
 func ParseLegacyArgs(args []string) (Config, error) {
 	var protocol string
 	var port int
+	var mounts []mount.Mount
 
 	for i := 0; i < len(args); i++ {
 		arg := strings.TrimSpace(args[i])
@@ -55,6 +58,12 @@ func ParseLegacyArgs(args []string) (Config, error) {
 				return Config{}, fmt.Errorf("conflicting -P directives %d and %d", port, value)
 			}
 			port = value
+		case strings.HasPrefix(arg, "MOUNT="):
+			mapping, err := parseLegacyMount(strings.TrimSpace(strings.TrimPrefix(arg, "MOUNT=")))
+			if err != nil {
+				return Config{}, err
+			}
+			mounts = append(mounts, mapping)
 		default:
 			return Config{}, fmt.Errorf("unknown directive %q", arg)
 		}
@@ -75,11 +84,42 @@ func ParseLegacyArgs(args []string) (Config, error) {
 		Name:     "default",
 		Protocol: protocol,
 		Listen:   fmt.Sprintf(":%d", port),
-	}}}
+	}}, Mounts: mounts}
 	if err := result.Validate(); err != nil {
 		return Config{}, err
 	}
 	return result, nil
+}
+
+func parseLegacyMount(value string) (mount.Mount, error) {
+	if len(value) >= 2 && value[0] == '"' && value[len(value)-1] == '"' {
+		unquoted, err := strconv.Unquote(value)
+		if err != nil {
+			return mount.Mount{}, fmt.Errorf("invalid MOUNT quoting: %w", err)
+		}
+		value = unquoted
+	}
+	fields := strings.Fields(value)
+	if len(fields) < 2 {
+		return mount.Mount{}, fmt.Errorf("MOUNT requires a path and target")
+	}
+
+	mapping := mount.Mount{Path: fields[0], Target: fields[1]}
+	for _, option := range fields[2:] {
+		if strings.HasPrefix(option, "priority=") {
+			priority, err := strconv.Atoi(strings.TrimPrefix(option, "priority="))
+			if err != nil {
+				return mount.Mount{}, fmt.Errorf("invalid MOUNT priority %q", option)
+			}
+			mapping.Priority = priority
+			continue
+		}
+		return mount.Mount{}, fmt.Errorf("unknown MOUNT option %q", option)
+	}
+	if err := mapping.Validate(); err != nil {
+		return mount.Mount{}, fmt.Errorf("invalid MOUNT: %w", err)
+	}
+	return mapping, nil
 }
 
 func parseLegacyPort(value string) (int, error) {

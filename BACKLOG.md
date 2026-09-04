@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 2 - Legacy SERVER adapter)
+**Last Updated:** 2026-09-03 (Iteration 3 - Canonical and legacy mounts)
 
 ---
 
@@ -44,13 +44,13 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-004: Canonical mount configuration
 
-- [READY] Define and validate `Mount` values.
+- [DONE] Define and validate `Mount` values.
 - Acceptance: path and target are required; paths must be absolute; priorities
   are deterministic; invalid target schemes fail validation.
 
 ### P1-005: Legacy `MOUNT` syntax
 
-- [READY] Parse the practical original `MOUNT="/path/* target/*"` form.
+- [DONE] Parse the practical original `MOUNT="/path/* target/*"` form.
 - Acceptance: golden tests cover quoting, wildcard suffixes, options, malformed
   entries, and multiple mounts.
 
@@ -117,6 +117,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 2 (2026-09-03)
 - [DONE] ✅ Added a side-effect-free `SERVER`/`-P` compatibility adapter
 
+### Iteration 3 (2026-09-03)
+- [DONE] ✅ Added canonical mounts and the practical original `MOUNT` form
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -139,6 +142,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add the canonical mount model and original `MOUNT` adapter while
-the Gitea forge is connected to Woodpecker; remote CI remains required before
-the batch is accepted.
+**Next step:** Normalize paths and resolve mounts deterministically while the
+Gitea forge is connected to Woodpecker; remote CI remains required before the
+batch is accepted.

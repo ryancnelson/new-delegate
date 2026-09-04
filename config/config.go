@@ -4,11 +4,14 @@ package config
 import (
 	"fmt"
 	"strings"
+
+	"gitea.local/ryan/new-delegate/mount"
 )
 
 // Config is the complete configuration consumed by the gateway runtime.
 type Config struct {
-	Servers []Server `json:"servers"`
+	Servers []Server      `json:"servers"`
+	Mounts  []mount.Mount `json:"mounts,omitempty"`
 }
 
 // Server describes a named protocol listener.
@@ -35,6 +38,11 @@ func (c Config) Validate() error {
 			return fmt.Errorf("duplicate server name %q", server.Name)
 		}
 		seen[server.Name] = struct{}{}
+	}
+	for i, mapping := range c.Mounts {
+		if err := mapping.Validate(); err != nil {
+			return fmt.Errorf("mount %d: %w", i, err)
+		}
 	}
 	return nil
 }

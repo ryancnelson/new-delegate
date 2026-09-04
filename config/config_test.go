@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"gitea.local/ryan/new-delegate/mount"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -66,5 +68,6 @@ func TestConfigValidate(t *testing.T) {
 func cloneConfig(in Config) Config {
 	out := in
 	out.Servers = append([]Server(nil), in.Servers...)
+	out.Mounts = append([]mount.Mount(nil), in.Mounts...)
 	return out
 }
