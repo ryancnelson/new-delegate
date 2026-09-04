@@ -9,7 +9,8 @@ Last verified: 2026-09-04
   for explicit EPSV capability failures; all six PASV fields and the resulting
   port are validated, while the server-advertised host is ignored. Offline
   tests cover IPv6 EPSV, a hostile PASV host, malformed octets, invalid ports,
-  and normal RETR/STOR/LIST behavior. The full Darwin/arm64 local gate passes.
+  and normal RETR/STOR/LIST behavior. The full Darwin/arm64 local gate and
+  push-triggered Woodpecker pipeline 88 passed at exact commit `f20c3c8`.
 - Iteration 86 established a race-clean geographic-link foundation and made
   Biggie Woodpecker enforce `go test -race ./...`. The Alpine agent image now
   includes its C build toolchain. Push-triggered pipelines reproduced and

@@ -134,7 +134,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-033: Constrain FTP data-channel destinations
 
-- [IN PROGRESS] Depends on P1-032. Files: `connector/ftp.go`; create
+- [DONE] Depends on P1-032. Files: `connector/ftp.go`; create
   `connector/ftp_test.go`; extend `connector/routes_test.go`.
 - Evidence: the PASV response is converted directly into a DialContext target.
 - RED: a fake approved control server advertises a different host in PASV;
@@ -153,7 +153,8 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   explicit capability responses. PASV validates every byte and the nonzero
   port but ignores the advertised host. IPv6 EPSV, hostile-host fallback,
   malformed-field, invalid-port, no-fallback, and RETR/STOR/LIST tests pass;
-  the complete local gate is green. Awaiting exact-commit Woodpecker acceptance.
+  the complete local gate is green. Push-triggered Woodpecker pipeline 88
+  passed all stages at exact commit `f20c3c8`.
 
 ### P1-034: Bound FTP I/O and implement transfer lifecycle
 
@@ -827,6 +828,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Start P1-033 in the active review-remediation queue: constrain
-FTP passive data connections to the authorized control peer. Continue in
-dependency order toward the two-host geographic-link demonstration.
+**Next step:** Start P1-034 in the active review-remediation queue: bound FTP
+control/data I/O and make transfer completion own its full lifecycle. Continue
+in dependency order toward the two-host geographic-link demonstration.
