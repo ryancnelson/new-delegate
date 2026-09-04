@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT URL source option key case normalization",
+  "args": [
+    "SERVER=http",
+    "MOUNT=\"http://legacy.example/files/* https://files.internal/files/* PrIoRiTy=8 SeRvEr=default PrOtOcOl=HtTp\"",
+    "PERMIT=HTTP:files.internal:127.0.0.1",
+    "REJECT=Http:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":80"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "http://legacy.example/files/*",
+        "target": "https://files.internal/files/*",
+        "priority": 8,
+        "server": "default",
+        "protocol": "http"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "http",
+        "destination": "files.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

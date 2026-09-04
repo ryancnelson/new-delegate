@@ -72,6 +72,8 @@ Intentional differences:
   legacy `MOUNT` protocol options.
 - Legacy compatibility fixtures now include protocol-case normalization for URL-source
   legacy `MOUNT` protocol options.
+- Legacy compatibility fixtures now include mixed-case option-key normalization
+  for URL-source legacy `MOUNT` directives.
 - Legacy compatibility fixtures now include protocol-case normalization for HTTPS
   `CONNECT` legacy `MOUNT` protocol options.
 - Legacy compatibility fixtures now include protocol-case normalization for HTTP
