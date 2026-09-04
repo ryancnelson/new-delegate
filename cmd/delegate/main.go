@@ -20,7 +20,23 @@ import (
 )
 
 func main() {
-	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr, serveHTTP))
+	args := os.Args[1:]
+	reloadPath := configPathFromArgs(args)
+	os.Exit(run(args, os.Stdout, os.Stderr, func(configured config.Config) error {
+		return serveHTTP(configured, reloadPath, os.Stderr)
+	}))
+}
+
+func configPathFromArgs(args []string) string {
+	for i, arg := range args {
+		if arg == "--config" && i+1 < len(args) {
+			return args[i+1]
+		}
+		if strings.HasPrefix(arg, "--config=") {
+			return strings.TrimPrefix(arg, "--config=")
+		}
+	}
+	return ""
 }
 
 func run(args []string, stdout, stderr io.Writer, serve func(config.Config) error) int {
@@ -201,7 +217,7 @@ func loadConfiguration(args []string) (config.Config, error) {
 	return configured, nil
 }
 
-func serveHTTP(configured config.Config) error {
+func serveHTTP(configured config.Config, reloadPath string, logOutput io.Writer) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -209,6 +225,21 @@ func serveHTTP(configured config.Config) error {
 	configStore, err := config.NewStore(configured)
 	if err != nil {
 		return fmt.Errorf("initialize configuration store: %w", err)
+	}
+	if reloadPath != "" {
+		signals := reloadSignals()
+		if len(signals) > 0 {
+			reloadEvents := make(chan os.Signal, 1)
+			signal.Notify(reloadEvents, signals...)
+			defer signal.Stop(reloadEvents)
+			go watchReload(ctx, reloadEvents, configStore, reloadPath, func(err error) {
+				if err != nil {
+					fmt.Fprintf(logOutput, "configuration reload rejected: %v\n", err)
+					return
+				}
+				fmt.Fprintln(logOutput, "configuration reloaded")
+			})
+		}
 	}
 	httpServers := make([]*http.Server, 0, len(configured.Servers))
 	listeners := make([]net.Listener, 0, len(configured.Servers))
@@ -233,4 +264,15 @@ func serveHTTP(configured config.Config) error {
 		listeners = append(listeners, listener)
 	}
 	return gatewayserver.ServeAll(ctx, httpServers, listeners, 10*time.Second)
+}
+
+func watchReload(ctx context.Context, events <-chan os.Signal, store *config.Store, path string, report func(error)) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-events:
+			report(config.ReloadTOMLFile(store, path))
+		}
+	}
 }

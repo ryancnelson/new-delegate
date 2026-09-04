@@ -210,4 +210,12 @@ Running changelog, updated automatically every 10 minutes.
 
 - Iteration 15 adds canonical TOML file reload with atomic publication,
   rollback on parse or validation failure, and restart-required rejection for
-  listener-topology changes. The complete local gate passes.
+  listener-topology changes. The complete local gate passes; Biggie
+  Woodpecker pipeline 16 passed at `f56724b`.
+
+## 2026-09-03 20:45
+
+- Iteration 16 wires canonical-file reload to `SIGHUP` on Unix-family systems.
+  A platform-neutral watcher test covers successful reload, rejected rollback,
+  reporting, and cancellation; Windows compiles with signal reload disabled.
+- The complete local gate passes. Remote Woodpecker acceptance remains.

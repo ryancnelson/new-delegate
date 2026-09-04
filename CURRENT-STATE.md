@@ -82,6 +82,11 @@ Last verified: 2026-09-03
   outputs cannot mutate stored slices, and concurrent replacements/readers
   pass the race detector. Each HTTP request reads exactly one snapshot for
   routing and authorization.
+- Canonical-file runtimes reload routing and policy atomically on `SIGHUP` on
+  Darwin and other Unix-family targets. Invalid files and listener-topology
+  changes are reported and leave the prior snapshot active. The watcher stops
+  with the server context; Windows keeps the same portable build with signal
+  reload disabled.
 
 ## Unverified
 
@@ -91,8 +96,4 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Reload canonical files into the atomic store while requiring a restart for
-listener-topology changes.
-
-The tested reload operation now does this atomically; portable signal-driven
-runtime triggering remains the current gate.
+Add explicit trusted-proxy CIDRs before honoring forwarded client addresses.

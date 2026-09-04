@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 14 - Atomic configuration snapshots)
+**Last Updated:** 2026-09-03 (Iteration 16 - Signal-driven configuration reload)
 
 ---
 
@@ -152,14 +152,22 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   and replacements pass the race detector; each HTTP request uses one snapshot
   for both mount resolution and policy evaluation.
 
+### P1-018: Signal-driven canonical reload
+
+- [DONE] Reload a running canonical-file configuration on `SIGHUP` without
+  interrupting listeners or in-flight requests.
+- Acceptance: a channel-driven watcher test proves successful publication,
+  rejected-file rollback, error reporting, and clean cancellation; Unix-family
+  builds register `SIGHUP`; Windows compiles with reload signals disabled;
+  listener topology changes remain restart-required.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
 
 - Independent frontend/backend TLS configuration.
-- Atomic configuration reload.
-- [DONE] Atomic canonical file reload operation with rollback and explicit
-  restart requirement for listener-topology changes.
+- [DONE] Atomic configuration reload for canonical files, with rollback and an
+  explicit restart requirement for listener-topology changes.
 - Trusted-proxy CIDRs for accepting forwarded client addresses; direct peer
   address remains the default and untrusted forwarding headers are ignored.
 - HTTP/FTP Fetch and Store translation.
@@ -228,6 +236,12 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 14 (2026-09-03)
 - [DONE] ✅ Added race-tested atomic configuration snapshot publication
 
+### Iteration 15 (2026-09-03)
+- [DONE] ✅ Added atomic canonical-file reload with topology protection
+
+### Iteration 16 (2026-09-03)
+- [DONE] ✅ Wired portable signal-driven runtime reload
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -255,5 +269,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Reload canonical files into the atomic store while requiring a
-restart for listener-topology changes.
+**Next step:** Add explicit trusted-proxy CIDRs before honoring forwarded
+client addresses.

@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"gitea.local/ryan/new-delegate/config"
 )
@@ -297,3 +299,78 @@ func TestRunReportsServeFailure(t *testing.T) {
 		t.Fatalf("stderr = %q, want serve error", stderr.String())
 	}
 }
+
+func TestConfigPathFromArgs(t *testing.T) {
+	tests := []struct {
+		args []string
+		want string
+	}{
+		{args: []string{"serve", "--config", "delegate.toml"}, want: "delegate.toml"},
+		{args: []string{"--config=delegate.toml"}, want: "delegate.toml"},
+		{args: []string{"SERVER=http"}},
+	}
+	for _, tt := range tests {
+		if got := configPathFromArgs(tt.args); got != tt.want {
+			t.Fatalf("configPathFromArgs(%q) = %q, want %q", tt.args, got, tt.want)
+		}
+	}
+}
+
+func TestWatchReloadPublishesChangesAndReportsFailures(t *testing.T) {
+	initial := config.Config{
+		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+	}
+	store, err := config.NewStore(initial)
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(t.TempDir(), "delegate.toml")
+	write := func(extra string) {
+		t.Helper()
+		text := `[[servers]]
+name = "public"
+protocol = "http"
+listen = ":8080"
+` + extra
+		if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("\n[[mounts]]\npath = \"/*\"\ntarget = \"http://new.internal/*\"\n")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	events := make(chan os.Signal, 1)
+	reports := make(chan error, 2)
+	done := make(chan struct{})
+	go func() {
+		watchReload(ctx, events, store, path, func(err error) { reports <- err })
+		close(done)
+	}()
+	events <- fakeSignal("reload")
+	if err := <-reports; err != nil {
+		t.Fatalf("valid reload report = %v", err)
+	}
+	if got := store.Snapshot().Mounts[0].Target; got != "http://new.internal/*" {
+		t.Fatalf("target = %q, want reloaded target", got)
+	}
+
+	write("\nunknown = true\n")
+	events <- fakeSignal("reload")
+	if err := <-reports; err == nil {
+		t.Fatal("invalid reload report = nil")
+	}
+	if got := store.Snapshot().Mounts[0].Target; got != "http://new.internal/*" {
+		t.Fatalf("invalid reload changed target to %q", got)
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("reload watcher did not stop")
+	}
+}
+
+type fakeSignal string
+
+func (s fakeSignal) String() string { return string(s) }
+func (fakeSignal) Signal()          {}

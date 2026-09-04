@@ -52,6 +52,11 @@ A canonical file may define multiple HTTP servers. The runtime binds all
 configured listeners before serving, then coordinates cancellation and bounded
 graceful shutdown across the group.
 
+On Darwin and other Unix-family systems, send `SIGHUP` to atomically reload a
+canonical TOML file. Invalid changes are reported and the previous snapshot
+stays active. Listener names, protocols, and addresses require a restart;
+routing and policy changes reload live. Signal reload is disabled on Windows.
+
 Explain the effective routing and policy result without opening a listener or
 contacting the backend:
 
