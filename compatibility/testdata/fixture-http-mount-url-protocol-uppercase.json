@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT URL source and protocol scope uppercase protocol option",
+  "args": [
+    "SERVER=http",
+    "MOUNT=\"http://legacy.example:8080/files/* https://files.internal/files/* server=default protocol=HtTp priority=5\"",
+    "PERMIT=HTTP:files.internal:127.0.0.1",
+    "REJECT=http:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":80"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "http://legacy.example:8080/files/*",
+        "target": "https://files.internal/files/*",
+        "priority": 5,
+        "server": "default",
+        "protocol": "http"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "http",
+        "destination": "files.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "http",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

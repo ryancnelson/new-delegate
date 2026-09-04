@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 48 - SOCKS MOUNT protocol option case-normalization fixture)
+**Last Updated:** 2026-09-04 (Iteration 49 - URL-source MOUNT protocol-option case-normalization fixture)
 
 ---
 
@@ -436,6 +436,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 48 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for uppercase SOCKS `MOUNT` protocol scope values
+
+### Iteration 49 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for URL-source `MOUNT` protocol scope case normalization
 
 ---
 

@@ -199,6 +199,8 @@ Last verified: 2026-09-04
   for Gopher legacy `MOUNT` directives with `protocol=GOPHER`.
 - The compatibility fixture corpus now includes protocol-option case-normalization
   for SOCKS legacy `MOUNT` directives with `protocol=SOCKS`.
+- The compatibility fixture corpus now includes protocol-option case-normalization
+  for URL-source legacy `MOUNT` directives with mixed-case protocol scope.
 
 ## Unverified
 
