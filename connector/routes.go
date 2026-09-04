@@ -51,14 +51,32 @@ func NewHTTPRoutes(defaultClient *http.Client, policies map[tlsconfig.Backend]*t
 // FetchForMount executes a Fetch with the transport associated with the
 // resolver-selected mount.
 func (r *HTTPRoutes) FetchForMount(ctx context.Context, mapping mount.Mount, fetch operation.Fetch) (operation.Result, error) {
+	selected, err := r.connectorForMount(mapping)
+	if err != nil {
+		return operation.Result{}, err
+	}
+	return selected.Fetch(ctx, fetch)
+}
+
+// StoreForMount executes a Store with the transport associated with the
+// resolver-selected mount.
+func (r *HTTPRoutes) StoreForMount(ctx context.Context, mapping mount.Mount, store operation.Store) (operation.Result, error) {
+	selected, err := r.connectorForMount(mapping)
+	if err != nil {
+		return operation.Result{}, err
+	}
+	return selected.Store(ctx, store)
+}
+
+func (r *HTTPRoutes) connectorForMount(mapping mount.Mount) (*HTTP, error) {
 	if mapping.TLS == nil {
-		return r.defaultConnector.Fetch(ctx, fetch)
+		return r.defaultConnector, nil
 	}
 	selected, ok := r.secureConnectors[*mapping.TLS]
 	if !ok {
-		return operation.Result{}, fmt.Errorf("no preloaded backend TLS transport for selected mount")
+		return nil, fmt.Errorf("no preloaded backend TLS transport for selected mount")
 	}
-	return selected.Fetch(ctx, fetch)
+	return selected, nil
 }
 
 // CloseIdleConnections releases pooled connections owned by routed transports.

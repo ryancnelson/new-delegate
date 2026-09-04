@@ -151,6 +151,12 @@ Last verified: 2026-09-03
   without opening a socket. A bounded source-validation fuzz run completed
   557,516 executions and a dedicated CONNECT-authority run completed 187,611
   executions without a panic.
+- Authorized HTTP `PUT` requests now become protocol-neutral Store operations
+  rather than Fetch operations. They reuse the winning mount's backend TLS
+  transport, preserve end-to-end metadata and known content length, and cap
+  request bodies at 32 MiB. Denied and declared-oversized writes invoke no
+  connector; loopback tests prove the complete HTTP Store path while existing
+  Fetch and CONNECT coverage remains green.
 
 ## Unverified
 
@@ -160,8 +166,8 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Route authorized HTTP `PUT` through a typed Store operation rather than
-representing writes as Fetch requests.
+Select the next compatibility slice after the verified HTTP Fetch, Store, and
+CONNECT foundation.
 
 Active verification and release builds target only Darwin/arm64 and Linux/amd64
 until the owner expands the matrix.

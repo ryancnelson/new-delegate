@@ -155,6 +155,11 @@ go run ./cmd/delegate explain --config examples/connect.toml \
   --method CONNECT
 ```
 
+Authorized HTTP `PUT` requests use a distinct protocol-neutral Store operation
+while sharing the same routing, policy, header-scrubbing, and per-mount backend
+TLS selection as Fetch. Store bodies are streamed with a 32 MiB cap; a declared
+oversized body is rejected before the backend connector runs.
+
 The JSON result distinguishes `permit`, `reject`, `no_mount`, `unsafe_path`,
 and `ambiguous_mount`, and includes the winning policy rule index when policy
 evaluation occurs. Original-style configuration directives can be supplied in

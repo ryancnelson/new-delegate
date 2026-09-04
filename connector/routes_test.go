@@ -73,3 +73,29 @@ func TestHTTPRoutesSelectsTransportFromMountPolicy(t *testing.T) {
 		t.Fatalf("backend calls = plain %d, secure %d; unknown route must not connect", plainCalls.Load(), secureCalls.Load())
 	}
 }
+
+func TestHTTPRoutesExecutesStore(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		body, err := io.ReadAll(request.Body)
+		if err != nil {
+			t.Error(err)
+		}
+		if request.Method != http.MethodPut || request.URL.Path != "/objects/report" || string(body) != "contents" || request.ContentLength != 8 {
+			t.Errorf("request = %s %s length=%d body=%q", request.Method, request.URL.Path, request.ContentLength, body)
+		}
+		response.WriteHeader(http.StatusCreated)
+	}))
+	defer backend.Close()
+	routes := NewHTTPRoutes(backend.Client(), nil)
+	result, err := routes.StoreForMount(context.Background(), mount.Mount{}, operation.Store{
+		Method: http.MethodPut, Resource: backend.URL + "/objects/report",
+		Body: strings.NewReader("contents"), Size: 8,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Body.Close()
+	if result.Status != http.StatusCreated {
+		t.Fatalf("status = %d, want %d", result.Status, http.StatusCreated)
+	}
+}

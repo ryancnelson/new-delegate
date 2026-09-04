@@ -403,3 +403,13 @@ Running changelog, updated automatically every 10 minutes.
   Linux/amd64 matrix. A bounded source-validation fuzz run completed 557,516
   executions and a dedicated CONNECT-authority run completed 187,611
   executions without a panic. Remote Woodpecker acceptance remains.
+
+## 2026-09-03 22:27
+
+- Iteration 26 gives authorized HTTP PUT a protocol-neutral Store operation
+  instead of representing writes as Fetch. Store uses the same resolved mount,
+  policy decision, sanitized metadata, and mount-selected HTTP/TLS transport;
+  it preserves known content length and enforces a 32 MiB streaming cap.
+- Focused tests prove the full loopback write and that denial or a declared
+  oversized body invokes neither Store nor Fetch. The complete local gate
+  passes on Darwin/arm64 and Linux/amd64; remote acceptance remains.

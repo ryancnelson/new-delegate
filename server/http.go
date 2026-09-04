@@ -29,6 +29,10 @@ type mountFetchConnector interface {
 	FetchForMount(context.Context, mount.Mount, operation.Fetch) (operation.Result, error)
 }
 
+type mountStoreConnector interface {
+	StoreForMount(context.Context, mount.Mount, operation.Store) (operation.Result, error)
+}
+
 type relayConnector interface {
 	Connect(context.Context, operation.Relay) (net.Conn, error)
 }
@@ -39,6 +43,10 @@ type httpHandler struct {
 	connector mountFetchConnector
 	relay     relayConnector
 }
+
+const maxStoreBodyBytes int64 = 32 << 20
+
+var errStoreBodyTooLarge = errors.New("store body too large")
 
 // NewHTTPHandler constructs an HTTP frontend for an already-validated runtime
 // configuration.
@@ -123,16 +131,33 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		if buildErr != nil {
 			return buildErr
 		}
+		metadata := cloneHeader(request.Header)
+		if request.Method == http.MethodPut {
+			if request.ContentLength > maxStoreBodyBytes {
+				return errStoreBodyTooLarge
+			}
+			stores, ok := h.connector.(mountStoreConnector)
+			if !ok {
+				return fmt.Errorf("backend connector does not support Store")
+			}
+			result, buildErr = stores.StoreForMount(request.Context(), matched.Mount, operation.Store{
+				Method: request.Method, Resource: resource, Metadata: metadata,
+				Body: http.MaxBytesReader(response, request.Body, maxStoreBodyBytes), Size: request.ContentLength,
+			})
+			return buildErr
+		}
 		result, buildErr = h.connector.FetchForMount(request.Context(), matched.Mount, operation.Fetch{
-			Method:   request.Method,
-			Resource: resource,
-			Metadata: cloneHeader(request.Header),
-			Body:     request.Body,
+			Method: request.Method, Resource: resource, Metadata: metadata, Body: request.Body,
 		})
 		return buildErr
 	})
 	if errors.Is(err, policy.ErrDenied) {
 		http.Error(response, string(decision.Reason), http.StatusForbidden)
+		return
+	}
+	var tooLarge *http.MaxBytesError
+	if errors.Is(err, errStoreBodyTooLarge) || errors.As(err, &tooLarge) {
+		http.Error(response, "store body too large", http.StatusRequestEntityTooLarge)
 		return
 	}
 	if err != nil {
@@ -287,6 +312,16 @@ type fixedMountConnector struct {
 
 func (f fixedMountConnector) FetchForMount(ctx context.Context, _ mount.Mount, fetch operation.Fetch) (operation.Result, error) {
 	return f.Fetch(ctx, fetch)
+}
+
+func (f fixedMountConnector) StoreForMount(ctx context.Context, _ mount.Mount, store operation.Store) (operation.Result, error) {
+	connector, ok := f.fetchConnector.(interface {
+		Store(context.Context, operation.Store) (operation.Result, error)
+	})
+	if !ok {
+		return operation.Result{}, fmt.Errorf("backend connector does not support Store")
+	}
+	return connector.Store(ctx, store)
 }
 
 func policySource(configured config.Config, serverName string, request *http.Request) (string, error) {

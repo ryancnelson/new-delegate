@@ -354,6 +354,67 @@ func TestHTTPHandlerRoutesFetchWithSelectedMount(t *testing.T) {
 	}
 }
 
+func TestHTTPHandlerRoutesAuthorizedPUTAsStore(t *testing.T) {
+	configured := config.Config{
+		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},
+		Mounts:  []mount.Mount{{Path: "/objects/*", Target: "http://store.internal/items/*"}},
+		Policies: []policy.Rule{{
+			Effect: policy.Permit, Protocol: "http", Destination: "store.internal", Method: http.MethodPut,
+		}},
+	}
+	routes := &recordingOperationRoutes{}
+	handler := NewReloadableHTTPHandlerWithRoutes("public", func() config.Config { return configured }, routes)
+	request := httptest.NewRequest(http.MethodPut, "http://frontend/objects/report", strings.NewReader("contents"))
+	request.Header.Set("Content-Type", "text/plain")
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusNoContent || routes.storeCalls != 1 || routes.fetchCalls != 0 {
+		t.Fatalf("response=%d store=%d fetch=%d", response.Code, routes.storeCalls, routes.fetchCalls)
+	}
+	if routes.store.Method != http.MethodPut || routes.store.Resource != "http://store.internal/items/report" ||
+		routes.store.Metadata["Content-Type"][0] != "text/plain" || routes.store.Size != int64(len("contents")) || routes.body != "contents" {
+		t.Fatalf("Store = %#v body=%q", routes.store, routes.body)
+	}
+
+	configured.Policies = nil
+	request = httptest.NewRequest(http.MethodPut, "http://frontend/objects/denied", strings.NewReader("secret"))
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden || routes.storeCalls != 1 || routes.fetchCalls != 0 {
+		t.Fatalf("denied response=%d store=%d fetch=%d", response.Code, routes.storeCalls, routes.fetchCalls)
+	}
+
+	configured.Policies = []policy.Rule{{Effect: policy.Permit, Protocol: "http", Method: http.MethodPut}}
+	request = httptest.NewRequest(http.MethodPut, "http://frontend/objects/huge", strings.NewReader("x"))
+	request.ContentLength = maxStoreBodyBytes + 1
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusRequestEntityTooLarge || routes.storeCalls != 1 || routes.fetchCalls != 0 {
+		t.Fatalf("oversize response=%d store=%d fetch=%d", response.Code, routes.storeCalls, routes.fetchCalls)
+	}
+}
+
+type recordingOperationRoutes struct {
+	storeCalls int
+	fetchCalls int
+	store      operation.Store
+	body       string
+}
+
+func (r *recordingOperationRoutes) FetchForMount(context.Context, mount.Mount, operation.Fetch) (operation.Result, error) {
+	r.fetchCalls++
+	return operation.Result{Status: http.StatusInternalServerError}, nil
+}
+
+func (r *recordingOperationRoutes) StoreForMount(_ context.Context, _ mount.Mount, store operation.Store) (operation.Result, error) {
+	r.storeCalls++
+	r.store = store
+	payload, err := io.ReadAll(store.Body)
+	r.body = string(payload)
+	return operation.Result{Status: http.StatusNoContent}, err
+}
+
 type recordingMountConnector struct {
 	calls   int
 	mapping mount.Mount

@@ -241,7 +241,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-027: Typed HTTP Store operation
 
-- [READY] Route authorized HTTP `PUT` through a protocol-neutral Store
+- [DONE] Route authorized HTTP `PUT` through a protocol-neutral Store
   operation instead of representing writes as Fetch requests.
 - Acceptance: routing and policy remain shared with Fetch; the selected mount
   rewrites the destination deterministically; metadata and bounded request
@@ -361,6 +361,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 25 (2026-09-03)
 - [DONE] ✅ Added authorized, bounded HTTP CONNECT relaying
 
+### Iteration 26 (2026-09-03)
+- [DONE] ✅ Routed bounded HTTP PUT requests through typed Store operations
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -388,4 +391,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Route authorized HTTP `PUT` through a typed Store operation.
+**Next step:** Select the next compatibility slice after the HTTP Fetch, Store,
+and CONNECT foundation.
