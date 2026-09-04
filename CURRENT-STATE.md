@@ -12,11 +12,16 @@ Last verified: 2026-09-03
 - Canonical `Config` and `Server` values reject missing fields and duplicate
   names without mutating caller-owned input.
 - The iteration-1 focused test and complete local gate pass on Darwin/arm64.
+- `SERVER=http` and compact or separated `-P` arguments parse into canonical
+  server configuration. Known protocols receive their conventional default
+  ports; conflicting repetitions, malformed ports, and unknown directives are
+  fatal. Golden and table tests pass.
 
 ## Unverified
 
 - Woodpecker repository activation and pipeline execution.
-- Legacy configuration syntax and all gateway runtime behavior.
+- Legacy syntax other than the verified `SERVER`/`-P` subset, and all gateway
+  runtime behavior.
 
 ## Current gate
 

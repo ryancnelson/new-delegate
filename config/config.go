@@ -8,14 +8,14 @@ import (
 
 // Config is the complete configuration consumed by the gateway runtime.
 type Config struct {
-	Servers []Server
+	Servers []Server `json:"servers"`
 }
 
 // Server describes a named protocol listener.
 type Server struct {
-	Name     string
-	Protocol string
-	Listen   string
+	Name     string `json:"name"`
+	Protocol string `json:"protocol"`
+	Listen   string `json:"listen"`
 }
 
 // Validate reports configuration errors without modifying the receiver.

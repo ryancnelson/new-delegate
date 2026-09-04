@@ -1,0 +1,9 @@
+{
+  "servers": [
+    {
+      "name": "default",
+      "protocol": "http",
+      "listen": ":8080"
+    }
+  ]
+}

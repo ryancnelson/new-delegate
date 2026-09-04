@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 1 - Canonical server model)
+**Last Updated:** 2026-09-03 (Iteration 2 - Legacy SERVER adapter)
 
 ---
 
@@ -38,7 +38,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-003: Legacy `SERVER` syntax
 
-- [READY] Parse `SERVER=http` and `-P8080` into the canonical server model.
+- [DONE] Parse `SERVER=http` and `-P8080` into the canonical server model.
 - Acceptance: golden tests cover ordering, whitespace, repeated directives,
   defaults, unknown directives, and malformed ports.
 
@@ -114,6 +114,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 1 (2026-09-03)
 - [DONE] ✅ Added immutable validation for canonical server configuration
 
+### Iteration 2 (2026-09-03)
+- [DONE] ✅ Added a side-effect-free `SERVER`/`-P` compatibility adapter
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -136,6 +139,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Parse original `SERVER` directives while the Gitea forge is
-connected to Woodpecker; remote CI remains required before the batch is
-accepted.
+**Next step:** Add the canonical mount model and original `MOUNT` adapter while
+the Gitea forge is connected to Woodpecker; remote CI remains required before
+the batch is accepted.
