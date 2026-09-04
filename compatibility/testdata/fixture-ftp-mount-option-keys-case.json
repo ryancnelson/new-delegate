@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT option key case normalization for FTP legacy directives",
+  "args": [
+    "SERVER=FTP",
+    "MOUNT=\"/ftp-incoming/* ftp://backend.internal/incoming/* PrIoRiTy=13 SeRvEr=default PrOtOcOl=FtP\"",
+    "PERMIT=FtP:backend.internal:127.0.0.1",
+    "REJECT=FTP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/ftp-incoming/*",
+        "target": "ftp://backend.internal/incoming/*",
+        "priority": 13,
+        "server": "default",
+        "protocol": "ftp"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "ftp",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "ftp",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

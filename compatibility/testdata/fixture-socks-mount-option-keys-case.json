@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT option key case normalization for SOCKS legacy directives",
+  "args": [
+    "SERVER=SOCKS",
+    "MOUNT=\"/socks-case/* tcp://backend.internal:1080 PrIoRiTy=15 SeRvEr=default PrOtOcOl=SoCkS\"",
+    "PERMIT=SOCKS:backend.internal:127.0.0.1",
+    "REJECT=sOcKs:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "socks",
+        "listen": ":1080"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/socks-case/*",
+        "target": "tcp://backend.internal:1080",
+        "priority": 15,
+        "server": "default",
+        "protocol": "socks"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "socks",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "socks",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

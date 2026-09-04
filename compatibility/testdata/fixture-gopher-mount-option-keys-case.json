@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT option key case normalization for Gopher legacy directives",
+  "args": [
+    "SERVER=gopher",
+    "MOUNT=\"/gopher-case/* http://backend.internal/gopher/* PrIoRiTy=14 SeRvEr=default PrOtOcOl=GoPhEr\"",
+    "PERMIT=GOPHER:backend.internal:127.0.0.1",
+    "REJECT=gOpHeR:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/gopher-case/*",
+        "target": "http://backend.internal/gopher/*",
+        "priority": 14,
+        "server": "default",
+        "protocol": "gopher"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "gopher",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
