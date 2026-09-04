@@ -255,6 +255,13 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   status through the semantic `Fetch` operation while preserving mount
   selection and policy behavior.
 
+### P1-029: Cancelable compatibility fixture suites
+
+- [DONE] Stop a fixture suite before it parses fixtures or invokes a reference
+  executable when its context has been canceled.
+- Acceptance: an already-canceled suite returns the context error and makes no
+  reference-runner call; cancellation is also checked between fixture phases.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)

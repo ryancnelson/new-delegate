@@ -38,6 +38,8 @@ Intentional differences:
 - Ambiguous mount precedence is a configuration error.
 - Secret configuration contains references, never resolved values.
 - Modern TOML is canonical; legacy syntax is an adapter onto the same model.
+- A canceled compatibility fixture-suite context stops before fixture parsing or
+  optional reference-executable execution.
 - Unknown TOML keys are fatal and configuration is fully validated before
   runtime resources are opened.
 - Forwarded client addresses are ignored unless the immediate peer is within a

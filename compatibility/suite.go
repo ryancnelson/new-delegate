@@ -19,6 +19,9 @@ func RunFixtureSuite(ctx context.Context, fixtureDir string, options CompareOpti
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	options.Context = ctx
 
@@ -32,10 +35,17 @@ func RunFixtureSuite(ctx context.Context, fixtureDir string, options CompareOpti
 
 	var mismatches []FixtureMismatch
 	for _, name := range names {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+
 		path := filepath.Join(fixtureDir, name)
 		fixture, err := LoadFixture(path)
 		if err != nil {
 			return nil, fmt.Errorf("fixture %q: %w", name, err)
+		}
+		if err := ctx.Err(); err != nil {
+			return nil, err
 		}
 
 		_, err = CompareFixture(fixture, options)
