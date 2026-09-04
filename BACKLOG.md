@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 53 - SOCKS CONNECT uppercase metadata and selector fixture)
+**Last Updated:** 2026-09-04 (Iteration 54 - FTP CONNECT uppercase metadata and selector fixture)
 
 ---
 
@@ -451,6 +451,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 53 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for `SERVER=SOCKS` `CONNECT` metadata and selector case-normalization
+
+### Iteration 54 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for `SERVER=FTP` `CONNECT` metadata and selector case-normalization
 
 ---
 

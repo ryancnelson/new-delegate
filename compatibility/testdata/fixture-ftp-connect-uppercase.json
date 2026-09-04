@@ -1,0 +1,43 @@
+{
+  "name": "SERVER=FTP uppercase CONNECT mount metadata and selectors",
+  "args": [
+    "SERVER=FTP",
+    "MOUNT=\"connect://Example.COM:443/ tcp://tunnel.internal:2121 server=default protocol=FTP priority=9\"",
+    "PERMIT=FtP:Tunnel.Internal:198.51.100.7",
+    "REJECT=FTP:Legacy.INTERNAL:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://Example.COM:443/",
+        "target": "tcp://tunnel.internal:2121",
+        "priority": 9,
+        "server": "default",
+        "protocol": "ftp"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "198.51.100.7",
+        "protocol": "ftp",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "ftp",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

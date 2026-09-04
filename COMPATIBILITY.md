@@ -80,5 +80,7 @@ Intentional differences:
   metadata and selector normalization.
 - Legacy compatibility fixtures now include uppercase `SERVER=SOCKS` `CONNECT`
   metadata and selector normalization.
+- Legacy compatibility fixtures now include uppercase `SERVER=FTP` `CONNECT`
+  metadata and selector normalization.
 - Legacy compatibility fixtures now include mount protocol-scope normalization in
   `MOUNT` options.
