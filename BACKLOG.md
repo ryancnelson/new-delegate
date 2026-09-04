@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 41 - Uppercase GOPHER protocol normalization fixture)
+**Last Updated:** 2026-09-04 (Iteration 42 - Uppercase SOCKS protocol normalization fixture)
 
 ---
 
@@ -415,6 +415,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 41 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for uppercase `SERVER=GOPHER` and matching protocol selectors
+
+### Iteration 42 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for uppercase `SERVER=SOCKS` and matching protocol selectors
 
 ---
 

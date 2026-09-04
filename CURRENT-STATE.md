@@ -185,6 +185,8 @@ Last verified: 2026-09-04
   for `SERVER=HTTPS` and uppercase protocol selectors.
 - The compatibility fixture corpus now includes protocol-case normalization checks
   for `SERVER=GOPHER` and uppercase protocol selectors.
+- The compatibility fixture corpus now includes protocol-case normalization checks
+  for `SERVER=SOCKS` and uppercase protocol selectors.
 
 ## Unverified
 

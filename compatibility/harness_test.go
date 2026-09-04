@@ -57,6 +57,11 @@ func TestLoadFixture(t *testing.T) {
 		t.Fatalf("LoadFixture() = %v", err)
 	}
 
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-server-uppercase.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
 	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-server-uppercase.json"))
 	if err != nil {
 		t.Fatalf("LoadFixture() = %v", err)

@@ -58,3 +58,5 @@ Intentional differences:
   `SERVER=HTTPS` and matching protocol selectors.
 - Legacy compatibility fixtures now include protocol-case normalization for
   `SERVER=GOPHER` and matching protocol selectors.
+- Legacy compatibility fixtures now include protocol-case normalization for
+  `SERVER=SOCKS` and matching protocol selectors.

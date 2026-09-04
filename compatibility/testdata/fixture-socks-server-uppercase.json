@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=SOCKS uppercase protocol normalization",
+  "args": [
+    "SERVER=SOCKS",
+    "MOUNT=\"/socks/* tcp://socks.internal:1080/*\"",
+    "PERMIT=SoCkS:socks.internal:127.0.0.1",
+    "REJECT=socks:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "socks",
+        "listen": ":1080"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/socks/*",
+        "target": "tcp://socks.internal:1080"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "socks",
+        "destination": "socks.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "socks",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
