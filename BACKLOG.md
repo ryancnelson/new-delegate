@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 90 - FTP passive peer pinning)
+**Last Updated:** 2026-09-04 (Iteration 92 - bounded FTP control I/O)
 
 ---
 
@@ -158,7 +158,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-034: Bound FTP I/O and implement transfer lifecycle
 
-- [IDEA] Depends on P1-033. Files: `connector/ftp.go`, `connector/ftp_test.go`,
+- [IN PROGRESS] Depends on P1-033. Files: `connector/ftp.go`, `connector/ftp_test.go`,
   `connector/routes_test.go`; semantic result changes only as needed.
 - RED cases: stalled greeting, unterminated/oversized multiline reply, stalled
   data stream, client cancellation mid-transfer, and large RETR/LIST payload.
@@ -171,6 +171,17 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   first response bytes do not require the complete download; final FTP failures
   are surfaced. Document how a failure after HTTP headers are sent is handled
   (abort/report transfer failure, never pretend the already-sent status changed).
+- Sub-checkpoints: (a) bounded multiline control replies plus dial/control
+  deadlines and cancellation; (b) streaming RETR/LIST body ownership and STOR
+  completion cleanup; (c) frontend propagation that aborts a partially written
+  HTTP response when a late FTP completion fails. Keep this parent in progress
+  until all three pass locally and in Woodpecker.
+- Sub-checkpoint (a) is locally verified: stalled greetings time out, canceled
+  contexts close the control socket, dialers receive a bounded context, and the
+  aggregate-bounded decoder accepts valid multiline replies while rejecting
+  oversized, unterminated, mismatched, and malformed records. Table, fuzz-seed,
+  focused, race, and full portability gates pass. Awaiting exact-commit
+  Woodpecker acceptance; sub-checkpoints (b) and (c) remain.
 
 ### P1-035: Make FTP-to-HTTP translation semantic and fail closed
 

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"gitea.local/ryan/new-delegate/operation"
 )
@@ -294,6 +295,211 @@ func FuzzParsePASVPort(f *testing.F) {
 	})
 }
 
+func TestFTPReadsMultilineGreeting(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	dataClient, dataServer := net.Pipe()
+	dialer := &ftpScriptDialer{
+		control: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		data: dataClient,
+	}
+	scriptDone := make(chan error, 1)
+	go func() {
+		defer controlServer.Close()
+		if _, err := io.WriteString(controlServer, "220-Welcome\r\n220 Ready\r\n"); err != nil {
+			scriptDone <- err
+			return
+		}
+		reader := bufio.NewReader(controlServer)
+		if err := ftpLoginScript(reader, controlServer); err != nil {
+			scriptDone <- err
+			return
+		}
+		if err := expectFTPCommand(reader, "EPSV"); err != nil {
+			scriptDone <- err
+			return
+		}
+		if err := writeFTPLine(controlServer, "229 Entering Extended Passive Mode (|||4242|)"); err != nil {
+			scriptDone <- err
+			return
+		}
+		scriptDone <- ftpRetrieveScript(reader, controlServer, dataServer, "multiline greeting")
+	}()
+
+	result, err := NewFTP(dialer).Fetch(context.Background(), operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer result.Body.Close()
+	if err := <-scriptDone; err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestFTPRejectsOversizedMultilineGreetingBeforeCommand(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	tracked := &ftpCloseTrackingConn{
+		Conn: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		closed: make(chan struct{}),
+	}
+	dialer := &ftpScriptDialer{control: tracked}
+	connector := NewFTP(dialer)
+	connector.maxReplyBytes = 64
+	scriptDone := make(chan error, 1)
+	go func() {
+		defer controlServer.Close()
+		_, err := io.WriteString(controlServer, "220-"+strings.Repeat("x", 80)+"\r\n220 Ready\r\n")
+		if err != nil && !errors.Is(err, net.ErrClosed) && !errors.Is(err, io.ErrClosedPipe) {
+			scriptDone <- err
+			return
+		}
+		scriptDone <- nil
+	}()
+
+	_, err := connector.Fetch(context.Background(), operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if err == nil || !strings.Contains(err.Error(), "reply exceeds") {
+		t.Fatalf("Fetch() error = %v, want bounded reply error", err)
+	}
+	select {
+	case <-tracked.closed:
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("control connection was not closed after oversized greeting")
+	}
+	if scriptErr := <-scriptDone; scriptErr != nil {
+		t.Fatal(scriptErr)
+	}
+}
+
+func TestFTPStalledGreetingUsesControlTimeout(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	defer controlServer.Close()
+	tracked := &ftpCloseTrackingConn{
+		Conn: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+		closed: make(chan struct{}),
+	}
+	dialer := &ftpScriptDialer{control: tracked}
+	connector := NewFTP(dialer)
+	connector.controlTimeout = 25 * time.Millisecond
+
+	started := time.Now()
+	_, err := connector.Fetch(context.Background(), operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if err == nil || !strings.Contains(err.Error(), "timeout") {
+		t.Fatalf("Fetch() error = %v, want control timeout", err)
+	}
+	if elapsed := time.Since(started); elapsed > 250*time.Millisecond {
+		t.Fatalf("stalled greeting returned after %s, want bounded return", elapsed)
+	}
+	select {
+	case <-tracked.closed:
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("control connection was not closed after greeting timeout")
+	}
+}
+
+func TestFTPStalledGreetingHonorsCancellation(t *testing.T) {
+	controlClient, controlServer := net.Pipe()
+	defer controlServer.Close()
+	dialer := &ftpScriptDialer{
+		control: ftpRemoteAddrConn{
+			Conn: controlClient,
+			peer: &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 21},
+		},
+	}
+	connector := NewFTP(dialer)
+	connector.controlTimeout = time.Second
+	ctx, cancel := context.WithCancel(context.Background())
+	result := make(chan error, 1)
+	go func() {
+		_, err := connector.Fetch(ctx, operation.Fetch{
+			Method:   "GET",
+			Resource: "ftp://127.0.0.1:21/file.txt",
+		})
+		result <- err
+	}()
+	cancel()
+	select {
+	case err := <-result:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("Fetch() error = %v, want context cancellation", err)
+		}
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("Fetch did not return after cancellation")
+	}
+}
+
+func TestFTPDialUsesBoundedContext(t *testing.T) {
+	connector := NewFTP(ftpDialerFunc(func(ctx context.Context, _, _ string) (net.Conn, error) {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}))
+	connector.dialTimeout = 25 * time.Millisecond
+	started := time.Now()
+	_, err := connector.Fetch(context.Background(), operation.Fetch{
+		Method:   "GET",
+		Resource: "ftp://127.0.0.1:21/file.txt",
+	})
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("Fetch() error = %v, want dial deadline", err)
+	}
+	if elapsed := time.Since(started); elapsed > 250*time.Millisecond {
+		t.Fatalf("dial returned after %s, want bounded return", elapsed)
+	}
+}
+
+func TestReadFTPReplyRejectsMalformedMultiline(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		input string
+		max   int
+	}{
+		{name: "unterminated", input: "220-first\r\nmore text\r\n", max: 256},
+		{name: "wrong terminal code", input: "220-first\r\n221 done\r\n", max: 256},
+		{name: "oversized total", input: "220-first\r\n" + strings.Repeat("x", 80) + "\r\n", max: 64},
+		{name: "bad separator", input: "220!bad\r\n", max: 256},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if reply, err := newFTPReplyReader(strings.NewReader(test.input), test.max).ReadReply(); err == nil {
+				t.Fatalf("ReadReply(%q) = %#v, nil; want error", test.input, reply)
+			}
+		})
+	}
+}
+
+func FuzzReadFTPReply(f *testing.F) {
+	for _, seed := range []string{
+		"220 ready\r\n",
+		"220-first\r\n220 ready\r\n",
+		"bad\r\n",
+		"",
+	} {
+		f.Add(seed)
+	}
+	f.Fuzz(func(t *testing.T, input string) {
+		reader := newFTPReplyReader(strings.NewReader(input), 256)
+		reply, err := reader.ReadReply()
+		if err == nil && (reply.Code < 100 || reply.Code > 599) {
+			t.Fatalf("ReadReply(%q) returned invalid code %d", input, reply.Code)
+		}
+	})
+}
+
 type ftpRemoteAddrConn struct {
 	net.Conn
 	peer net.Addr
@@ -301,12 +507,29 @@ type ftpRemoteAddrConn struct {
 
 func (c ftpRemoteAddrConn) RemoteAddr() net.Addr { return c.peer }
 
+type ftpCloseTrackingConn struct {
+	net.Conn
+	closed chan struct{}
+	once   sync.Once
+}
+
+func (c *ftpCloseTrackingConn) Close() error {
+	c.once.Do(func() { close(c.closed) })
+	return c.Conn.Close()
+}
+
 type ftpScriptDialer struct {
 	mu      sync.Mutex
 	control net.Conn
 	data    net.Conn
 	dataErr error
 	dials   []string
+}
+
+type ftpDialerFunc func(context.Context, string, string) (net.Conn, error)
+
+func (f ftpDialerFunc) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	return f(ctx, network, address)
 }
 
 func (d *ftpScriptDialer) DialContext(_ context.Context, _, address string) (net.Conn, error) {
