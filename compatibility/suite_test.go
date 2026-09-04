@@ -67,3 +67,11 @@ func TestRunFixtureSuiteReturnsErrorWhenNoFixturesExist(t *testing.T) {
 		t.Fatalf("RunFixtureSuite() error = %v, want contains %q", err, "no fixture files found")
 	}
 }
+
+func TestListFixtureFilesReturnsErrorForMissingDirectory(t *testing.T) {
+	t.Parallel()
+
+	if _, err := listFixtureFiles(filepath.Join("testdata", "does-not-exist")); err == nil {
+		t.Fatal("listFixtureFiles() = nil, want error")
+	}
+}
