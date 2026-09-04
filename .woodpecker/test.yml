@@ -5,7 +5,9 @@ when:
 
 steps:
   - name: test
-    image: golang:1.25-bookworm
+    # Biggie uses Woodpecker's local backend: image is the executable that
+    # interprets commands. The agent provides Go and the POSIX shell.
+    image: sh
     commands:
       - test -z "$(gofmt -l .)"
       - go vet ./...
@@ -13,7 +15,7 @@ steps:
       - go test -race ./...
 
   - name: portable-builds
-    image: golang:1.25-bookworm
+    image: sh
     commands:
       - CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -o /tmp/delegate-darwin-arm64 ./cmd/delegate
       - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/delegate-linux-amd64 ./cmd/delegate
