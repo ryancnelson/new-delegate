@@ -1,6 +1,6 @@
 # Current state
 
-Last verified: 2026-09-03
+Last verified: 2026-09-04
 
 ## Verified
 
@@ -157,6 +157,9 @@ Last verified: 2026-09-03
   request bodies at 32 MiB. Denied and declared-oversized writes invoke no
   connector; loopback tests prove the complete HTTP Store path while existing
   Fetch and CONNECT coverage remains green.
+- `ftp://` mounts now execute protocol-neutral Fetch and Store operations through a
+  dedicated FTP connector and preserve loopback behavior for both `RETR` and `STOR`
+  operations.
 
 ## Unverified
 
@@ -166,8 +169,8 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Select the next compatibility slice after the verified HTTP Fetch, Store, and
-CONNECT foundation.
+Select the next compatibility slice: FTP `LIST` translation and the differential
+compatibility harness against the original DeleGate implementation.
 
 Active verification and release builds target only Darwin/arm64 and Linux/amd64
 until the owner expands the matrix.

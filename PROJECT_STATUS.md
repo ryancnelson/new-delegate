@@ -413,3 +413,34 @@ Running changelog, updated automatically every 10 minutes.
 - Focused tests prove the full loopback write and that denial or a declared
   oversized body invokes neither Store nor Fetch. The complete local gate
   passes on Darwin/arm64 and Linux/amd64; remote acceptance remains.
+
+## 2026-09-03 22:24
+
+- Two new commits confirm the work already logged out-of-band above: `d7a011d [iter-25] relay authorized HTTP CONNECT` and `a0f398d [iter-26] route HTTP PUT as typed Store`. Working tree is clean, in sync with `origin/main`.
+- Nothing currently `[IN PROGRESS]` in BACKLOG.md. New current gate per CURRENT-STATE.md: select the next compatibility slice after the verified HTTP Fetch, Store, and CONNECT foundation. Build/release scope remains limited to Darwin/arm64 and Linux/amd64 per the owner's standing constraint.
+- Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
+
+## 2026-09-03 22:35
+
+- No new commits since the last entry (`a0f398d` still HEAD, in sync with `origin/main`). Only local change is this file itself.
+- BACKLOG.md unchanged: nothing currently `[IN PROGRESS]`. CURRENT-STATE.md gate unchanged: select the next compatibility slice after the verified HTTP Fetch, Store, and CONNECT foundation. Build/release scope still limited to Darwin/arm64 and Linux/amd64.
+- Quiet tick — work appears paused since iteration 26 landed.
+
+## 2026-09-03 22:44
+
+- Still no new commits (`a0f398d` remains HEAD, in sync with `origin/main`), but active work has resumed. New `[IN PROGRESS]` item (BACKLOG.md line 265): HTTP/FTP Fetch and Store translation. New current gate per CURRENT-STATE.md: select the next compatibility slice — FTP `LIST` translation and the differential compatibility harness against the original DeleGate implementation.
+- Working tree has uncommitted, in-progress changes: modified `connector/routes.go`, `connector/routes_test.go`, `BACKLOG.md`, `COMPATIBILITY.md`, `CURRENT-STATE.md`; untracked `connector/ftp.go`.
+- Build/release scope still limited to Darwin/arm64 and Linux/amd64. Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
+
+## 2026-09-04 05:00
+
+- New commit `e17d7b8 [iter-27] add ftp fetch and store connector routing` adds
+  protocol-neutral FTP Fetch and Store for `ftp://` mounts through a dedicated
+  `FTP` connector. `routes.FetchForMount` / `StoreForMount` now dispatch by scheme,
+  preserving policy and frontend selection behavior while adding URL-targeted FTP routing.
+- Focused loopback tests for this iteration pass, and the project verification gate
+  now passes end-to-end (formatting/vet/tests/race and CGO-free Darwin/arm64,
+  Linux/amd64 builds).
+- Working tree is clean and in sync with `origin/main`; current gate per
+  `CURRENT-STATE.md` remains the differential compatibility slice: FTP `LIST`
+  translation and compatibility harnesses against original DeleGate.

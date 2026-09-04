@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 23 - HTTP hop-by-hop boundary)
+**Last Updated:** 2026-09-04 (Iteration 27 - HTTP/FTP Fetch and Store translation)
 
 ---
 
@@ -262,7 +262,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 - [DONE] Trusted-proxy CIDRs for accepting forwarded client addresses; direct
   peer address remains the default and untrusted forwarding headers are
   ignored.
-- HTTP/FTP Fetch and Store translation.
+- [DONE] HTTP/FTP Fetch and Store translation.
 - Differential compatibility harness for an original DeleGate executable.
 
 ---
@@ -363,6 +363,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 26 (2026-09-03)
 - [DONE] ✅ Routed bounded HTTP PUT requests through typed Store operations
+
+### Iteration 27 (2026-09-04)
+- [DONE] ✅ Added FTP Fetch and Store connector translation
 
 ---
 

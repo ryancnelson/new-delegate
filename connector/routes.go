@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/operation"
@@ -15,6 +17,7 @@ import (
 // semantic Fetch remains transport-agnostic.
 type HTTPRoutes struct {
 	defaultConnector *HTTP
+	ftpConnector     *FTP
 	secureConnectors map[tlsconfig.Backend]*HTTP
 	transports       []*http.Transport
 }
@@ -27,6 +30,7 @@ func NewHTTPRoutes(defaultClient *http.Client, policies map[tlsconfig.Backend]*t
 	}
 	routes := &HTTPRoutes{
 		defaultConnector: NewHTTP(defaultClient),
+		ftpConnector:     NewFTP(nil),
 		secureConnectors: make(map[tlsconfig.Backend]*HTTP, len(policies)),
 		transports:       make([]*http.Transport, 0, len(policies)),
 	}
@@ -68,15 +72,28 @@ func (r *HTTPRoutes) StoreForMount(ctx context.Context, mapping mount.Mount, sto
 	return selected.Store(ctx, store)
 }
 
-func (r *HTTPRoutes) connectorForMount(mapping mount.Mount) (*HTTP, error) {
-	if mapping.TLS == nil {
+type protocolConnector interface {
+	Fetch(context.Context, operation.Fetch) (operation.Result, error)
+	Store(context.Context, operation.Store) (operation.Result, error)
+}
+
+func (r *HTTPRoutes) connectorForMount(mapping mount.Mount) (protocolConnector, error) {
+	parsed, err := url.Parse(mapping.Target)
+	if err != nil {
+		return nil, fmt.Errorf("mount target URL: %w", err)
+	}
+	switch {
+	case strings.EqualFold(parsed.Scheme, "ftp"):
+		return r.ftpConnector, nil
+	case mapping.TLS == nil:
 		return r.defaultConnector, nil
+	default:
+		selected, ok := r.secureConnectors[*mapping.TLS]
+		if !ok {
+			return nil, fmt.Errorf("no preloaded backend TLS transport for selected mount")
+		}
+		return selected, nil
 	}
-	selected, ok := r.secureConnectors[*mapping.TLS]
-	if !ok {
-		return nil, fmt.Errorf("no preloaded backend TLS transport for selected mount")
-	}
-	return selected, nil
 }
 
 // CloseIdleConnections releases pooled connections owned by routed transports.
