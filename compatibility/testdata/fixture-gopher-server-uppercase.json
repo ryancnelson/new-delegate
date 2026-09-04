@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=GOPHER uppercase protocol normalization",
+  "args": [
+    "SERVER=GOPHER",
+    "MOUNT=\"/gopher/* http://gopher.internal/gopher/*\"",
+    "PERMIT=GOpHeR:gopher.internal:127.0.0.1",
+    "REJECT=GOPHER:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/gopher/*",
+        "target": "http://gopher.internal/gopher/*"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "gopher.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "gopher",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

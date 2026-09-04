@@ -56,3 +56,5 @@ Intentional differences:
   uppercase `SERVER=FTP` and matching `PERMIT`/`REJECT` selectors.
 - Legacy compatibility fixtures now include protocol-case normalization for
   `SERVER=HTTPS` and matching protocol selectors.
+- Legacy compatibility fixtures now include protocol-case normalization for
+  `SERVER=GOPHER` and matching protocol selectors.
