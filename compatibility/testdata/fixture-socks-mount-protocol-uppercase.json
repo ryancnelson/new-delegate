@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT protocol scope uppercase protocol option for SOCKS",
+  "args": [
+    "SERVER=socks",
+    "MOUNT=\"/socks/* tcp://backend.internal:1080 protocol=SOCKS priority=11 server=default\"",
+    "PERMIT=sOCKS:backend.internal:127.0.0.1",
+    "REJECT=SoCkS:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "socks",
+        "listen": ":1080"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/socks/*",
+        "target": "tcp://backend.internal:1080",
+        "priority": 11,
+        "server": "default",
+        "protocol": "socks"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "socks",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "socks",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
