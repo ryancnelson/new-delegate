@@ -33,6 +33,10 @@ type mountStoreConnector interface {
 	StoreForMount(context.Context, mount.Mount, operation.Store) (operation.Result, error)
 }
 
+type mountListConnector interface {
+	ListForMount(context.Context, mount.Mount, operation.List) (operation.Result, error)
+}
+
 type relayConnector interface {
 	Connect(context.Context, operation.Relay) (net.Conn, error)
 }
@@ -132,7 +136,17 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 			return buildErr
 		}
 		metadata := cloneHeader(request.Header)
-		if request.Method == http.MethodPut {
+		switch request.Method {
+		case "LIST":
+			lists, ok := h.connector.(mountListConnector)
+			if !ok {
+				return operation.ErrUnsupported
+			}
+			result, buildErr = lists.ListForMount(request.Context(), matched.Mount, operation.List{
+				Resource: resource, Metadata: metadata,
+			})
+			return buildErr
+		case http.MethodPut:
 			if request.ContentLength > maxStoreBodyBytes {
 				return errStoreBodyTooLarge
 			}
@@ -145,11 +159,12 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 				Body: http.MaxBytesReader(response, request.Body, maxStoreBodyBytes), Size: request.ContentLength,
 			})
 			return buildErr
+		default:
+			result, buildErr = h.connector.FetchForMount(request.Context(), matched.Mount, operation.Fetch{
+				Method: request.Method, Resource: resource, Metadata: metadata, Body: request.Body,
+			})
+			return buildErr
 		}
-		result, buildErr = h.connector.FetchForMount(request.Context(), matched.Mount, operation.Fetch{
-			Method: request.Method, Resource: resource, Metadata: metadata, Body: request.Body,
-		})
-		return buildErr
 	})
 	if errors.Is(err, policy.ErrDenied) {
 		http.Error(response, string(decision.Reason), http.StatusForbidden)
@@ -356,6 +371,16 @@ func (f fixedMountConnector) StoreForMount(ctx context.Context, _ mount.Mount, s
 		return operation.Result{}, fmt.Errorf("backend connector does not support Store")
 	}
 	return connector.Store(ctx, store)
+}
+
+func (f fixedMountConnector) ListForMount(ctx context.Context, _ mount.Mount, list operation.List) (operation.Result, error) {
+	connector, ok := f.fetchConnector.(interface {
+		List(context.Context, operation.List) (operation.Result, error)
+	})
+	if !ok {
+		return operation.Result{}, operation.ErrUnsupported
+	}
+	return connector.List(ctx, list)
 }
 
 func policySource(configured config.Config, serverName string, request *http.Request) (string, error) {

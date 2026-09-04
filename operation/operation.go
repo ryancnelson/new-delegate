@@ -31,6 +31,12 @@ type Fetch struct {
 	Body     io.Reader
 }
 
+// List asks a connector to enumerate one resource collection.
+type List struct {
+	Resource string
+	Metadata map[string][]string
+}
+
 // Store asks a connector to write one resource.
 type Store struct {
 	Method   string

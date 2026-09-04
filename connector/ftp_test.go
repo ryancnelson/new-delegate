@@ -553,7 +553,7 @@ func TestFTPFetchReturnsBeforeDataCompletes(t *testing.T) {
 		command string
 	}{
 		{name: "retrieve", method: "GET", command: "RETR"},
-		{name: "list", method: "LIST", command: "LIST"},
+		{name: "list", command: "LIST"},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			testFTPFetchReturnsBeforeDataCompletes(t, test.method, test.command)
@@ -595,10 +595,18 @@ func testFTPFetchReturnsBeforeDataCompletes(t *testing.T, method, command string
 		err    error
 	}, 1)
 	go func() {
-		result, err := NewFTP(dialer).Fetch(context.Background(), operation.Fetch{
-			Method:   method,
-			Resource: "ftp://127.0.0.1:21/large.txt",
-		})
+		var result operation.Result
+		var err error
+		connector := NewFTP(dialer)
+		if command == "LIST" {
+			result, err = connector.List(context.Background(), operation.List{
+				Resource: "ftp://127.0.0.1:21/large.txt",
+			})
+		} else {
+			result, err = connector.Fetch(context.Background(), operation.Fetch{
+				Method: method, Resource: "ftp://127.0.0.1:21/large.txt",
+			})
+		}
 		resultReady <- struct {
 			result operation.Result
 			err    error

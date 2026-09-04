@@ -10,8 +10,12 @@ Last verified: 2026-09-04
   rejects unknown or invalid results as 502. FTP no longer returns raw 226
   statuses, and unsupported FTP Fetch/Store methods fail before any dial.
   Focused connector/server tests and the full local gate pass. Push-triggered
-  Woodpecker pipeline 96 passed all stages at exact commit `4e9efe1`; real
-  HTTP-to-FTP outcome acceptance remains in P1-035.
+  Woodpecker pipeline 96 passed all stages at exact commit `4e9efe1`.
+- LIST is now a distinct semantic operation through the HTTP frontend, route
+  selector, and HTTP/FTP connectors. A real loopback HTTP-to-FTP matrix proves
+  GET 200, LIST 200, PUT 204, missing 404, permission 403, and upstream 502;
+  HEAD, POST, and DELETE return 405 without an FTP control connection. The full
+  race and Darwin/arm64 plus Linux/amd64 gate pass locally.
 - FTP control setup now uses bounded dial contexts, rolling socket deadlines,
   and context-triggered connection closure. Replies are decoded as complete
   single- or multiline FTP records with a 64 KiB aggregate limit; malformed,

@@ -51,12 +51,15 @@ func NewFTP(dialer contextDialer) *FTP {
 
 // Fetch retrieves one resource from an ftp backend.
 func (f *FTP) Fetch(ctx context.Context, fetch operation.Fetch) (operation.Result, error) {
-	switch fetch.Method {
-	case http.MethodGet, "LIST":
-	default:
+	if fetch.Method != http.MethodGet {
 		return operation.Result{}, fmt.Errorf("unsupported ftp fetch method %q: %w", fetch.Method, operation.ErrUnsupported)
 	}
 	return f.operate(ctx, fetch.Method, fetch.Resource, "", fetch.Body)
+}
+
+// List enumerates one resource collection from an FTP backend.
+func (f *FTP) List(ctx context.Context, list operation.List) (operation.Result, error) {
+	return f.operate(ctx, "LIST", list.Resource, "", nil)
 }
 
 // Store writes one resource to an ftp backend.

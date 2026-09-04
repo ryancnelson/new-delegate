@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 99 - accept semantic FTP outcomes)
+**Last Updated:** 2026-09-04 (Iteration 100 - HTTP-to-FTP outcome acceptance)
 
 ---
 
@@ -224,6 +224,13 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   and the full race/portability gate pass. Push-triggered Woodpecker pipeline
   96 passed all stages at exact commit `4e9efe1`. The real HTTP-to-FTP outcome
   matrix remains before P1-035 acceptance.
+- Sub-checkpoint (b) is locally verified: LIST is a distinct semantic operation
+  through the frontend, route selector, and HTTP/FTP connectors rather than a
+  Fetch method string. A real loopback HTTP-to-FTP test proves GET 200, LIST
+  200, PUT 204, missing 404, permission 403, and upstream 502 behavior. HEAD,
+  POST, and DELETE return 405 without opening an FTP control connection. The
+  focused tests and full race plus Darwin/arm64 and Linux/amd64 gate pass.
+  Awaiting exact-commit Woodpecker acceptance.
 
 ### P1-036: Own and drain CONNECT and bridge sessions
 

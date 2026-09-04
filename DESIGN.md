@@ -52,6 +52,9 @@ approval. It does not manufacture semantic operations.
   small protocol-neutral outcomes: success, not found, permission denied, or
   upstream failure. The HTTP frontend owns the outcome-to-status mapping and
   fails closed on unknown outcomes or invalid passthrough statuses.
+- Fetch, List, and Store are distinct semantic capabilities. A frontend LIST
+  request becomes `operation.List`; connectors do not encode listing as an
+  HTTP-shaped Fetch method.
 - The direct peer is authoritative unless it is an explicitly trusted proxy;
   malformed client-address chains from trusted proxies fail closed.
 - Equal-specificity mounts require distinct priorities or validation fails.

@@ -286,10 +286,9 @@ func TestHTTPRoutesDispatchesFTPFetchAndStore(t *testing.T) {
 		t.Fatalf("stored body = %q, want %q", got, storePayload)
 	}
 
-	listResult, err := routes.FetchForMount(context.Background(), mount.Mount{
+	listResult, err := routes.ListForMount(context.Background(), mount.Mount{
 		Target: "ftp://" + address + "/",
-	}, operation.Fetch{
-		Method:   "LIST",
+	}, operation.List{
 		Resource: "ftp://" + address + "/",
 	})
 	if err != nil {

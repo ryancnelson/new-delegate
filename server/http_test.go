@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -330,6 +332,278 @@ func TestHTTPHandlerMapsUnsupportedBackendOperationToMethodNotAllowed(t *testing
 	if response.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, want %d", response.Code, http.StatusMethodNotAllowed)
 	}
+}
+
+func TestHTTPHandlerRoutesLISTAsSemanticListOperation(t *testing.T) {
+	configured := config.Config{
+		Mounts:   []mount.Mount{{Path: "/*", Target: "ftp://backend.invalid/*"}},
+		Policies: []policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "*"}},
+	}
+	routes := &recordingListRoutes{}
+	handler := NewReloadableHTTPHandlerWithRoutes("public", func() config.Config { return configured }, routes)
+	request := httptest.NewRequest("LIST", "http://frontend/reports", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || routes.listCalls != 1 || routes.fetchCalls != 0 {
+		t.Fatalf("response=%d list=%d fetch=%d", response.Code, routes.listCalls, routes.fetchCalls)
+	}
+	if routes.list.Resource != "ftp://backend.invalid/reports" {
+		t.Fatalf("List resource = %q", routes.list.Resource)
+	}
+}
+
+func TestHTTPFrontendTranslatesFTPOutcomesEndToEnd(t *testing.T) {
+	ftpBackend := startSemanticFTPTestServer(t)
+	defer ftpBackend.Close()
+	routes := connector.NewHTTPRoutes(nil, nil)
+	defer routes.CloseIdleConnections()
+	configured := config.Config{
+		Mounts: []mount.Mount{{Path: "/*", Target: "ftp://" + ftpBackend.Address() + "/*"}},
+		Policies: []policy.Rule{{
+			Effect: policy.Permit, Protocol: "http", Source: "*",
+		}},
+	}
+	frontend := httptest.NewServer(NewReloadableHTTPHandlerWithRoutes(
+		"public", func() config.Config { return configured }, routes,
+	))
+	defer frontend.Close()
+
+	for _, test := range []struct {
+		name       string
+		method     string
+		path       string
+		request    string
+		wantStatus int
+		wantBody   string
+	}{
+		{name: "retrieve", method: http.MethodGet, path: "/ok", wantStatus: http.StatusOK, wantBody: "retrieved bytes"},
+		{name: "list", method: "LIST", path: "/directory", wantStatus: http.StatusOK, wantBody: "entry.txt\n"},
+		{name: "store", method: http.MethodPut, path: "/upload", request: "stored bytes", wantStatus: http.StatusNoContent},
+		{name: "not found", method: http.MethodGet, path: "/missing", wantStatus: http.StatusNotFound},
+		{name: "permission denied", method: http.MethodGet, path: "/forbidden", wantStatus: http.StatusForbidden},
+		{name: "upstream failure", method: http.MethodGet, path: "/upstream", wantStatus: http.StatusBadGateway},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			request, err := http.NewRequest(test.method, frontend.URL+test.path, strings.NewReader(test.request))
+			if err != nil {
+				t.Fatal(err)
+			}
+			response, err := frontend.Client().Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, readErr := io.ReadAll(response.Body)
+			_ = response.Body.Close()
+			if readErr != nil {
+				t.Fatal(readErr)
+			}
+			if response.StatusCode != test.wantStatus || string(body) != test.wantBody {
+				t.Fatalf("response = %d %q, want %d %q", response.StatusCode, body, test.wantStatus, test.wantBody)
+			}
+		})
+	}
+	if got := ftpBackend.Upload("/upload"); got != "stored bytes" {
+		t.Fatalf("stored payload = %q, want stored bytes", got)
+	}
+
+	acceptedBefore := ftpBackend.Accepted()
+	for _, method := range []string{http.MethodHead, http.MethodPost, http.MethodDelete} {
+		request, err := http.NewRequest(method, frontend.URL+"/ok", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response, err := frontend.Client().Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = response.Body.Close()
+		if response.StatusCode != http.StatusMethodNotAllowed {
+			t.Errorf("%s status = %d, want %d", method, response.StatusCode, http.StatusMethodNotAllowed)
+		}
+	}
+	if got := ftpBackend.Accepted(); got != acceptedBefore {
+		t.Fatalf("unsupported methods opened %d FTP controls, want zero", got-acceptedBefore)
+	}
+}
+
+type semanticFTPTestServer struct {
+	t        *testing.T
+	listener net.Listener
+	accepted atomic.Int32
+	wait     sync.WaitGroup
+	mu       sync.Mutex
+	uploads  map[string]string
+}
+
+func startSemanticFTPTestServer(t *testing.T) *semanticFTPTestServer {
+	t.Helper()
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := &semanticFTPTestServer{t: t, listener: listener, uploads: map[string]string{}}
+	server.wait.Add(1)
+	go func() {
+		defer server.wait.Done()
+		for {
+			control, acceptErr := listener.Accept()
+			if acceptErr != nil {
+				return
+			}
+			server.accepted.Add(1)
+			server.wait.Add(1)
+			go func() {
+				defer server.wait.Done()
+				if handleErr := server.handle(control); handleErr != nil {
+					server.t.Errorf("fake FTP control: %v", handleErr)
+				}
+			}()
+		}
+	}()
+	return server
+}
+
+func (s *semanticFTPTestServer) Address() string { return s.listener.Addr().String() }
+func (s *semanticFTPTestServer) Accepted() int32 { return s.accepted.Load() }
+
+func (s *semanticFTPTestServer) Upload(path string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.uploads[path]
+}
+
+func (s *semanticFTPTestServer) Close() {
+	_ = s.listener.Close()
+	s.wait.Wait()
+}
+
+func (s *semanticFTPTestServer) handle(control net.Conn) error {
+	defer control.Close()
+	reader := bufio.NewReader(control)
+	if err := writeSemanticFTPLine(control, "220 ready"); err != nil {
+		return err
+	}
+	var dataListener net.Listener
+	defer func() {
+		if dataListener != nil {
+			_ = dataListener.Close()
+		}
+	}()
+
+	for {
+		line, err := reader.ReadString('\n')
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		command, argument := splitSemanticFTPCommand(line)
+		switch command {
+		case "USER":
+			err = writeSemanticFTPLine(control, "230 logged in")
+		case "TYPE":
+			err = writeSemanticFTPLine(control, "200 binary")
+		case "EPSV":
+			if dataListener != nil {
+				_ = dataListener.Close()
+			}
+			dataListener, err = net.Listen("tcp", "127.0.0.1:0")
+			if err == nil {
+				port := dataListener.Addr().(*net.TCPAddr).Port
+				err = writeSemanticFTPLine(control, "229 Entering Extended Passive Mode (|||"+strconv.Itoa(port)+"|)")
+			}
+		case "RETR", "LIST", "STOR":
+			var data net.Conn
+			data, err = acceptSemanticFTPData(dataListener)
+			if err != nil {
+				break
+			}
+			dataListener = nil
+			err = s.transfer(control, data, command, argument)
+		default:
+			err = writeSemanticFTPLine(control, "502 unsupported")
+		}
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func (s *semanticFTPTestServer) transfer(control net.Conn, data net.Conn, command, path string) error {
+	defer data.Close()
+	if command == "RETR" {
+		switch path {
+		case "/missing":
+			return writeSemanticFTPLine(control, "550 missing")
+		case "/forbidden":
+			return writeSemanticFTPLine(control, "530 denied")
+		case "/upstream":
+			return writeSemanticFTPLine(control, "451 unavailable")
+		}
+	}
+	if err := writeSemanticFTPLine(control, "150 opening data"); err != nil {
+		return err
+	}
+	switch command {
+	case "RETR":
+		_, _ = io.WriteString(data, "retrieved bytes")
+	case "LIST":
+		_, _ = io.WriteString(data, "entry.txt\n")
+	case "STOR":
+		body, err := io.ReadAll(data)
+		if err != nil {
+			return err
+		}
+		s.mu.Lock()
+		s.uploads[path] = string(body)
+		s.mu.Unlock()
+	}
+	if err := data.Close(); err != nil {
+		return err
+	}
+	return writeSemanticFTPLine(control, "226 complete")
+}
+
+func acceptSemanticFTPData(listener net.Listener) (net.Conn, error) {
+	if listener == nil {
+		return nil, errors.New("data listener was not opened")
+	}
+	if tcp, ok := listener.(*net.TCPListener); ok {
+		_ = tcp.SetDeadline(time.Now().Add(time.Second))
+	}
+	data, err := listener.Accept()
+	_ = listener.Close()
+	return data, err
+}
+
+func splitSemanticFTPCommand(line string) (string, string) {
+	line = strings.TrimSpace(line)
+	command, argument, _ := strings.Cut(line, " ")
+	return strings.ToUpper(command), argument
+}
+
+func writeSemanticFTPLine(connection net.Conn, line string) error {
+	_, err := io.WriteString(connection, line+"\r\n")
+	return err
+}
+
+type recordingListRoutes struct {
+	listCalls  int
+	fetchCalls int
+	list       operation.List
+}
+
+func (r *recordingListRoutes) FetchForMount(context.Context, mount.Mount, operation.Fetch) (operation.Result, error) {
+	r.fetchCalls++
+	return operation.Result{Status: http.StatusTeapot}, nil
+}
+
+func (r *recordingListRoutes) ListForMount(_ context.Context, _ mount.Mount, list operation.List) (operation.Result, error) {
+	r.listCalls++
+	r.list = list
+	return operation.Result{Outcome: operation.OutcomeSuccess}, nil
 }
 
 type terminalErrorReader struct {

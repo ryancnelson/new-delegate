@@ -62,6 +62,16 @@ func (r *HTTPRoutes) FetchForMount(ctx context.Context, mapping mount.Mount, fet
 	return selected.Fetch(ctx, fetch)
 }
 
+// ListForMount executes a List with the transport associated with the
+// resolver-selected mount.
+func (r *HTTPRoutes) ListForMount(ctx context.Context, mapping mount.Mount, list operation.List) (operation.Result, error) {
+	selected, err := r.connectorForMount(mapping)
+	if err != nil {
+		return operation.Result{}, err
+	}
+	return selected.List(ctx, list)
+}
+
 // StoreForMount executes a Store with the transport associated with the
 // resolver-selected mount.
 func (r *HTTPRoutes) StoreForMount(ctx context.Context, mapping mount.Mount, store operation.Store) (operation.Result, error) {
@@ -74,6 +84,7 @@ func (r *HTTPRoutes) StoreForMount(ctx context.Context, mapping mount.Mount, sto
 
 type protocolConnector interface {
 	Fetch(context.Context, operation.Fetch) (operation.Result, error)
+	List(context.Context, operation.List) (operation.Result, error)
 	Store(context.Context, operation.Store) (operation.Result, error)
 }
 

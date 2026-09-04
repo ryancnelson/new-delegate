@@ -31,6 +31,11 @@ func (h *HTTP) Fetch(ctx context.Context, fetch operation.Fetch) (operation.Resu
 	return h.execute(ctx, fetch.Method, fetch.Resource, fetch.Metadata, fetch.Body, -1)
 }
 
+// List executes one semantic collection listing using an HTTP backend.
+func (h *HTTP) List(ctx context.Context, list operation.List) (operation.Result, error) {
+	return h.execute(ctx, "LIST", list.Resource, list.Metadata, nil, -1)
+}
+
 // Store executes one semantic write operation using an HTTP backend.
 func (h *HTTP) Store(ctx context.Context, store operation.Store) (operation.Result, error) {
 	return h.execute(ctx, store.Method, store.Resource, store.Metadata, store.Body, store.Size)
