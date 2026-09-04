@@ -132,6 +132,26 @@ func TestLoadFixture(t *testing.T) {
 		t.Fatalf("LoadFixture() = %v", err)
 	}
 
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-http-connect-mount-option-keys-case.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-ftp-connect-mount-option-keys-case.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-gopher-connect-mount-option-keys-case.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
+	_, err = LoadFixture(filepath.Join("testdata", "fixture-socks-connect-mount-option-keys-case.json"))
+	if err != nil {
+		t.Fatalf("LoadFixture() = %v", err)
+	}
+
 	_, err = LoadFixture(filepath.Join("testdata", "fixture-https-mount-option-keys-case.json"))
 	if err != nil {
 		t.Fatalf("LoadFixture() = %v", err)

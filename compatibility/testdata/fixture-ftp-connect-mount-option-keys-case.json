@@ -1,0 +1,43 @@
+{
+  "name": "CONNECT MOUNT option key case normalization for FTP legacy directives",
+  "args": [
+    "SERVER=FTP",
+    "MOUNT=\"connect://Example.COM:21/ tcp://tunnel.internal:21 PrIoRiTy=17 SeRvEr=default PrOtOcOl=fTp\"",
+    "PERMIT=FtP:tunnel.internal:127.0.0.1",
+    "REJECT=FTP:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "ftp",
+        "listen": ":21"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://example.com:21/",
+        "target": "tcp://tunnel.internal:21",
+        "priority": 17,
+        "server": "default",
+        "protocol": "ftp"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "ftp",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "ftp",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

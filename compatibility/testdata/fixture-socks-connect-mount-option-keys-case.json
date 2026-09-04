@@ -1,0 +1,43 @@
+{
+  "name": "CONNECT MOUNT option key case normalization for SOCKS legacy directives",
+  "args": [
+    "SERVER=sOCKS",
+    "MOUNT=\"connect://Example.COM:1080/ tcp://tunnel.internal:1080 PrIoRiTy=19 SeRvEr=default PrOtOcOl=SoCkS\"",
+    "PERMIT=SOCKS:tunnel.internal:127.0.0.1",
+    "REJECT=sOCKS:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "socks",
+        "listen": ":1080"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://example.com:1080/",
+        "target": "tcp://tunnel.internal:1080",
+        "priority": 19,
+        "server": "default",
+        "protocol": "socks"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "socks",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "socks",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}

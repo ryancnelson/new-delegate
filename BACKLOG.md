@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 63 - MOUNT option key case coverage for FTP/Gopher/SOCKS)
+**Last Updated:** 2026-09-04 (Iteration 64 - MOUNT option key case coverage for CONNECT mounts)
 
 ---
 
@@ -487,6 +487,10 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 63 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for mixed-case `MOUNT` option
   keys across FTP, Gopher, and SOCKS legacy directives.
+
+### Iteration 64 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for mixed-case `MOUNT` option
+  keys in CONNECT legacy mount directives across HTTP, FTP, Gopher, and SOCKS.
 
 ---
 

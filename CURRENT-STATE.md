@@ -223,6 +223,8 @@ Last verified: 2026-09-04
   full HTTPS legacy mount flow with policy metadata.
 - The compatibility fixture corpus now includes mixed-case `MOUNT` option keys in
   legacy FTP, Gopher, and SOCKS directives.
+- The compatibility fixture corpus now includes mixed-case `MOUNT` option keys in
+  CONNECT legacy directives.
 - The compatibility fixture corpus now includes `SERVER=HTTPS` `CONNECT` metadata and
   selector case-normalization.
 - The compatibility fixture corpus now includes `SERVER=SOCKS` `CONNECT` metadata

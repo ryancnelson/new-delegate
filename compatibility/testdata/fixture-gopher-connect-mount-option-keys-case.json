@@ -1,0 +1,43 @@
+{
+  "name": "CONNECT MOUNT option key case normalization for Gopher legacy directives",
+  "args": [
+    "SERVER=Gopher",
+    "MOUNT=\"connect://Example.COM:70/ tcp://tunnel.internal:7070 PrIoRiTy=18 SeRvEr=default PrOtOcOl=GoPhEr\"",
+    "PERMIT=GoPhEr:tunnel.internal:127.0.0.1",
+    "REJECT=Gopher:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "gopher",
+        "listen": ":70"
+      }
+    ],
+    "mounts": [
+      {
+        "source": "connect://example.com:70/",
+        "target": "tcp://tunnel.internal:7070",
+        "priority": 18,
+        "server": "default",
+        "protocol": "gopher"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "gopher",
+        "destination": "tunnel.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "gopher",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
