@@ -7,25 +7,15 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
 	"testing"
 )
 
 func TestLoadFixture(t *testing.T) {
-	entries, err := os.ReadDir(filepath.Join("testdata"))
+	names, err := listFixtureFiles(filepath.Join("testdata"))
 	if err != nil {
-		t.Fatalf("os.ReadDir(testdata) = %v", err)
+		t.Fatalf("listFixtureFiles(testdata) = %v", err)
 	}
-
-	names := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
-			continue
-		}
-		names = append(names, entry.Name())
-	}
-	sort.Strings(names)
 
 	if len(names) == 0 {
 		t.Fatal("no fixture files found in testdata")
@@ -33,7 +23,7 @@ func TestLoadFixture(t *testing.T) {
 
 	for _, name := range names {
 		t.Run(name, func(t *testing.T) {
-			_, err := LoadFixture(filepath.Join("testdata", name))
+			_, err := LoadFixture(filepath.Join("testdata", filepath.FromSlash(name)))
 			if err != nil {
 				t.Fatalf("LoadFixture(%q) = %v", name, err)
 			}

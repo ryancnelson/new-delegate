@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
+	"io/fs"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -21,19 +21,10 @@ func RunFixtureSuite(ctx context.Context, fixtureDir string, options CompareOpti
 
 	options.Context = ctx
 
-	entries, err := os.ReadDir(fixtureDir)
+	names, err := listFixtureFiles(fixtureDir)
 	if err != nil {
 		return nil, fmt.Errorf("read fixture directory %q: %w", fixtureDir, err)
 	}
-
-	names := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
-			continue
-		}
-		names = append(names, entry.Name())
-	}
-	sort.Strings(names)
 	if len(names) == 0 {
 		return nil, fmt.Errorf("no fixture files found in %q", fixtureDir)
 	}
@@ -61,4 +52,27 @@ func RunFixtureSuite(ctx context.Context, fixtureDir string, options CompareOpti
 	}
 
 	return mismatches, nil
+}
+
+func listFixtureFiles(base string) ([]string, error) {
+	var names []string
+	if err := filepath.WalkDir(base, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
+			return nil
+		}
+		rel, err := filepath.Rel(base, path)
+		if err != nil {
+			return err
+		}
+		names = append(names, filepath.ToSlash(rel))
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	sort.Strings(names)
+	return names, nil
 }
