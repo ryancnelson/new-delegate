@@ -364,3 +364,23 @@ Running changelog, updated automatically every 10 minutes.
 - New commit: `9b53249 [iter-22] match absolute URL mount sources`. Matches the iteration-22 summary already logged out-of-band at 21:39 in this file: `MOUNT` extended with absolute HTTP/HTTPS source URLs in both strict TOML and legacy directives while preserving path mounts; resolution compares scheme/authority without DNS, folds host case, distinguishes explicit ports, and fails closed on userinfo, query, fragment, escaping, traversal, malformed authority, and non-canonical paths; live absolute-form requests and `delegate explain --url` share the resolver; a bounded URL-source fuzz run completed 393,080 executions without a panic.
 - New `[IN PROGRESS]` item (BACKLOG.md line 224): strip proxy credentials and hop-by-hop headers on both sides of the connection — this is the current gate per CURRENT-STATE.md, a prerequisite before expanding forward-proxy behavior. Working tree already has uncommitted work toward it: modified `BACKLOG.md`, `server/http.go`, `server/http_test.go`.
 - Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
+
+## 2026-09-03 21:54
+
+- New commit: `02b357f [iter-23] strip HTTP hop-by-hop metadata`. Matches the iteration-23 summary already logged out-of-band at 21:45 in this file: requests and responses now strip standard hop-by-hop fields, `Proxy-Connection`, proxy credentials/challenges, and every repeated case-insensitive header nominated by `Connection`, while end-to-end values remain intact; a real `http.Client` proxy integration test proves `Proxy-Authorization` and connection-scoped fields never reach the backend and backend hop-by-hop fields never return to the caller.
+- Working tree is now clean, in sync with `origin/main` — nothing currently `[IN PROGRESS]` in BACKLOG.md.
+- New current gate per CURRENT-STATE.md: add authorized, bounded HTTP `CONNECT` as a byte-stream relay separate from semantic Fetch translation.
+- Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
+
+## 2026-09-03 22:04
+
+- No new commits since the last entry (`02b357f` still HEAD, in sync with `origin/main`). Only local change is this file itself.
+- BACKLOG.md unchanged: nothing currently `[IN PROGRESS]`. CURRENT-STATE.md gate unchanged: authorized, bounded HTTP `CONNECT` as a byte-stream relay separate from semantic Fetch translation.
+- Quiet tick — work appears paused since iteration 23 landed.
+
+## 2026-09-03 22:07
+
+- Owner narrowed active build and release work to Darwin/arm64 and Linux/amd64
+  until further notice. Local checks, Woodpecker, release packaging, and the
+  standing agent constraint now use exactly that matrix; prior broader builds
+  remain historical facts only.

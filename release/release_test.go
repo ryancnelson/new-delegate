@@ -6,9 +6,20 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
+
+func TestTargetsMatchActiveBuildMatrix(t *testing.T) {
+	want := []Target{
+		{GOOS: "darwin", GOARCH: "arm64"},
+		{GOOS: "linux", GOARCH: "amd64"},
+	}
+	if !slices.Equal(Targets, want) {
+		t.Fatalf("Targets = %#v, want %#v", Targets, want)
+	}
+}
 
 func TestBuildCreatesDeterministicChecksummedArchives(t *testing.T) {
 	source := t.TempDir()

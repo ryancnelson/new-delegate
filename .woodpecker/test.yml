@@ -19,6 +19,3 @@ steps:
     commands:
       - CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 sh scripts/ci-go.sh go build -o /tmp/delegate-darwin-arm64 ./cmd/delegate
       - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 sh scripts/ci-go.sh go build -o /tmp/delegate-linux-amd64 ./cmd/delegate
-      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 sh scripts/ci-go.sh go build -o /tmp/delegate-linux-arm64 ./cmd/delegate
-      - CGO_ENABLED=0 GOOS=illumos GOARCH=amd64 sh scripts/ci-go.sh go build -o /tmp/delegate-illumos-amd64 ./cmd/delegate
-      - CGO_ENABLED=0 GOOS=windows GOARCH=amd64 sh scripts/ci-go.sh go build -o /tmp/delegate-windows-amd64.exe ./cmd/delegate

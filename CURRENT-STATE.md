@@ -117,8 +117,8 @@ Last verified: 2026-09-03
   close at shutdown, and changing the preloaded backend TLS-policy set requires
   a restart while routing among the existing set may reload.
 - `scripts/release.sh VERSION OUTPUT_DIRECTORY` produces deterministic zip
-  archives for Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64, and
-  Windows/amd64 with CGO disabled, trimmed paths, no VCS metadata, an empty Go
+  archives for the active Darwin/arm64 and Linux/amd64 matrix with CGO
+  disabled, trimmed paths, no VCS metadata, an empty Go
   build ID, and a link-time version stamp. Archives contain the executable and
   README, preserve executable mode, and have a stable SHA-256 manifest. Two
   complete real builds produced identical manifests; all checksums verified,
@@ -151,3 +151,6 @@ Last verified: 2026-09-03
 
 Add authorized, bounded HTTP `CONNECT` as a byte-stream relay separate from
 semantic Fetch translation.
+
+Active verification and release builds target only Darwin/arm64 and Linux/amd64
+until the owner expands the matrix.

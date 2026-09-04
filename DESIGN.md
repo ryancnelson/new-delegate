@@ -62,8 +62,9 @@ approval. It does not manufacture semantic operations.
 
 ## Portability
 
-Darwin/arm64 is the primary development platform. Linux/amd64 and Linux/arm64
-are runtime targets. illumos/amd64 and Windows/amd64 are compile-checked. The
+Darwin/arm64 is the primary development platform and Linux/amd64 is the only
+additional active build and release target. Other platforms remain a future
+portability concern but are not built until the owner expands the matrix. The
 default build uses pure Go and no assembly.
 
 Release archives use fixed ordering, timestamps, modes, trimmed source paths,

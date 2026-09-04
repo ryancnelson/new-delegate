@@ -19,6 +19,8 @@ This is an iterate-bot project. Work through `BACKLOG.md` in priority order.
 
 - Go standard library first. Add dependencies only with a recorded reason.
 - Keep the normal build compatible with `CGO_ENABLED=0`.
+- Until the owner expands the matrix, build and package only Darwin/arm64 and
+  Linux/amd64.
 - Do not write assembly.
 - Do not contact a backend before mount resolution and policy both succeed.
 - Unknown directives, ambiguous mounts, and unsupported translations fail
@@ -30,4 +32,3 @@ This is an iterate-bot project. Work through `BACKLOG.md` in priority order.
 - Every parser gets table tests, malformed-input tests, and fuzz coverage.
 - Never place credentials in configuration values, logs, test fixtures, or
   command arguments. Configuration stores provider references only.
-

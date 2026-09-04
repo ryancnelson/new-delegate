@@ -202,9 +202,9 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-023: Self-contained release artifacts
 
-- [DONE] Produce checksummed single-binary archives for every supported target.
-- Acceptance: one deterministic script builds Darwin/arm64, Linux/amd64,
-  Linux/arm64, illumos/amd64, and Windows/amd64 with `CGO_ENABLED=0`; archives
+- [DONE] Produce checksummed single-binary archives for every active target.
+- Acceptance: one deterministic script builds Darwin/arm64 and Linux/amd64
+  with `CGO_ENABLED=0`; archives
   contain only the executable plus essential notices; SHA-256 checksums are
   emitted; the native artifact passes `delegate check` against the example;
   tests use a temporary output directory and never depend on public networks.

@@ -22,9 +22,6 @@ type Target struct {
 var Targets = []Target{
 	{GOOS: "darwin", GOARCH: "arm64"},
 	{GOOS: "linux", GOARCH: "amd64"},
-	{GOOS: "linux", GOARCH: "arm64"},
-	{GOOS: "illumos", GOARCH: "amd64"},
-	{GOOS: "windows", GOARCH: "amd64"},
 }
 
 // Builder creates one target executable at output.
