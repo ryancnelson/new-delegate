@@ -125,6 +125,15 @@ Last verified: 2026-09-03
   and the extracted Darwin binary reported its version and passed `check`
   against the canonical example. Archive construction also has isolated,
   network-free determinism tests.
+- Mounts may use either the existing path source or an absolute HTTP/HTTPS URL
+  source. Legacy `MOUNT="http://host/path/* target/*"` and strict TOML
+  `source` decode to the same model. Resolution matches scheme and authority
+  without DNS, folds host case, keeps explicit ports distinct, normalizes the
+  request path, and uses URL authority as a deterministic tie-breaker. Source
+  userinfo, query, fragment, percent escaping, traversal, duplicate separators,
+  and unsupported schemes fail closed. Live absolute-form HTTP requests and
+  `delegate explain --url` use this same resolver. A bounded fuzz run completed
+  393,080 executions without a panic.
 
 ## Unverified
 
@@ -134,5 +143,5 @@ Last verified: 2026-09-03
 
 ## Current gate
 
-Add fail-closed URL-authority source patterns to `MOUNT` as the routing
-prerequisite for HTTP forward proxying.
+Strip proxy credentials and all HTTP hop-by-hop headers on requests and
+responses before expanding forward-proxy behavior.

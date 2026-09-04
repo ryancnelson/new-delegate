@@ -136,6 +136,14 @@ func loadExplanation(args []string) (config.Config, explain.Request, error) {
 			request.Path = parsed
 		case strings.HasPrefix(arg, "--path="):
 			request.Path = strings.TrimPrefix(arg, "--path=")
+		case arg == "--url":
+			parsed, err := value("--url")
+			if err != nil {
+				return config.Config{}, explain.Request{}, err
+			}
+			request.URL = parsed
+		case strings.HasPrefix(arg, "--url="):
+			request.URL = strings.TrimPrefix(arg, "--url=")
 		case arg == "--source":
 			parsed, err := value("--source")
 			if err != nil {
@@ -164,8 +172,8 @@ func loadExplanation(args []string) (config.Config, explain.Request, error) {
 			configArgs = append(configArgs, arg)
 		}
 	}
-	if strings.TrimSpace(request.Path) == "" {
-		return config.Config{}, explain.Request{}, fmt.Errorf("--path is required")
+	if (strings.TrimSpace(request.Path) == "") == (strings.TrimSpace(request.URL) == "") {
+		return config.Config{}, explain.Request{}, fmt.Errorf("exactly one of --path or --url is required")
 	}
 	if strings.TrimSpace(request.Source) == "" {
 		return config.Config{}, explain.Request{}, fmt.Errorf("--source is required")

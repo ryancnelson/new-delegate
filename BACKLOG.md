@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 21 - Reproducible release artifacts)
+**Last Updated:** 2026-09-03 (Iteration 22 - URL-authority mounts)
 
 ---
 
@@ -211,13 +211,23 @@ These are ideal next iteration candidates. Each provides clear user value and fi
 
 ### P1-024: URL-authority MOUNT sources
 
-- [READY] Extend mount sources beyond path-only patterns to original-style
+- [DONE] Extend mount sources beyond path-only patterns to original-style
   absolute HTTP URLs while preserving path mounts as reverse-gateway defaults.
 - Acceptance: canonical and legacy forms distinguish scheme, host, port, and
   normalized path without DNS; host comparison is case-insensitive and ports
   are explicit; userinfo, fragments, ambiguous escaping, and malformed
   authorities fail closed; resolution remains deterministic; `explain` covers
   both source forms. This becomes the routing basis for HTTP forward proxying.
+
+### P1-025: HTTP hop-by-hop boundary
+
+- [READY] Strip proxy credentials and hop-by-hop headers on both sides of the
+  HTTP Fetch boundary before expanding forward-proxy behavior.
+- Acceptance: standard hop-by-hop fields and every header nominated by
+  `Connection` are removed from backend requests and frontend responses;
+  `Proxy-Authorization` and `Proxy-Authenticate` never cross the gateway;
+  end-to-end headers remain intact; casing and repeated values are covered;
+  an absolute-form proxy-client integration test proves no credential leakage.
 
 ---
 
@@ -320,6 +330,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 21 (2026-09-03)
 - [DONE] ✅ Built reproducible checksummed release archives
 
+### Iteration 22 (2026-09-03)
+- [DONE] ✅ Added original-style URL-authority mount sources
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -347,5 +360,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add fail-closed URL-authority source patterns to `MOUNT` as the
-routing prerequisite for HTTP forward proxying.
+**Next step:** Enforce the HTTP hop-by-hop boundary, especially proxy
+credentials, before expanding forward-proxy behavior.

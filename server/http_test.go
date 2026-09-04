@@ -70,6 +70,41 @@ func TestHTTPHandlerProxiesAuthorizedFetch(t *testing.T) {
 	}
 }
 
+func TestHTTPHandlerMatchesAbsoluteFormURLMount(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/guide" {
+			t.Errorf("backend path = %q", request.URL.Path)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer backend.Close()
+	handler := NewHTTPHandler(
+		[]mount.Mount{{Source: "http://Example.COM:8080/docs/*", Target: backend.URL + "/*"}},
+		[]policy.Rule{{Effect: policy.Permit, Protocol: "http", Source: "*"}},
+		connector.NewHTTP(backend.Client()),
+	)
+	request := httptest.NewRequest(http.MethodGet, "http://example.com:8080/docs/guide", nil)
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, body=%q", response.Code, response.Body.String())
+	}
+
+	request = httptest.NewRequest(http.MethodGet, "http://example.com/docs/guide", nil)
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusNotFound {
+		t.Fatalf("port-mismatched status = %d, want 404", response.Code)
+	}
+
+	request = httptest.NewRequest(http.MethodGet, "http://user@example.com:8080/docs/guide", nil)
+	response = httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("userinfo status = %d, want 400", response.Code)
+	}
+}
+
 func TestHTTPHandlerRoutesFetchWithSelectedMount(t *testing.T) {
 	tlsPolicy := &tlsconfig.Backend{CAFile: "ca.pem", ServerName: "backend.internal"}
 	configured := config.Config{

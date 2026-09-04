@@ -21,9 +21,11 @@ type Match struct {
 
 // Request identifies both the resource path and the frontend evaluating it.
 type Request struct {
-	Path     string
-	Server   string
-	Protocol string
+	Path      string
+	Scheme    string
+	Authority string
+	Server    string
+	Protocol  string
 }
 
 // Resolve safely normalizes a request path and selects the most specific
@@ -32,8 +34,9 @@ func Resolve(mounts []Mount, requestPath string) (Match, error) {
 	return ResolveFor(mounts, Request{Path: requestPath})
 }
 
-// ResolveFor resolves a path after filtering mappings by named server and
-// frontend protocol. Empty and "*" scopes match every frontend.
+// ResolveFor resolves a normalized path and optional URL authority after
+// filtering mappings by named server and frontend protocol. Empty and "*"
+// scopes match every frontend.
 func ResolveFor(mounts []Mount, request Request) (Match, error) {
 	normalized, err := NormalizePath(request.Path)
 	if err != nil {
@@ -45,6 +48,7 @@ func ResolveFor(mounts []Mount, request Request) (Match, error) {
 		capture     string
 		specificity int
 		scope       int
+		authority   int
 	}
 	var winner candidate
 	found := false
@@ -55,20 +59,34 @@ func ResolveFor(mounts []Mount, request Request) (Match, error) {
 		if !ok {
 			continue
 		}
-		capture, specificity, ok := matchPath(mapping.Path, normalized)
+		pattern := mapping.Path
+		authority := 0
+		if mapping.Source != "" {
+			parsed, parseErr := parseSourceURL(mapping.Source)
+			if parseErr != nil || !strings.EqualFold(parsed.Scheme, request.Scheme) || !strings.EqualFold(parsed.Host, request.Authority) {
+				continue
+			}
+			pattern = parsed.EscapedPath()
+			if pattern == "" {
+				pattern = "/"
+			}
+			authority = 1
+		}
+		capture, specificity, ok := matchPath(pattern, normalized)
 		if !ok {
 			continue
 		}
-		current := candidate{mapping: mapping, capture: capture, specificity: specificity, scope: scope}
+		current := candidate{mapping: mapping, capture: capture, specificity: specificity, scope: scope, authority: authority}
 		if !found || current.specificity > winner.specificity ||
 			(current.specificity == winner.specificity && current.mapping.Priority > winner.mapping.Priority) ||
-			(current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority && current.scope > winner.scope) {
+			(current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority && current.authority > winner.authority) ||
+			(current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority && current.authority == winner.authority && current.scope > winner.scope) {
 			winner = current
 			found = true
 			ambiguous = false
 			continue
 		}
-		if current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority && current.scope == winner.scope {
+		if current.specificity == winner.specificity && current.mapping.Priority == winner.mapping.Priority && current.authority == winner.authority && current.scope == winner.scope {
 			ambiguous = true
 		}
 	}

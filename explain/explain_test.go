@@ -32,6 +32,29 @@ func TestEvaluateExplainsPermittedRequest(t *testing.T) {
 	}
 }
 
+func TestEvaluateExplainsURLAuthorityMount(t *testing.T) {
+	configured := config.Config{
+		Servers: []config.Server{{Name: "proxy", Protocol: "http", Listen: ":8080"}},
+		Mounts: []mount.Mount{{
+			Source: "http://Example.COM:8080/docs/*", Target: "http://docs.internal/*",
+		}},
+		Policies: []policy.Rule{{
+			Effect: policy.Permit, Protocol: "http", Destination: "docs.internal", Source: "*",
+		}},
+	}
+	got, err := Evaluate(configured, Request{
+		URL: "http://example.com:8080/docs/guide", Source: "192.0.2.10",
+		Server: "proxy", Protocol: "http", Method: "GET",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Outcome != OutcomePermit || got.Mount == nil ||
+		got.Mount.Source != "http://Example.COM:8080/docs/*" || got.Mount.Target != "http://docs.internal/guide" {
+		t.Fatalf("Evaluate() = %#v, want URL mount explanation", got)
+	}
+}
+
 func TestEvaluateExplainsDefaultDeny(t *testing.T) {
 	configured := config.Config{
 		Servers: []config.Server{{Name: "public", Protocol: "http", Listen: ":8080"}},

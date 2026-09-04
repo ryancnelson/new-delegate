@@ -120,3 +120,29 @@ func TestResolveForScopesMountsToFrontend(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveForMatchesURLAuthorityWithoutDNS(t *testing.T) {
+	mounts := []Mount{
+		{Path: "/docs/*", Target: "http://fallback/*"},
+		{Source: "http://Example.COM:8080/docs/*", Target: "http://authority/*"},
+	}
+	got, err := ResolveFor(mounts, Request{
+		Path: "/docs/guide", Scheme: "HTTP", Authority: "example.com:8080",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Target != "http://authority/guide" || got.Mount.Source == "" {
+		t.Fatalf("ResolveFor() = %#v, want URL-authority mount", got)
+	}
+
+	got, err = ResolveFor(mounts, Request{
+		Path: "/docs/guide", Scheme: "http", Authority: "example.com",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Target != "http://fallback/guide" {
+		t.Fatalf("port-mismatched target = %q, want path fallback", got.Target)
+	}
+}

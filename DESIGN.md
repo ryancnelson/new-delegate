@@ -45,6 +45,8 @@ approval. It does not manufacture semantic operations.
 - Configuration is parsed and validated completely before activation.
 - Reload failure leaves the previous configuration active.
 - Paths are normalized and validated before mount matching.
+- Absolute URL mount sources match parsed scheme and authority without DNS;
+  userinfo and non-canonical source paths are invalid.
 - A request cannot reach a connector without an affirmative policy decision.
 - The direct peer is authoritative unless it is an explicitly trusted proxy;
   malformed client-address chains from trusted proxies fail closed.

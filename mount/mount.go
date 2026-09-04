@@ -9,9 +9,10 @@ import (
 	"gitea.local/ryan/new-delegate/tlsconfig"
 )
 
-// Mount maps a frontend path pattern to a backend URL pattern.
+// Mount maps a frontend path or absolute URL pattern to a backend URL pattern.
 type Mount struct {
-	Path     string             `json:"path" toml:"path"`
+	Path     string             `json:"path,omitempty" toml:"path"`
+	Source   string             `json:"source,omitempty" toml:"source"`
 	Target   string             `json:"target" toml:"target"`
 	Priority int                `json:"priority,omitempty" toml:"priority"`
 	Server   string             `json:"server,omitempty" toml:"server"`
@@ -34,14 +35,35 @@ func (m Mount) Validate() error {
 	if strings.ContainsAny(m.Protocol, " \t\r\n") {
 		return fmt.Errorf("mount protocol scope %q contains whitespace", m.Protocol)
 	}
-	if m.Path == "" {
-		return fmt.Errorf("mount path is required")
+	if m.Path == "" && m.Source == "" {
+		return fmt.Errorf("mount path is required when URL source is absent")
 	}
-	if !strings.HasPrefix(m.Path, "/") {
-		return fmt.Errorf("mount path %q must be absolute", m.Path)
+	if m.Path != "" && m.Source != "" {
+		return fmt.Errorf("mount requires exactly one path or absolute URL source")
 	}
-	if strings.Count(m.Path, "*") > 1 || (strings.Contains(m.Path, "*") && !strings.HasSuffix(m.Path, "*")) {
-		return fmt.Errorf("mount path %q has an invalid wildcard", m.Path)
+	sourcePath := m.Path
+	if m.Source != "" {
+		parsed, err := parseSourceURL(m.Source)
+		if err != nil {
+			return err
+		}
+		sourcePath = parsed.EscapedPath()
+		if sourcePath == "" {
+			sourcePath = "/"
+		}
+		if strings.Contains(sourcePath, "%") {
+			return fmt.Errorf("mount source path %q uses ambiguous escaping", sourcePath)
+		}
+		normalized, err := NormalizePath(sourcePath)
+		if err != nil || normalized != sourcePath {
+			return fmt.Errorf("mount source path %q is not normalized", sourcePath)
+		}
+	}
+	if !strings.HasPrefix(sourcePath, "/") {
+		return fmt.Errorf("mount path %q must be absolute", sourcePath)
+	}
+	if strings.Count(sourcePath, "*") > 1 || (strings.Contains(sourcePath, "*") && !strings.HasSuffix(sourcePath, "*")) {
+		return fmt.Errorf("mount path %q has an invalid wildcard", sourcePath)
 	}
 	if m.Target == "" {
 		return fmt.Errorf("mount target is required")
@@ -68,4 +90,36 @@ func (m Mount) Validate() error {
 		}
 	}
 	return nil
+}
+
+// Pattern returns the configured source identity used by policy and
+// explanation layers.
+func (m Mount) Pattern() string {
+	if m.Source != "" {
+		return m.Source
+	}
+	return m.Path
+}
+
+func parseSourceURL(source string) (*url.URL, error) {
+	parsed, err := url.Parse(source)
+	if err != nil {
+		return nil, fmt.Errorf("mount source URL: %w", err)
+	}
+	if !parsed.IsAbs() || parsed.Host == "" || parsed.Opaque != "" {
+		return nil, fmt.Errorf("mount source %q requires an absolute authority", source)
+	}
+	if !strings.EqualFold(parsed.Scheme, "http") && !strings.EqualFold(parsed.Scheme, "https") {
+		return nil, fmt.Errorf("mount source scheme %q is unsupported", parsed.Scheme)
+	}
+	if parsed.User != nil {
+		return nil, fmt.Errorf("mount source URL cannot contain userinfo")
+	}
+	if parsed.RawQuery != "" || parsed.ForceQuery {
+		return nil, fmt.Errorf("mount source URL cannot contain a query")
+	}
+	if parsed.Fragment != "" {
+		return nil, fmt.Errorf("mount source URL cannot contain a fragment")
+	}
+	return parsed, nil
 }

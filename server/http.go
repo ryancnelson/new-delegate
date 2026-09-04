@@ -65,9 +65,14 @@ func NewReloadableHTTPHandlerWithRoutes(server string, snapshot func() config.Co
 }
 
 func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
+	if request.URL.IsAbs() && (request.URL.User != nil || request.URL.Fragment != "") {
+		http.Error(response, "invalid absolute request target", http.StatusBadRequest)
+		return
+	}
 	configured := h.snapshot()
 	matched, err := mount.ResolveFor(configured.Mounts, mount.Request{
-		Path: request.URL.EscapedPath(), Server: h.server, Protocol: "http",
+		Path: request.URL.EscapedPath(), Scheme: request.URL.Scheme,
+		Authority: request.URL.Host, Server: h.server, Protocol: "http",
 	})
 	if err != nil {
 		switch {
@@ -91,7 +96,7 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 		Protocol:    "http",
 		Destination: targetHostname(matched.Target),
 		Method:      request.Method,
-		Mount:       matched.Mount.Path,
+		Mount:       matched.Mount.Pattern(),
 	})
 
 	var result operation.Result

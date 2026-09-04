@@ -27,6 +27,7 @@ const (
 // Request is the complete protocol-neutral input to a routing explanation.
 type Request struct {
 	Path     string `json:"path"`
+	URL      string `json:"url,omitempty"`
 	Source   string `json:"source"`
 	Server   string `json:"server"`
 	Protocol string `json:"protocol"`
@@ -35,7 +36,8 @@ type Request struct {
 
 // MountResult describes the winning mount and rewritten backend target.
 type MountResult struct {
-	Path           string `json:"path"`
+	Path           string `json:"path,omitempty"`
+	Source         string `json:"source,omitempty"`
 	NormalizedPath string `json:"normalized_path"`
 	Target         string `json:"target"`
 }
@@ -60,8 +62,8 @@ func Evaluate(configured config.Config, request Request) (Result, error) {
 	if err := configured.Validate(); err != nil {
 		return Result{}, fmt.Errorf("validate configuration: %w", err)
 	}
-	if strings.TrimSpace(request.Path) == "" {
-		return Result{}, fmt.Errorf("request path is required")
+	if (strings.TrimSpace(request.Path) == "") == (strings.TrimSpace(request.URL) == "") {
+		return Result{}, fmt.Errorf("request requires exactly one path or absolute URL")
 	}
 	if strings.TrimSpace(request.Source) == "" {
 		return Result{}, fmt.Errorf("request source is required")
@@ -76,9 +78,26 @@ func Evaluate(configured config.Config, request Request) (Result, error) {
 		return Result{}, fmt.Errorf("request method is required")
 	}
 
+	mountRequest := mount.Request{
+		Path: request.Path, Server: request.Server, Protocol: request.Protocol,
+	}
+	if request.URL != "" {
+		parsed, err := url.ParseRequestURI(request.URL)
+		if err != nil || !parsed.IsAbs() || parsed.Host == "" || parsed.User != nil || parsed.Fragment != "" {
+			return Result{}, fmt.Errorf("request URL must be an absolute URL without userinfo or fragment")
+		}
+		mountRequest.Path = parsed.EscapedPath()
+		if mountRequest.Path == "" {
+			mountRequest.Path = "/"
+		}
+		mountRequest.Scheme = parsed.Scheme
+		mountRequest.Authority = parsed.Host
+		request.Path = mountRequest.Path
+	}
 	result := Result{Request: request}
 	matched, err := mount.ResolveFor(configured.Mounts, mount.Request{
-		Path: request.Path, Server: request.Server, Protocol: request.Protocol,
+		Path: mountRequest.Path, Scheme: mountRequest.Scheme, Authority: mountRequest.Authority,
+		Server: mountRequest.Server, Protocol: mountRequest.Protocol,
 	})
 	if err != nil {
 		switch {
@@ -96,6 +115,7 @@ func Evaluate(configured config.Config, request Request) (Result, error) {
 
 	result.Mount = &MountResult{
 		Path:           matched.Mount.Path,
+		Source:         matched.Mount.Source,
 		NormalizedPath: matched.NormalizedPath,
 		Target:         matched.Target,
 	}
@@ -108,7 +128,7 @@ func Evaluate(configured config.Config, request Request) (Result, error) {
 		Protocol:    request.Protocol,
 		Destination: target.Hostname(),
 		Method:      request.Method,
-		Mount:       matched.Mount.Path,
+		Mount:       matched.Mount.Pattern(),
 	})
 	result.Policy = &PolicyResult{
 		Allowed: decision.Allowed, Reason: decision.Reason, RuleIndex: decision.RuleIndex,

@@ -150,6 +150,10 @@ func parseLegacyMount(value string) (mount.Mount, error) {
 	}
 
 	mapping := mount.Mount{Path: fields[0], Target: fields[1]}
+	if strings.Contains(fields[0], "://") {
+		mapping.Source = fields[0]
+		mapping.Path = ""
+	}
 	for _, option := range fields[2:] {
 		switch {
 		case strings.HasPrefix(option, "priority="):

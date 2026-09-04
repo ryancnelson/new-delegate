@@ -26,6 +26,18 @@ func TestMountValidate(t *testing.T) {
 			mount: Mount{Path: "/*", Target: "delegate://next-proxy:8081/*"},
 		},
 		{
+			name:  "absolute HTTP source",
+			mount: Mount{Source: "http://Example.COM:8080/docs/*", Target: "https://docs.internal/*"},
+		},
+		{name: "path and URL source", mount: Mount{Path: "/*", Source: "http://example.com/*", Target: "http://backend/*"}, wantErr: "exactly one"},
+		{name: "source userinfo", mount: Mount{Source: "http://user@example.com/*", Target: "http://backend/*"}, wantErr: "userinfo"},
+		{name: "source query", mount: Mount{Source: "http://example.com/*?x=1", Target: "http://backend/*"}, wantErr: "query"},
+		{name: "source fragment", mount: Mount{Source: "http://example.com/*#x", Target: "http://backend/*"}, wantErr: "fragment"},
+		{name: "source encoded separator", mount: Mount{Source: "http://example.com/a%2fb/*", Target: "http://backend/*"}, wantErr: "source path"},
+		{name: "source traversal", mount: Mount{Source: "http://example.com/a/../*", Target: "http://backend/*"}, wantErr: "source path"},
+		{name: "source duplicate separator", mount: Mount{Source: "http://example.com/a//b/*", Target: "http://backend/*"}, wantErr: "source path"},
+		{name: "unsupported source scheme", mount: Mount{Source: "ftp://example.com/*", Target: "http://backend/*"}, wantErr: "source scheme"},
+		{
 			name: "HTTPS with backend TLS policy",
 			mount: Mount{Path: "/*", Target: "https://backend.internal/*", TLS: &tlsconfig.Backend{
 				CAFile: "certs/backend-ca.pem", MinimumVersion: "1.3",

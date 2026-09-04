@@ -48,6 +48,21 @@ Mounts may be scoped to a named frontend and protocol with `server` and
 `protocol`. Unscoped mounts remain shared fallbacks; an equally ranked scoped
 mount wins over a shared one.
 
+Mount sources may also be absolute HTTP URLs, matching the original tool's
+distinctive form:
+
+```sh
+go run ./cmd/delegate check \
+  SERVER=http -P8080 \
+  'MOUNT="http://example.com:8080/docs/* http://docs.internal/*"' \
+  'PERMIT="http:docs.internal:*"'
+```
+
+Strict TOML uses `source = "http://example.com:8080/docs/*"` instead of
+`path`. Scheme and authority match without DNS, host case is ignored, and an
+explicit port is distinct from an omitted port. URL sources reject userinfo,
+queries, fragments, escaping, traversal, and non-canonical paths.
+
 A canonical file may define multiple HTTP servers. The runtime binds all
 configured listeners before serving, then coordinates cancellation and bounded
 graceful shutdown across the group.
@@ -101,6 +116,9 @@ go run ./cmd/delegate explain \
   --source 127.0.0.1 \
   --method GET
 ```
+
+For an absolute URL source, replace `--path` with
+`--url http://example.com:8080/docs/index.html`.
 
 The JSON result distinguishes `permit`, `reject`, `no_mount`, `unsafe_path`,
 and `ambiguous_mount`, and includes the winning policy rule index when policy

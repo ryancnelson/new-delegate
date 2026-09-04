@@ -145,6 +145,40 @@ mount = "/api/*"
 	}
 }
 
+func TestRunExplainAcceptsAbsoluteURLInput(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "delegate.toml")
+	contents := []byte(`
+[[servers]]
+name = "proxy"
+protocol = "http"
+listen = ":8080"
+[[mounts]]
+source = "http://example.com:8080/docs/*"
+target = "http://docs.internal/*"
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "docs.internal"
+source = "*"
+`)
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var stdout, stderr bytes.Buffer
+	got := run([]string{
+		"explain", "--config", path, "--url", "http://example.com:8080/docs/guide",
+		"--source", "192.0.2.10", "--method", "GET",
+	}, &stdout, &stderr, func(config.Config) error {
+		t.Fatal("explain invoked runtime")
+		return nil
+	})
+	if got != 0 || !strings.Contains(stdout.String(), `"outcome": "permit"`) ||
+		!strings.Contains(stdout.String(), `"source": "http://example.com:8080/docs/*"`) {
+		t.Fatalf("run() = %d, stdout=%q, stderr=%q", got, stdout.String(), stderr.String())
+	}
+}
+
 func TestRunExplainRejectsMissingRequestInputs(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	exitCode := run([]string{"explain", "SERVER=http", "--path", "/"}, &stdout, &stderr, func(config.Config) error {

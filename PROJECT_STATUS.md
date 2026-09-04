@@ -71,7 +71,20 @@ Running changelog, updated automatically every 10 minutes.
 - Two complete real builds produced identical manifests; all five checksums
   verified. The extracted Darwin/arm64 executable reported `v0.0.0-smoke` and
   successfully checked `examples/delegate.toml`. The full local gate passes;
-  remote CI is pending. Next gate: URL-authority `MOUNT` sources.
+  Woodpecker pipeline #22 accepted commit `ebb1046`. Next gate: URL-authority
+  `MOUNT` sources.
+
+## 2026-09-03 21:39
+
+- Iteration 22 extends `MOUNT` with absolute HTTP/HTTPS source URLs in both
+  strict TOML and original-style legacy directives while preserving path mounts.
+- Resolution compares parsed scheme and authority without DNS, folds host case,
+  distinguishes explicit ports, and fails closed on userinfo, query, fragment,
+  escaping, traversal, malformed authority, and non-canonical paths. Live
+  absolute-form requests and `delegate explain --url` share the resolver.
+- All tests, race detection, static checks, and portability builds pass. A
+  bounded URL-source fuzz run completed 393,080 executions without a panic.
+  Remote CI is pending. Next gate: strip hop-by-hop headers and proxy credentials.
 
 ## 2026-09-03 18:46
 
@@ -325,3 +338,10 @@ Running changelog, updated automatically every 10 minutes.
   A platform-neutral watcher test covers successful reload, rejected rollback,
   reporting, and cancellation; Windows compiles with signal reload disabled.
 - The complete local gate passes. Remote Woodpecker acceptance remains.
+
+## 2026-09-03 21:34
+
+- New commit: `ebb1046 [iter-21] build reproducible release archives`. Matches the iteration-21 summary already logged out-of-band at 21:31 in this file: `scripts/release.sh` produces deterministic CGO-free zip archives for Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64, and Windows/amd64 with trimmed paths, no VCS metadata, empty build ID, link-time version stamp, and a stable SHA-256 manifest; two real builds produced identical manifests, all checksums verified, and the extracted Darwin binary reported its version and passed `check` against the canonical example.
+- **Release packaging** is `[DONE]` (BACKLOG.md line 205/321). All Priority 1 and TLS-related work through checksummed release archives is now complete.
+- New current gate per CURRENT-STATE.md: add fail-closed URL-authority source patterns to `MOUNT` as the routing prerequisite for HTTP forward proxying. Working tree already has in-progress, uncommitted work toward it: modified `BACKLOG.md`, `config/legacy_test.go`, `mount/mount_test.go`, `mount/resolve_test.go`.
+- Remaining unverified unchanged: legacy syntax outside the verified subset; legacy adapter still one server per process invocation.
