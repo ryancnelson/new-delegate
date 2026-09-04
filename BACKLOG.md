@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 56 - GOPHER CONNECT protocol-scope normalization)
+**Last Updated:** 2026-09-04 (Iteration 57 - FTP CONNECT mount protocol-scope normalization)
 
 ---
 
@@ -460,6 +460,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 
 ### Iteration 56 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for `SERVER=GOPHER` `CONNECT` `MOUNT` protocol-scope normalization
+
+### Iteration 57 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for `SERVER=FTP` `CONNECT` `MOUNT` protocol-scope normalization
 
 ---
 
