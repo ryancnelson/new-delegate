@@ -211,6 +211,8 @@ Last verified: 2026-09-04
   and selector case-normalization.
 - The compatibility fixture corpus now includes `SERVER=FTP` `CONNECT` metadata
   and selector case-normalization.
+- The compatibility fixture corpus now includes `SERVER=GOPHER` `CONNECT` metadata
+  and selector case-normalization.
 
 ## Unverified
 
