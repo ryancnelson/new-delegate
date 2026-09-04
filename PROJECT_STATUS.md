@@ -106,6 +106,13 @@ Running changelog, updated automatically every 10 minutes.
 - BACKLOG.md now lists a `[DONE]` item at line 94 for the check-mode/runnable-config work; new current gate per CURRENT-STATE.md is adding canonical TOML config loading while keeping the runtime dependency footprint small and portable.
 - Windows/amd64 has joined the local and remote CGO-free portability compile matrix.
 
+## 2026-09-03 20:04
+
+- Two new commits: `95c8547 [iter-9] drain listeners gracefully`, `c34092b [status] record iteration 9 acceptance`. This closes out the graceful-shutdown work that was previously only in the uncommitted working tree.
+- New work already staged but uncommitted in the working tree: strict canonical **TOML config loading** (`config/toml.go`, `config/toml_test.go`, new `go.sum`, an `examples/` directory) plus modifications across `config/config.go`, `mount/mount.go`, `policy/policy.go`, `cmd/delegate/main.go`, `go.mod`, `README.md`, `COMPATIBILITY.md`, `BACKLOG.md`, `CURRENT-STATE.md`. BACKLOG.md line 111 already reflects this as `[DONE]`: canonical TOML decodes server/mount/policy values through a strict reader-based parser; unknown fields, syntax errors, and invalid values fail before runtime resources open; `--config PATH`/`--config=PATH` is supported but rejects mixing with legacy directives; the pinned decoder is pure Go with no transitive runtime dependencies.
+- New current gate per CURRENT-STATE.md: add a side-effect-free explanation command for effective mount and policy decisions (this matches the Priority 2 backlog idea "config check and effective-policy explanation command").
+- Remaining unverified: legacy syntax outside `SERVER`/`-P`/practical `MOUNT`/`PERMIT`/`REJECT`, and mount scoping by named server/protocol.
+
 ## 2026-09-03 19:56
 
 - The iteration-9 work described as in progress above is now committed as
@@ -113,3 +120,14 @@ Running changelog, updated automatically every 10 minutes.
 - Biggie Woodpecker pipeline 8 passed in 20 seconds, including the expanded
   Windows/amd64 portability build.
 - The next ready slice is canonical TOML loading.
+
+## 2026-09-03 20:03
+
+- Iteration 10 adds strict canonical TOML parsing for server, mount, and policy
+  configuration, backed by a pure-Go decoder with no transitive dependencies.
+- `delegate check` and `delegate serve` accept `--config PATH` or
+  `--config=PATH`; mixed legacy/file configuration is rejected before file or
+  listener activity.
+- The complete local gate passes: formatting, vet, unit tests, race tests, and
+  CGO-free builds for Darwin/arm64, Linux/amd64, Linux/arm64, illumos/amd64,
+  and Windows/amd64. Remote Woodpecker acceptance remains to be run.

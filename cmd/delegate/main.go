@@ -28,7 +28,7 @@ func run(args []string, stdout, stderr io.Writer, serve func(config.Config) erro
 		args = args[1:]
 	}
 
-	configured, err := config.ParseLegacyArgs(args)
+	configured, err := loadConfiguration(args)
 	if err != nil {
 		fmt.Fprintf(stderr, "invalid configuration: %v\n", err)
 		return 2
@@ -55,6 +55,53 @@ func run(args []string, stdout, stderr io.Writer, serve func(config.Config) erro
 		return 1
 	}
 	return 0
+}
+
+func loadConfiguration(args []string) (config.Config, error) {
+	configIndex := -1
+	for i, arg := range args {
+		if arg == "--config" || strings.HasPrefix(arg, "--config=") {
+			configIndex = i
+			break
+		}
+	}
+	if configIndex == -1 {
+		return config.ParseLegacyArgs(args)
+	}
+	if configIndex != 0 {
+		return config.Config{}, fmt.Errorf("cannot combine --config with legacy directives")
+	}
+
+	var path string
+	if args[0] == "--config" {
+		if len(args) < 2 || strings.TrimSpace(args[1]) == "" {
+			return config.Config{}, fmt.Errorf("--config requires a path")
+		}
+		path = args[1]
+		if len(args) != 2 {
+			return config.Config{}, fmt.Errorf("cannot combine --config with legacy directives")
+		}
+	} else {
+		path = strings.TrimSpace(strings.TrimPrefix(args[0], "--config="))
+		if path == "" {
+			return config.Config{}, fmt.Errorf("--config requires a path")
+		}
+		if len(args) != 1 {
+			return config.Config{}, fmt.Errorf("cannot combine --config with legacy directives")
+		}
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return config.Config{}, fmt.Errorf("read configuration %q: %w", path, err)
+	}
+	defer file.Close()
+
+	configured, err := config.ParseTOML(file)
+	if err != nil {
+		return config.Config{}, err
+	}
+	return configured, nil
 }
 
 func serveHTTP(configured config.Config) error {

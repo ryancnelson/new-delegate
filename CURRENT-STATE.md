@@ -55,14 +55,20 @@ Last verified: 2026-09-03
   bounded period. The command converts interrupt and termination signals into
   graceful cancellation. The local and remote portability matrices now also
   compile Windows/amd64 with `CGO_ENABLED=0`.
+- Canonical TOML decodes server, mount, and policy values through a strict,
+  reader-based parser. Unknown fields, syntax errors, and invalid canonical
+  values fail before runtime resources are opened. The command accepts
+  `--config PATH` and `--config=PATH`, but rejects mixing either with legacy
+  directives. The pinned decoder is pure Go and has no transitive runtime
+  dependencies.
 
 ## Unverified
 
 - Legacy syntax outside the verified `SERVER`, `-P`, practical `MOUNT`,
-  `PERMIT`, and `REJECT` subset. Canonical TOML loading and mount scoping by
-  named server/protocol remain deferred.
+  `PERMIT`, and `REJECT` subset. Mount scoping by named server/protocol remains
+  deferred.
 
 ## Current gate
 
-Add canonical TOML loading while keeping the runtime dependency footprint
-small and portable.
+Add a side-effect-free explanation command for effective mount and policy
+decisions.

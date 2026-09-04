@@ -9,9 +9,9 @@ import (
 
 // Mount maps a frontend path pattern to a backend URL pattern.
 type Mount struct {
-	Path     string `json:"path"`
-	Target   string `json:"target"`
-	Priority int    `json:"priority,omitempty"`
+	Path     string `json:"path" toml:"path"`
+	Target   string `json:"target" toml:"target"`
+	Priority int    `json:"priority,omitempty" toml:"priority"`
 }
 
 var supportedTargetSchemes = map[string]struct{}{

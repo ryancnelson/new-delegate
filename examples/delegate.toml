@@ -1,0 +1,14 @@
+[[servers]]
+name = "public"
+protocol = "http"
+listen = ":8080"
+
+[[mounts]]
+path = "/*"
+target = "http://127.0.0.1:9000/*"
+
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "127.0.0.1"
+source = "*"

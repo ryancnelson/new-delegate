@@ -14,6 +14,7 @@ Only passing tests may move an item to `verified`.
 | `CACHE` | Explicit response cache policy | planned |
 | Proxy chaining | Backend connector targeting another delegate | planned |
 | Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT`, `PERMIT`, `REJECT` |
+| Modern TOML | Strict canonical configuration file | verified: server, mount, and policy model |
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | planned |
 | SOCKS5 | CONNECT and bounded relay | planned |
@@ -29,3 +30,5 @@ Intentional differences:
 - Ambiguous mount precedence is a configuration error.
 - Secret configuration contains references, never resolved values.
 - Modern TOML is canonical; legacy syntax is an adapter onto the same model.
+- Unknown TOML keys are fatal and configuration is fully validated before
+  runtime resources are opened.

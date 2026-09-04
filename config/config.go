@@ -11,20 +11,23 @@ import (
 
 // Config is the complete configuration consumed by the gateway runtime.
 type Config struct {
-	Servers  []Server      `json:"servers"`
-	Mounts   []mount.Mount `json:"mounts,omitempty"`
-	Policies []policy.Rule `json:"policies,omitempty"`
+	Servers  []Server      `json:"servers" toml:"servers"`
+	Mounts   []mount.Mount `json:"mounts,omitempty" toml:"mounts"`
+	Policies []policy.Rule `json:"policies,omitempty" toml:"policies"`
 }
 
 // Server describes a named protocol listener.
 type Server struct {
-	Name     string `json:"name"`
-	Protocol string `json:"protocol"`
-	Listen   string `json:"listen"`
+	Name     string `json:"name" toml:"name"`
+	Protocol string `json:"protocol" toml:"protocol"`
+	Listen   string `json:"listen" toml:"listen"`
 }
 
 // Validate reports configuration errors without modifying the receiver.
 func (c Config) Validate() error {
+	if len(c.Servers) == 0 {
+		return fmt.Errorf("at least one server is required")
+	}
 	seen := make(map[string]struct{}, len(c.Servers))
 	for i, server := range c.Servers {
 		if strings.TrimSpace(server.Name) == "" {

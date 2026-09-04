@@ -37,13 +37,13 @@ type Request struct {
 // Rule matches non-empty constraints conjunctively. Empty and "*" match any
 // value. Higher priority wins; Reject wins an equal-priority tie.
 type Rule struct {
-	Effect      Effect `json:"effect"`
-	Priority    int    `json:"priority"`
-	Source      string `json:"source,omitempty"`
-	Protocol    string `json:"protocol,omitempty"`
-	Destination string `json:"destination,omitempty"`
-	Method      string `json:"method,omitempty"`
-	Mount       string `json:"mount,omitempty"`
+	Effect      Effect `json:"effect" toml:"effect"`
+	Priority    int    `json:"priority" toml:"priority"`
+	Source      string `json:"source,omitempty" toml:"source"`
+	Protocol    string `json:"protocol,omitempty" toml:"protocol"`
+	Destination string `json:"destination,omitempty" toml:"destination"`
+	Method      string `json:"method,omitempty" toml:"method"`
+	Mount       string `json:"mount,omitempty" toml:"mount"`
 }
 
 // Decision is a typed, auditable policy result.

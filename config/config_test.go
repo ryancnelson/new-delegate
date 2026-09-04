@@ -24,6 +24,11 @@ func TestConfigValidate(t *testing.T) {
 			}}},
 		},
 		{
+			name:    "missing server",
+			config:  Config{},
+			wantErr: "server",
+		},
+		{
 			name:    "missing name",
 			config:  Config{Servers: []Server{{Protocol: "http", Listen: ":8080"}}},
 			wantErr: "name",

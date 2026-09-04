@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 9 - Graceful listener lifecycle)
+**Last Updated:** 2026-09-03 (Iteration 10 - Canonical TOML loading)
 
 ---
 
@@ -106,6 +106,15 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   listener no longer accepts connections; the command handles interrupt and
   termination signals.
 
+### P1-013: Canonical TOML loading
+
+- [DONE] Decode strict TOML into the same validated configuration used by the
+  legacy compatibility adapter.
+- Acceptance: a reader-based parser has no file or network side effects;
+  server, mount, and policy values decode; unknown keys, malformed TOML, and
+  invalid canonical values are fatal; `check` and `serve` accept `--config`
+  without permitting mixed legacy arguments.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -164,6 +173,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 9 (2026-09-03)
 - [DONE] ✅ Added bounded graceful shutdown and Windows compile verification
 
+### Iteration 10 (2026-09-03)
+- [DONE] ✅ Added strict canonical TOML parsing and command file loading
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -186,5 +198,5 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add canonical TOML loading without introducing a runtime-heavy
-dependency.
+**Next step:** Explain effective mount and policy decisions without opening a
+listener.

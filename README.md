@@ -33,6 +33,17 @@ go run ./cmd/delegate check \
 Remove `check` (or replace it with `serve`) to start the current HTTP frontend.
 With no matching `PERMIT`, requests are denied by default.
 
+The same canonical model can be written as strict TOML. Unknown keys and
+invalid values are fatal before a listener starts:
+
+```sh
+go run ./cmd/delegate check --config examples/delegate.toml
+go run ./cmd/delegate serve --config examples/delegate.toml
+```
+
+`--config=examples/delegate.toml` is also accepted. A TOML file cannot be
+combined with legacy directives on the same invocation.
+
 Development is organized as small iterate-bot sessions. Each session takes the
 highest-priority ready item from `BACKLOG.md`, begins with a failing test, makes
 the smallest implementation that passes, updates verified state, and commits.

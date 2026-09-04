@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -33,6 +35,80 @@ func TestRunCheckPrintsCanonicalConfigWithoutServing(t *testing.T) {
 		if !strings.Contains(stdout.String(), fragment) {
 			t.Fatalf("stdout missing %q:\n%s", fragment, stdout.String())
 		}
+	}
+}
+
+func TestRunCheckLoadsTOMLConfigWithoutServing(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "delegate.toml")
+	contents := []byte(`
+[[servers]]
+name = "public"
+protocol = "http"
+listen = ":8080"
+
+[[mounts]]
+path = "/*"
+target = "http://backend.internal/*"
+
+[[policies]]
+effect = "permit"
+protocol = "http"
+destination = "backend.internal"
+source = "*"
+`)
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	serveCalls := 0
+	exitCode := run([]string{"check", "--config", path}, &stdout, &stderr, func(config.Config) error {
+		serveCalls++
+		return nil
+	})
+
+	if exitCode != 0 {
+		t.Fatalf("run() exit code = %d, want 0; stderr=%q", exitCode, stderr.String())
+	}
+	if serveCalls != 0 {
+		t.Fatalf("serve calls = %d, want zero", serveCalls)
+	}
+	if !strings.Contains(stdout.String(), `"name": "public"`) {
+		t.Fatalf("stdout = %q, want canonical config", stdout.String())
+	}
+}
+
+func TestRunRejectsConfigFileMixedWithLegacyDirectives(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	exitCode := run([]string{"check", "--config", "delegate.toml", "SERVER=http"}, &stdout, &stderr, func(config.Config) error {
+		t.Fatal("serve called for invalid arguments")
+		return nil
+	})
+	if exitCode != 2 || !strings.Contains(stderr.String(), "cannot combine") {
+		t.Fatalf("run() = %d, stderr=%q; want cannot combine error", exitCode, stderr.String())
+	}
+}
+
+func TestRunReportsConfigFileReadFailure(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	exitCode := run([]string{"check", "--config", filepath.Join(t.TempDir(), "missing.toml")}, &stdout, &stderr, func(config.Config) error {
+		t.Fatal("serve called for unreadable configuration")
+		return nil
+	})
+	if exitCode != 2 || !strings.Contains(stderr.String(), "read configuration") {
+		t.Fatalf("run() = %d, stderr=%q; want read error", exitCode, stderr.String())
+	}
+}
+
+func TestRunRejectsMissingConfigPath(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	exitCode := run([]string{"check", "--config"}, &stdout, &stderr, func(config.Config) error {
+		t.Fatal("serve called for missing configuration path")
+		return nil
+	})
+	if exitCode != 2 || !strings.Contains(stderr.String(), "requires a path") {
+		t.Fatalf("run() = %d, stderr=%q; want path error", exitCode, stderr.String())
 	}
 }
 
