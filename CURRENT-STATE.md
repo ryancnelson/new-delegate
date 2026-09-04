@@ -191,6 +191,8 @@ Last verified: 2026-09-04
   for CONNECT metadata and `PERMIT`/`REJECT` selectors.
 - The compatibility fixture corpus now includes protocol-option scope
   normalization for legacy `MOUNT` directives.
+- The compatibility fixture corpus now includes protocol-option case-normalization
+  for HTTPS legacy `MOUNT` directives with `protocol=HTTPS`.
 
 ## Unverified
 

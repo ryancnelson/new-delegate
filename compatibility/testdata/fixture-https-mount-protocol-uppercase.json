@@ -1,0 +1,43 @@
+{
+  "name": "MOUNT protocol scope uppercase protocol option for HTTPS",
+  "args": [
+    "SERVER=HTTPS",
+    "MOUNT=\"/admin/* https://backend.internal/admin/* server=default protocol=HTTPS priority=14\"",
+    "PERMIT=HTTPS:backend.internal:127.0.0.1",
+    "REJECT=hTtPs:legacy.internal:*"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "https",
+        "listen": ":443"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/admin/*",
+        "target": "https://backend.internal/admin/*",
+        "priority": 14,
+        "server": "default",
+        "protocol": "https"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "https",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "*",
+        "protocol": "https",
+        "destination": "legacy.internal"
+      }
+    ]
+  }
+}
