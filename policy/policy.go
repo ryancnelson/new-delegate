@@ -4,6 +4,7 @@ package policy
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"strings"
 )
 
@@ -26,21 +27,23 @@ var ErrDenied = errors.New("operation denied")
 
 // Request is the protocol-neutral authorization input.
 type Request struct {
-	Source   string
-	Protocol string
-	Method   string
-	Mount    string
+	Source      string
+	Protocol    string
+	Destination string
+	Method      string
+	Mount       string
 }
 
 // Rule matches non-empty constraints conjunctively. Empty and "*" match any
 // value. Higher priority wins; Reject wins an equal-priority tie.
 type Rule struct {
-	Effect   Effect
-	Priority int
-	Source   string
-	Protocol string
-	Method   string
-	Mount    string
+	Effect      Effect `json:"effect"`
+	Priority    int    `json:"priority"`
+	Source      string `json:"source,omitempty"`
+	Protocol    string `json:"protocol,omitempty"`
+	Destination string `json:"destination,omitempty"`
+	Method      string `json:"method,omitempty"`
+	Mount       string `json:"mount,omitempty"`
 }
 
 // Decision is a typed, auditable policy result.
@@ -83,11 +86,55 @@ func (d Decision) Enforce(next func() error) error {
 	return next()
 }
 
+// Validate checks selector syntax without resolving names or performing I/O.
+func (r Rule) Validate() error {
+	if r.Effect != Permit && r.Effect != Reject {
+		return fmt.Errorf("unknown policy effect %q", r.Effect)
+	}
+	if r.Source != "" && r.Source != "*" {
+		if strings.Contains(r.Source, "/") {
+			if _, err := netip.ParsePrefix(r.Source); err != nil {
+				return fmt.Errorf("invalid source CIDR %q", r.Source)
+			}
+		} else if _, err := netip.ParseAddr(r.Source); err != nil {
+			return fmt.Errorf("invalid source address %q", r.Source)
+		}
+	}
+	if strings.Contains(r.Destination, "*") && r.Destination != "*" &&
+		(!strings.HasPrefix(r.Destination, "*.") || strings.Count(r.Destination, "*") != 1) {
+		return fmt.Errorf("invalid destination wildcard %q", r.Destination)
+	}
+	return nil
+}
+
 func ruleMatches(rule Rule, request Request) bool {
-	return matches(rule.Source, request.Source, false) &&
+	return sourceMatches(rule.Source, request.Source) &&
 		matches(rule.Protocol, request.Protocol, true) &&
+		destinationMatches(rule.Destination, request.Destination) &&
 		matches(rule.Method, request.Method, true) &&
 		matches(rule.Mount, request.Mount, false)
+}
+
+func sourceMatches(pattern, value string) bool {
+	if pattern == "" || pattern == "*" {
+		return true
+	}
+	if prefix, err := netip.ParsePrefix(pattern); err == nil {
+		address, err := netip.ParseAddr(value)
+		return err == nil && prefix.Contains(address)
+	}
+	return pattern == value
+}
+
+func destinationMatches(pattern, value string) bool {
+	if pattern == "" || pattern == "*" {
+		return true
+	}
+	if strings.HasPrefix(pattern, "*.") {
+		suffix := strings.ToLower(strings.TrimPrefix(pattern, "*"))
+		return strings.HasSuffix(strings.ToLower(value), suffix) && len(value) > len(suffix)
+	}
+	return strings.EqualFold(pattern, value)
 }
 
 func matches(pattern, value string, foldCase bool) bool {

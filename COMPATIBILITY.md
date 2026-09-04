@@ -7,13 +7,13 @@ Only passing tests may move an item to `verified`.
 | --- | --- | --- |
 | `SERVER` | Named frontend listener and protocol | verified: basic protocol and port |
 | `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: practical syntax and resolver kernel |
-| `PERMIT` / `REJECT` | Fail-closed policy rules | partial: canonical policy kernel |
+| `PERMIT` / `REJECT` | Fail-closed policy rules | verified: basic legacy selectors and canonical kernel |
 | `RELAY` | Authorized transparent byte-stream forwarding | planned |
 | `STLS` | Independent readable frontend/backend TLS settings | planned |
 | `FCL` | Bounded typed request/response transformations | planned |
 | `CACHE` | Explicit response cache policy | planned |
 | Proxy chaining | Backend connector targeting another delegate | planned |
-| Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT` |
+| Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT`, `PERMIT`, `REJECT` |
 | HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch slice |
 | FTP frontend/backend | Typed codec and Fetch/Store/List connector | planned |
 | SOCKS5 | CONNECT and bounded relay | planned |

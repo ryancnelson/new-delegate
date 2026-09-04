@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"gitea.local/ryan/new-delegate/mount"
+	"gitea.local/ryan/new-delegate/policy"
 )
 
 func TestConfigValidate(t *testing.T) {
@@ -69,5 +70,6 @@ func cloneConfig(in Config) Config {
 	out := in
 	out.Servers = append([]Server(nil), in.Servers...)
 	out.Mounts = append([]mount.Mount(nil), in.Mounts...)
+	out.Policies = append([]policy.Rule(nil), in.Policies...)
 	return out
 }

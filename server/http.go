@@ -51,10 +51,11 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	}
 
 	decision := policy.Evaluate(h.rules, policy.Request{
-		Source:   remoteHost(request.RemoteAddr),
-		Protocol: "http",
-		Method:   request.Method,
-		Mount:    matched.Mount.Path,
+		Source:      remoteHost(request.RemoteAddr),
+		Protocol:    "http",
+		Destination: targetHostname(matched.Target),
+		Method:      request.Method,
+		Mount:       matched.Mount.Path,
 	})
 
 	var result operation.Result
@@ -87,6 +88,14 @@ func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Requ
 	if result.Body != nil {
 		_, _ = io.Copy(response, result.Body)
 	}
+}
+
+func targetHostname(target string) string {
+	parsed, err := url.Parse(target)
+	if err != nil {
+		return ""
+	}
+	return parsed.Hostname()
 }
 
 func backendResource(target, rawQuery string) (string, error) {

@@ -93,3 +93,36 @@ func TestDecisionEnforceInvokesPermittedOperation(t *testing.T) {
 		t.Fatal("permitted operation did not invoke connector callback")
 	}
 }
+
+func TestEvaluateLegacySelectors(t *testing.T) {
+	rules := []Rule{
+		{Effect: Permit, Protocol: "http", Destination: "*.internal.com", Source: "10.0.0.0/8", Priority: 0},
+		{Effect: Reject, Protocol: "*", Destination: "*", Source: "*", Priority: -1},
+	}
+	tests := []struct {
+		name    string
+		request Request
+		allowed bool
+	}{
+		{
+			name:    "CIDR and destination suffix match",
+			request: Request{Protocol: "HTTP", Destination: "api.internal.com", Source: "10.20.30.40"},
+			allowed: true,
+		},
+		{
+			name:    "suffix does not match bare parent",
+			request: Request{Protocol: "http", Destination: "internal.com", Source: "10.20.30.40"},
+		},
+		{
+			name:    "CIDR excludes source",
+			request: Request{Protocol: "http", Destination: "api.internal.com", Source: "192.0.2.4"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Evaluate(rules, tt.request); got.Allowed != tt.allowed {
+				t.Fatalf("Evaluate() = %#v, want allowed=%v", got, tt.allowed)
+			}
+		})
+	}
+}

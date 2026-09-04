@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-03 (Iteration 6 - HTTP acceptance slice)
+**Last Updated:** 2026-09-03 (Iteration 7 - Legacy policy configuration)
 
 ---
 
@@ -81,6 +81,14 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   status, headers, and body return to the client; denial produces 403 and zero
   backend connections.
 
+### P1-010: Legacy `PERMIT` / `REJECT` syntax
+
+- [DONE] Parse `protocol:destination:source` selectors into canonical policy
+  rules.
+- Acceptance: golden and table tests cover quoting, whitespace, CIDR sources,
+  destination suffix wildcards, ordered fallback rejection, and malformed
+  selectors; matching performs no DNS or network I/O.
+
 ---
 
 ## Priority 2: High Impact, Medium Scope (60-90 min)
@@ -130,6 +138,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 6 (2026-09-03)
 - [DONE] ✅ Proxied an authorized HTTP Fetch operation end to end
 
+### Iteration 7 (2026-09-03)
+- [DONE] ✅ Added original-style `PERMIT`/`REJECT` parsing and selector matching
+
 ---
 
 ## Ideas Inbox (Unsorted)
@@ -152,5 +163,4 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Add legacy `PERMIT`/`REJECT` parsing and a runnable configuration
-loader.
+**Next step:** Add a runnable, validation-first legacy configuration command.

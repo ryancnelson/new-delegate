@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"gitea.local/ryan/new-delegate/mount"
+	"gitea.local/ryan/new-delegate/policy"
 )
 
 // Config is the complete configuration consumed by the gateway runtime.
 type Config struct {
-	Servers []Server      `json:"servers"`
-	Mounts  []mount.Mount `json:"mounts,omitempty"`
+	Servers  []Server      `json:"servers"`
+	Mounts   []mount.Mount `json:"mounts,omitempty"`
+	Policies []policy.Rule `json:"policies,omitempty"`
 }
 
 // Server describes a named protocol listener.
@@ -42,6 +44,11 @@ func (c Config) Validate() error {
 	for i, mapping := range c.Mounts {
 		if err := mapping.Validate(); err != nil {
 			return fmt.Errorf("mount %d: %w", i, err)
+		}
+	}
+	for i, rule := range c.Policies {
+		if err := rule.Validate(); err != nil {
+			return fmt.Errorf("policy %d: %w", i, err)
 		}
 	}
 	return nil

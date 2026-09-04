@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"gitea.local/ryan/new-delegate/mount"
+	"gitea.local/ryan/new-delegate/policy"
 )
 
 var legacyDefaultPorts = map[string]int{
@@ -23,6 +24,7 @@ func ParseLegacyArgs(args []string) (Config, error) {
 	var protocol string
 	var port int
 	var mounts []mount.Mount
+	var policies []policy.Rule
 
 	for i := 0; i < len(args); i++ {
 		arg := strings.TrimSpace(args[i])
@@ -64,6 +66,18 @@ func ParseLegacyArgs(args []string) (Config, error) {
 				return Config{}, err
 			}
 			mounts = append(mounts, mapping)
+		case strings.HasPrefix(arg, "PERMIT="):
+			rule, err := parseLegacyPolicy(policy.Permit, strings.TrimSpace(strings.TrimPrefix(arg, "PERMIT=")), -len(policies))
+			if err != nil {
+				return Config{}, err
+			}
+			policies = append(policies, rule)
+		case strings.HasPrefix(arg, "REJECT="):
+			rule, err := parseLegacyPolicy(policy.Reject, strings.TrimSpace(strings.TrimPrefix(arg, "REJECT=")), -len(policies))
+			if err != nil {
+				return Config{}, err
+			}
+			policies = append(policies, rule)
 		default:
 			return Config{}, fmt.Errorf("unknown directive %q", arg)
 		}
@@ -84,11 +98,42 @@ func ParseLegacyArgs(args []string) (Config, error) {
 		Name:     "default",
 		Protocol: protocol,
 		Listen:   fmt.Sprintf(":%d", port),
-	}}, Mounts: mounts}
+	}}, Mounts: mounts, Policies: policies}
 	if err := result.Validate(); err != nil {
 		return Config{}, err
 	}
 	return result, nil
+}
+
+func parseLegacyPolicy(effect policy.Effect, value string, priority int) (policy.Rule, error) {
+	if len(value) >= 2 && value[0] == '"' && value[len(value)-1] == '"' {
+		unquoted, err := strconv.Unquote(value)
+		if err != nil {
+			return policy.Rule{}, fmt.Errorf("invalid %s quoting: %w", strings.ToUpper(string(effect)), err)
+		}
+		value = unquoted
+	}
+	selectors := strings.SplitN(value, ":", 3)
+	if len(selectors) != 3 {
+		return policy.Rule{}, fmt.Errorf("%s requires three selectors: protocol:destination:source", strings.ToUpper(string(effect)))
+	}
+	for i := range selectors {
+		selectors[i] = strings.TrimSpace(selectors[i])
+		if selectors[i] == "" {
+			return policy.Rule{}, fmt.Errorf("%s contains an empty selector", strings.ToUpper(string(effect)))
+		}
+	}
+	rule := policy.Rule{
+		Effect:      effect,
+		Priority:    priority,
+		Protocol:    strings.ToLower(selectors[0]),
+		Destination: strings.ToLower(selectors[1]),
+		Source:      selectors[2],
+	}
+	if err := rule.Validate(); err != nil {
+		return policy.Rule{}, fmt.Errorf("invalid %s: %w", strings.ToUpper(string(effect)), err)
+	}
+	return rule, nil
 }
 
 func parseLegacyMount(value string) (mount.Mount, error) {

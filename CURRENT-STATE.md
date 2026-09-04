@@ -42,14 +42,17 @@ Last verified: 2026-09-03
 - Biggie Woodpecker pipeline 4 passed in 31 seconds at commit `fa799d6`,
   validating formatting, vet, all tests, and CGO-free Darwin/arm64,
   Linux/amd64, Linux/arm64, and illumos/amd64 builds.
+- Original `PERMIT="protocol:destination:source"` and `REJECT=...` directives
+  parse into canonical rules with explicit priorities preserving first-match
+  order. The policy kernel matches IP/CIDR sources and exact or `*.suffix`
+  destinations without DNS or network activity.
 
 ## Unverified
 
-- Legacy syntax other than the verified `SERVER`, `-P`, and practical `MOUNT`
-  subset, plus gateway runtime behavior. Legacy `PERMIT`/`REJECT` parsing and
+- Legacy syntax outside the verified `SERVER`, `-P`, practical `MOUNT`,
+  `PERMIT`, and `REJECT` subset. A runnable validated configuration loader and
   mount scoping by named server/protocol remain deferred.
 
 ## Current gate
 
-Add canonical policy configuration and the original `PERMIT`/`REJECT` syntax,
-then make the tested HTTP slice runnable from validated configuration.
+Make the tested HTTP slice runnable from validated legacy configuration.
