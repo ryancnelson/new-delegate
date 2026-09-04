@@ -175,6 +175,8 @@ Last verified: 2026-09-04
   coverage with a path mount and protocol-aware policy metadata.
 - The compatibility fixture corpus now includes default-port `SERVER=https`
   coverage with an HTTPS mount and protocol-specific permit/reject parity.
+- The compatibility fixture corpus now includes default-port `SERVER=socks`
+  coverage with TCP target support and protocol-aware permit/reject metadata.
 
 ## Unverified
 

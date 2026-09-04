@@ -48,3 +48,5 @@ Intentional differences:
   path mount and policy metadata.
 - Legacy compatibility fixtures now include default-port `SERVER=https` with HTTPS
   mount and policy parity.
+- Legacy compatibility fixtures now include default-port `SERVER=socks` with TCP
+  mount and protocol metadata.

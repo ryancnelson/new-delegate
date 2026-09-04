@@ -401,6 +401,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 36 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=gopher` and path mount translation metadata
 
+### Iteration 37 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=socks` and TCP mount translation metadata
+
 ---
 
 ## Ideas Inbox (Unsorted)

@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=socks default port and socks mount",
+  "args": [
+    "SERVER=socks",
+    "MOUNT=\"/socks/* tcp://socks.internal:1080/*\"",
+    "PERMIT=socks:socks.internal:127.0.0.1",
+    "REJECT=*:*:198.51.100.0/24"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "socks",
+        "listen": ":1080"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/socks/*",
+        "target": "tcp://socks.internal:1080"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "socks",
+        "destination": "socks.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "198.51.100.0/24",
+        "protocol": "*",
+        "destination": "*"
+      }
+    ]
+  }
+}
