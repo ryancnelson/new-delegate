@@ -60,3 +60,5 @@ Intentional differences:
   `SERVER=GOPHER` and matching protocol selectors.
 - Legacy compatibility fixtures now include protocol-case normalization for
   `SERVER=SOCKS` and matching protocol selectors.
+- Legacy compatibility fixtures now include CONNECT metadata and selector parity for
+  protocol normalization.
