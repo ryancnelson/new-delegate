@@ -13,14 +13,14 @@ Only passing tests may move an item to `verified`.
 | `FCL` | Bounded typed request/response transformations | planned |
 | `CACHE` | Explicit response cache policy | planned |
 | Proxy chaining | Backend connector targeting another delegate | planned |
-| Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT`, `PERMIT`, `REJECT` |
+| Original command-line directives | Compatibility syntax adapter | partial: `SERVER`, `-P`, `MOUNT`, `PERMIT`, `REJECT`; differential fixture harness scaffolding added |
 | Modern TOML | Strict canonical configuration file | verified: server, mount, policy, trusted proxy, and TLS models |
 | Decision inspection | Side-effect-free effective routing/policy explanation | verified: JSON `explain` command |
 | Forwarded client identity | Per-listener header and trusted-proxy CIDRs | verified: HTTP, right-to-left trust chain |
 | Portable distribution | Checksummed self-contained executable archives | verified: Darwin/arm64 and Linux/amd64 |
-| HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch, Store (PUT), CONNECT, and FTP Fetch/Store/List; differential harness remains future |
+| HTTP frontend/backend | Typed codec and connector | partial: authorized Fetch, Store (PUT), CONNECT, and FTP Fetch/Store/List; differential harness scaffolded |
 | HTTP proxy metadata boundary | Hop-by-hop and proxy-credential stripping | verified: requests and responses |
-| FTP frontend/backend | Typed codec and Fetch/Store/List connector | partial: LIST and differential harness remain future |
+| FTP frontend/backend | Typed codec and Fetch/Store/List connector | partial: LIST added and differential harness scaffolded |
 | SOCKS5 | CONNECT and bounded relay | planned |
 | SMTP, POP3, IMAP, NNTP, LDAP, DNS | Later protocol packages | research |
 | Gopher, Finger, Telnet | Compatibility demand determines priority | research |

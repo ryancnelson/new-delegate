@@ -1,0 +1,16 @@
+{
+  "name": "SERVER=http with -P8080",
+  "args": [
+    "SERVER=http",
+    "-P8080"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "http",
+        "listen": ":8080"
+      }
+    ]
+  }
+}

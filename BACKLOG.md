@@ -270,7 +270,7 @@ These are ideal next iteration candidates. Each provides clear user value and fi
   peer address remains the default and untrusted forwarding headers are
   ignored.
 - [DONE] HTTP/FTP Fetch, Store, and List translation.
-- Differential compatibility harness for an original DeleGate executable.
+- [IN PROGRESS] Differential compatibility harness for an original DeleGate executable.
 
 ---
 
