@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 83 - SOCKS5 CONNECT wire framing)
+**Last Updated:** 2026-09-04 (Astra architecture/code review handoff; implementation pending)
 
 ---
 
@@ -18,9 +18,253 @@
 
 ---
 
-## Priority 1: High Impact, Small Scope (30-45 min)
+## Active Priority 1: Review remediation and geographic-link delivery
 
-These are ideal next iteration candidates. Each provides clear user value and fits within a single focused session.
+This queue supersedes the historical next-step guidance below. The owner agreed
+with the architecture/code review and requested this handoff for GPT Sol. Do not
+resume low-value casing fixtures or add protocol names while these items remain.
+Historical DONE entries describe earlier acceptance tests, not proof that the
+broader protocol or lifecycle is complete. New items below correct those gaps.
+
+### Handoff baseline and working rules
+
+- Work in `/Volumes/T9/ryan-homedir/devel/new-delegate`, not the Solaris project.
+  Read `AGENTS.md`, `CURRENT-STATE.md`, `DESIGN.md`, `COMPATIBILITY.md`, and this
+  active queue before implementation. Inspect current git state again.
+- At review time HEAD was `1e076e0`; last numbered implementation was iter-83,
+  `9e0050e`. `link/`, `docs/design-plans/`, and `docs/implementation-plans/` were
+  untracked; `PROJECT_STATUS.md` was modified independently. Preserve all of
+  these. Do not blindly stage the whole tree or revert work to get green tests.
+- A fresh native Darwin/arm64 `go test -race ./... -count=1 -timeout=30s` passed
+  every tested package except `link`, which reported concurrent bytes.Buffer
+  access in `TestRunRightPrintsOnePairingAndRedactsTailcatOutput`. This is a
+  reproduced failure. Other review findings are source-backed and need focused
+  reproductions; do not claim their regression tests already exist.
+- No real Tailcat two-host demonstration or current Woodpecker run was verified
+  by this review. Untracked code cannot be covered by an existing remote green
+  build. HTTP is the only runnable frontend; SOCKS5 has codecs, not a listener.
+- Keep Go, canonical configuration, legacy syntax adapters, deterministic mounts,
+  policy-before-backend, and separate semantic/relay paths. No rewrite.
+- Only Darwin/arm64 and Linux/amd64 are active build targets. Keep normal builds
+  CGO-free; no new assembly. Claude owns the site work; leave it alone.
+- Execute one ready item at a time, in the order below. Larger items may become
+  explicitly named sub-items with their own RED/GREEN checkpoints. Do not mark
+  a parent DONE until every acceptance condition is demonstrated.
+- For each item: mark IN PROGRESS; write the regression; run it and record the
+  expected failure; implement; rerun focused tests; run `./scripts/check.sh`;
+  update verified status; commit only intended files with the next available
+  `[iter-N]`; push origin and the configured GitHub CI mirror; verify Biggie
+  Woodpecker for that exact commit before proceeding. Inspect remote names and
+  latest iteration rather than assuming either is unchanged. Record build URL,
+  commit, and result. Report a concrete CI blocker instead of claiming success.
+- Unit/integration tests must be offline and use loopback/ephemeral ports or
+  fakes. A separately invoked real two-host smoke test may use the network.
+  The owner explicitly permits short-lived pairing secrets in test process
+  arguments; this narrow exception does not permit committing them or logging
+  them unnecessarily. The GitHub mirror is now public.
+
+### P1-031: Restore race-clean tests and make Woodpecker enforce them
+
+- [IN PROGRESS] Ready first. Files: `link/tailcat_test.go`, `.woodpecker/test.yml`,
+  `scripts/check.sh`, `scripts/ci-go.sh` as needed.
+- Immediate operational priority: the owner reports Woodpecker has been idle
+  for four hours. Investigate before further feature development. Read the
+  actual latest pipeline timestamp, commit SHA, event, and status; compare local
+  HEAD, Gitea origin, and GitHub mirror branch tips. Inspect which repository
+  Woodpecker is connected to, enabled state, event/branch filters, webhook
+  deliveries, pending queue, and Biggie agent availability. Distinguish no push,
+  missing webhook, rejected event, queued job, and execution failure. Do not
+  assume the runner is broken merely because no build was triggered.
+- Trigger a manual build of the existing intended remote revision immediately
+  if supported, or retry that exact revision through the established UI/API.
+  This proves the execution path only; it does not validate uncommitted link
+  code or prove push webhooks work. Do not create an empty commit just to hide
+  the missing delivery path. After the real remediation commit is pushed,
+  require its push-triggered build to demonstrate automatic delivery too.
+- Report the concrete idle cause (or the specific check still blocked), build
+  URL/number, SHA, and observed state promptly. Follow the build to completion;
+  a trigger acknowledgment or queued status is not a successful build. If a
+  missing login or runner access prevents this, ask for that exact prerequisite
+  rather than spending another session adding code without remote validation.
+- RED: run `go test -race ./link -run TestRunRightPrintsOnePairingAndRedactsTailcatOutput -count=1`.
+  The producer writes bytes.Buffer while the test polls Len/String.
+- Replace timing-based shared-buffer polling with synchronized handoff/observed
+  writes; read diagnostics only after synchronization. Use `io.Discard` instead
+  of the custom writer returning `(0, nil)`. Give every wait an explicit bound;
+  ensure failure cleanup cancels and joins the child before the test exits.
+- Acceptance: repeated race-enabled link tests and the full local gate pass.
+  Woodpecker runs `go test -race ./...` with a suitable native toolchain, plus
+  existing ordinary tests/vet/formatting and CGO-free target builds. Do not
+  apply `CGO_ENABLED=0` to the race test. The exact pushed commit is green.
+- Reconcile untracked link files deliberately: include their reviewed source
+  when committing tests that depend on it. It remains unfinished and unwired;
+  passing its tests is not Tailcat feature completion.
+
+### P1-032: Prevent HTTP redirect policy bypass
+
+- [IDEA] Depends on P1-031. Files: `connector/http.go`, `connector/routes.go`,
+  `cmd/delegate/main.go`, `connector/routes_test.go`, `server/http_test.go`.
+- Evidence: policy approves only the resolved target; `http.Client.Do` follows
+  redirects using a client whose CheckRedirect is unset.
+- RED: an allowed loopback backend returns a redirect to a second, denied
+  backend. Assert the second backend sees zero requests and the caller receives
+  the original redirect/status/body. Cover cross-host and same-host/different
+  path redirects, HTTPS-to-HTTP downgrade, and a Store redirect.
+- Default decision: proxy redirects unchanged using `http.ErrUseLastResponse`.
+  Enforce this for default and per-mount TLS clients; do not accidentally retain
+  a caller-supplied redirect callback that bypasses the gateway invariant.
+  Following redirects is deferred unless every new destination is reauthorized.
+- Acceptance: zero secondary dials, preserved response, and existing TLS and
+  header-boundary tests remain green.
+
+### P1-033: Constrain FTP data-channel destinations
+
+- [IDEA] Depends on P1-032. Files: `connector/ftp.go`; create
+  `connector/ftp_test.go`; extend `connector/routes_test.go`.
+- Evidence: the PASV response is converted directly into a DialContext target.
+- RED: a fake approved control server advertises a different host in PASV;
+  assert no dial to that host. Cover malformed octets, zero/out-of-range ports,
+  and IPv6 control connections.
+- Prefer EPSV, using the actual control peer IP for data connections. If PASV
+  fallback is supported, constrain it to that same peer, validate all fields,
+  and document the fallback rule. Do not trust an arbitrary server-supplied
+  hostname or perform a fresh unpinned hostname resolution for the data peer.
+- Acceptance: normal retrieval/storage/listing still work; hostile passive
+  replies cannot redirect the gateway to another host. Keep data-port handling
+  an explicit part of the authorized FTP operation.
+
+### P1-034: Bound FTP I/O and implement transfer lifecycle
+
+- [IDEA] Depends on P1-033. Files: `connector/ftp.go`, `connector/ftp_test.go`,
+  `connector/routes_test.go`; semantic result changes only as needed.
+- RED cases: stalled greeting, unterminated/oversized multiline reply, stalled
+  data stream, client cancellation mid-transfer, and large RETR/LIST payload.
+- Replace unbounded reply reading with a bounded FTP reply decoder including
+  multiline handling. Add dial/control/data deadlines and cancellation-driven
+  socket closure. Stream payloads with bounded memory; do not replace ReadAll
+  with another whole-file buffer. A returned body must own data/control cleanup
+  and transfer completion validation, including when the caller closes early.
+- Acceptance: cancellation and timeout release all owned sockets/goroutines;
+  first response bytes do not require the complete download; final FTP failures
+  are surfaced. Document how a failure after HTTP headers are sent is handled
+  (abort/report transfer failure, never pretend the already-sent status changed).
+
+### P1-035: Make FTP-to-HTTP translation semantic and fail closed
+
+- [IDEA] Depends on P1-034. Files: `operation/operation.go` (confirm filename),
+  `connector/ftp.go`, `server/http.go`, related connector/server tests.
+- Evidence: FTP completion codes such as 226 are returned as HTTP status codes;
+  unknown methods silently become RETR. Operation fields remain HTTP-shaped.
+- RED: a real HTTP frontend against a fake FTP backend returns sensible HTTP
+  success/not-found/permission/upstream-failure outcomes; unsupported methods
+  execute no FTP command or backend dial. Test HEAD deliberately: either
+  implement its semantics or reject it, rather than silently retrieving a file.
+- Define a small semantic outcome/capability contract for Fetch, Store, List and
+  their failures. Map FTP wire codes into it and let the HTTP frontend encode
+  HTTP statuses. Preserve deliberate HTTP passthrough behavior without making
+  every future connector manufacture HTTP codes. Avoid a speculative RPC layer.
+- Acceptance: no raw FTP status crosses as an HTTP status; translation errors
+  fail closed; existing HTTP behavior is regression-tested. Record the chosen
+  mapping and any unsupported operations in COMPATIBILITY.md.
+
+### P1-036: Own and drain CONNECT and bridge sessions
+
+- [IDEA] Depends on P1-035. Files: `server/lifecycle.go`, `server/group.go`,
+  `server/http.go`, `link/bridge.go`, and lifecycle/relay tests.
+- Evidence: HTTP Shutdown does not manage hijacked CONNECT sessions. The bridge
+  registers connections only after dialing; Close snapshots allow later Add;
+  the drain-timeout branch then waits without a bound.
+- RED: cancel with an active CONNECT, a pending dial, a relay completing during
+  drain, and a relay held past the deadline. Deterministically coordinate the
+  registration-versus-close race with channels, not sleeps. Cover listener
+  failure as well as parent cancellation.
+- Use explicit session ownership: register accepted clients before dialing,
+  reject/close late registrations after shutdown, cancel owned dials, stop
+  accepting, allow a bounded drain, then force-close remaining sessions.
+  Define the Dialer contract to honor cancellation; Go cannot forcibly kill an
+  arbitrary non-cooperative callback. Do not promise bounds the API cannot meet.
+- Preserve bidirectional half-close; terminate the opposite copy on fatal I/O
+  errors, handle connections without CloseWrite, and retain idle deadlines.
+- Acceptance: Serve returns within the documented deadline plus test tolerance,
+  no tracked sessions survive, half-close works, race tests pass. Share lifecycle
+  logic where useful without conflating HTTP parsing and transparent relay.
+
+### P1-037: Replace fragile Tailcat orchestration with a tested transport adapter
+
+- [IDEA] Depends on P1-036. Files: `link/tailcat.go`, `link/tailcat_test.go`,
+  `link/bridge.go`, `go.mod`, `go.sum` if embedding; existing Tailcat plans.
+- Prefer a pinned Tailcat Go-library adapter behind the narrow connection
+  interface and shared lifecycle. Inspect the actual chosen upstream version,
+  toolchain requirements, license, and Darwin/arm64 + Linux/amd64 build results;
+  record why the dependency is justified. Do not depend on moving latest.
+  A CLI adapter is acceptable only if its lifecycle is equally tested.
+- Required regressions: saved default key cannot defeat one-run pairing;
+  malformed token including `tcp` is rejected; one newline completes handoff
+  without waiting for EOF; oversized/trailing input has a defined fail-closed
+  rule; cancellation during input/startup returns; output failure stops/reaps
+  child resources; selected loopback host is preserved or explicitly rejected.
+- Use upstream address parsing rather than scraping arbitrary `tc` words from
+  human logs. With CLI serving explicitly request `--key=new`; drain output
+  readers correctly, check scanner errors, prevent blocked sends/early returns,
+  and define process cleanup. Do not run a second independent forwarding loop
+  that silently bypasses the shared drain contract.
+- Acceptance: offline adapter tests cover failures and cleanup, no secret is
+  persisted by default, and one live pairing supports multiple TCP streams.
+  Upstream reference: https://github.com/tailscale/tailcat#key-management and
+  https://github.com/tailscale/tailcat#go-library . Recheck pinned-version facts.
+
+### P1-038: Wire the geographic link into the executable and prove it on Biggie
+
+- [IDEA] Depends on P1-037. Files: `cmd/delegate/main.go`, command/runtime tests,
+  `examples/`, `scripts/` smoke-test entrypoint, README and compatibility docs.
+- Right starts first and emits a one-run handoff; left consumes it and exposes
+  a loopback endpoint. Keep the existing ordinary serve/check/explain behavior.
+  Define and document exact flags before writing command tests. Unknown or
+  invalid link arguments fail before creating processes, listeners, or backends.
+- First complete slice: HTTP between the two gateways, with any backend protocol
+  translation performed on the destination side. Carry approved traffic only;
+  do not implicitly trust forwarded client identity just because it arrived
+  over Tailcat. Document whether policy sees the left gateway or an explicitly
+  authenticated end-client identity.
+- Offline acceptance: executable-level tests cover startup, repeated clients,
+  concurrent streams, backend failure, half-close, cancellation and cleanup.
+- Real smoke acceptance: right on Linux/amd64 Biggie, left on Darwin/arm64;
+  repeated and concurrent curl requests reuse one pairing; teardown closes
+  listeners; restart creates a fresh pairing and the old one no longer works.
+  Capture sanitized evidence and exact binary commit IDs. Run this network test
+  separately from deterministic offline CI, with bounded waits and cleanup.
+- Woodpecker must build/test the exact pushed checkpoint. Cross-compilation is
+  not a two-host execution test, and a local smoke is not a Woodpecker result.
+- Document a working one-machine command and its exact right-first, two-host
+  equivalent, plus direct same-tailnet guidance that needs no Tailcat pairing.
+  Do not claim general FTP-client support through a single forwarded control
+  port: FTP data connections need separate handling. Do not claim arbitrary
+  semantic splitting of every original DeleGate command in this first slice.
+
+### P1-039: Make compatibility and progress claims evidence-based
+
+- [IDEA] Depends on P1-038; correct misleading claims opportunistically with
+  each earlier checkpoint. Files: `compatibility/harness.go`, related tests,
+  `CURRENT-STATE.md`, `COMPATIBILITY.md`, `DESIGN.md`, this backlog.
+- Current fixtures compare canonical config, and the reference executable path
+  invokes `check` expecting this project's JSON schema. Label this parser/config
+  regression coverage, not verified original DeleGate wire parity.
+- Specify a real behavioral comparison: controlled original server and new
+  server, same requests/backends, observed response and backend-side effects.
+  If the original binary needs an adapter, specify it explicitly. Availability
+  of a reference binary is a prerequisite, not permission to invent evidence.
+- Acceptance: ledger distinguishes parsed configuration, codec-only support,
+  runnable integration, actual two-host tests, and reference comparisons.
+  Current-state docs summarize capabilities/limits; preserve historical records
+  without promoting old acceptance tests into broader completion claims.
+- Resume broader protocol work only after the above delivery checkpoint, using
+  user-visible vertical slices rather than another series of casing fixtures.
+
+---
+
+## Historical Priority 1: Completed acceptance slices
+
+These records are retained for history. Select new work from the active queue above.
 
 ### P1-001: Bootstrap and prove remote CI
 
@@ -561,6 +805,6 @@ New ideas get added here during iterations. Sort into priority sections during s
 
 ---
 
-**Next step:** Select the next compatibility slice to extend legacy-directive
-parity coverage and broaden the fixture corpus against a reference DeleGate
-executable.
+**Next step:** Start P1-031 in the active review-remediation queue. Restore the
+race-clean local/remote gate, then follow its dependency order through an actual
+two-host geographic-link demonstration. Do not select another casing fixture.
