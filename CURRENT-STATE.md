@@ -171,6 +171,8 @@ Last verified: 2026-09-04
   with protocol-scoped mapping and explicit legacy policy.
 - The compatibility fixture corpus now includes default-port `SERVER=ftp` legacy
   coverage with ftp mount + mixed protocol policy rules.
+- The compatibility fixture corpus now includes default-port `SERVER=https`
+  coverage with an HTTPS mount and protocol-specific permit/reject parity.
 
 ## Unverified
 

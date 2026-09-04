@@ -44,3 +44,5 @@ Intentional differences:
   trusted CIDR configured on that listener.
 - Legacy compatibility fixtures now include default-port `SERVER=ftp` parsing with
   ftp mount and protocol-specific policy metadata.
+- Legacy compatibility fixtures now include default-port `SERVER=https` with HTTPS
+  mount and policy parity.

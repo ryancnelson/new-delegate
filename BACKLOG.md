@@ -395,6 +395,9 @@ Track completed items here to celebrate progress and inform future strategic rev
 ### Iteration 34 (2026-09-04)
 - [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=ftp` and ftp mount translation metadata
 
+### Iteration 35 (2026-09-04)
+- [DONE] ✅ Added compatibility fixture coverage for default-port `SERVER=https` and HTTPS mount translation metadata
+
 ---
 
 ## Ideas Inbox (Unsorted)

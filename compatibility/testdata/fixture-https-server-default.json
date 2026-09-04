@@ -1,0 +1,40 @@
+{
+  "name": "SERVER=https default port and HTTPS mount",
+  "args": [
+    "SERVER=https",
+    "MOUNT=\"/secure/* https://backend.internal/secure/*\"",
+    "PERMIT=https:backend.internal:127.0.0.1",
+    "REJECT=*:*:198.51.100.0/24"
+  ],
+  "reference_config": {
+    "servers": [
+      {
+        "name": "default",
+        "protocol": "https",
+        "listen": ":443"
+      }
+    ],
+    "mounts": [
+      {
+        "path": "/secure/*",
+        "target": "https://backend.internal/secure/*"
+      }
+    ],
+    "policies": [
+      {
+        "effect": "permit",
+        "priority": 0,
+        "source": "127.0.0.1",
+        "protocol": "https",
+        "destination": "backend.internal"
+      },
+      {
+        "effect": "reject",
+        "priority": -1,
+        "source": "198.51.100.0/24",
+        "protocol": "*",
+        "destination": "*"
+      }
+    ]
+  }
+}
