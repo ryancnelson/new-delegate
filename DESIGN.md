@@ -142,7 +142,14 @@ delegate TAILCAT-LISTEN:8080 TCP-CONNECT:127.0.0.1:8080
 delegate TCP-LISTEN:127.0.0.1:18080 TAILCAT-CONNECT:@stdin
 ```
 
-The two-address parser is side-effect-free and exists before runtime wiring.
+The two-address parser is side-effect-free. Address-route command dispatch is
+separate from legacy configuration loading and parses and role-checks the whole
+pair before selecting a runtime. The first runtime slice supports only
+`TCP-LISTEN` to `TCP-CONNECT`; it validates the combination and network
+operations before binding, then uses the shared `link.Serve` ownership and
+drain contract. Parsed Tailcat combinations fail before network I/O until their
+explicit runtime adapters are wired.
+
 Keywords are currently exact and case-sensitive. Comma options are reserved
 until each address type has an explicit option schema; accepting arbitrary
 socat options would create misleading compatibility and unsafe ambiguity.

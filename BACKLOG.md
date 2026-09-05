@@ -384,6 +384,17 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   Do not claim general FTP-client support through a single forwarded control
   port: FTP data connections need separate handling. Do not claim arbitrary
   semantic splitting of every original DeleGate command in this first slice.
+- Sub-checkpoint (a) wires the ordinary `TCP-LISTEN` to `TCP-CONNECT` form into
+  the executable. Command dispatch parses the complete route before selecting
+  the address runtime and cannot fall through to the legacy configuration
+  runtime. The runtime validates its supported combination and dependencies
+  before binding, creates one listener, dials the configured destination once
+  per client with the shared cancellation context, and delegates session
+  ownership, half-close relay, and bounded drain to `link.Serve`. Focused tests
+  prove malformed and unsupported routes have no runtime side effects and two
+  sequential clients traverse one listener. A main-process loopback smoke using
+  the documented Python HTTP backend and curl returned HTTP 200. Tailcat route
+  wiring, concurrent executable acceptance, and the two-host proof remain.
 
 ### P1-039: Make compatibility and progress claims evidence-based
 

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"gitea.local/ryan/new-delegate/config"
+	"gitea.local/ryan/new-delegate/endpoint"
 	"gitea.local/ryan/new-delegate/explain"
 	gatewayserver "gitea.local/ryan/new-delegate/server"
 )
@@ -23,9 +24,52 @@ var version = "devel"
 func main() {
 	args := os.Args[1:]
 	reloadPath := configPathFromArgs(args)
-	os.Exit(run(args, os.Stdout, os.Stderr, func(configured config.Config) error {
-		return serveHTTP(configured, reloadPath, os.Stderr)
-	}))
+	os.Exit(runCommand(
+		args,
+		os.Stdout,
+		os.Stderr,
+		func(configured config.Config) error {
+			return serveHTTP(configured, reloadPath, os.Stderr)
+		},
+		func(route endpoint.Route) error {
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+			defer stop()
+			return serveAddressRoute(ctx, route, productionAddressRouteRuntime())
+		},
+	))
+}
+
+func runCommand(
+	args []string,
+	stdout, stderr io.Writer,
+	serveConfig func(config.Config) error,
+	serveRoute func(endpoint.Route) error,
+) int {
+	if !looksLikeAddressRoute(args) {
+		return run(args, stdout, stderr, serveConfig)
+	}
+	route, err := endpoint.ParseRoute(args)
+	if err != nil {
+		fmt.Fprintf(stderr, "invalid address route: %v\n", err)
+		return 2
+	}
+	if serveRoute == nil {
+		fmt.Fprintln(stderr, "address route runtime is unavailable")
+		return 1
+	}
+	if err := serveRoute(route); err != nil {
+		fmt.Fprintf(stderr, "serve address route: %v\n", err)
+		return 1
+	}
+	return 0
+}
+
+func looksLikeAddressRoute(args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
+	kind, _, found := strings.Cut(args[0], ":")
+	return found && !strings.Contains(kind, "=") && strings.HasSuffix(strings.ToUpper(kind), "-LISTEN")
 }
 
 func configPathFromArgs(args []string) string {

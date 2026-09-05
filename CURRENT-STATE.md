@@ -4,6 +4,15 @@ Last verified: 2026-09-04
 
 ## Verified
 
+- The primary two-address command now has its first executable runtime slice:
+  `TCP-LISTEN:host:port TCP-CONNECT:host:port` binds one TCP listener and opens
+  one context-aware destination connection per accepted client through the
+  shared owned/drained bridge. Typed parsing completes before runtime dispatch;
+  malformed commands and unsupported Tailcat combinations create no listeners
+  or outbound connections. Focused command tests cover two sequential clients
+  and cancellation; a main-process loopback smoke through the documented HTTP
+  backend command returned 200. The two Tailcat command forms remain parsed but
+  unwired.
 - The fragile Tailcat child-process and human-log scraping experiment has been
   replaced by an in-process transport adapter. A fresh-key, exact-port Tailcat
   ingress feeds the shared owned/drained bridge; one lazy Tailcat client is
@@ -21,8 +30,9 @@ Last verified: 2026-09-04
   direction: one listening endpoint followed by one connecting endpoint. It
   covers ordinary TCP, Tailcat-to-TCP destination, and TCP-to-Tailcat client
   routes; role reversal, malformed values, unknown types, literal capability
-  secrets, and unschematized comma options fail closed. Runtime wiring is not
-  yet implemented, and legacy DeleGate directives remain a migration adapter.
+  secrets, and unschematized comma options fail closed. Ordinary TCP runtime
+  wiring is implemented; Tailcat command wiring is not. Legacy DeleGate
+  directives remain a migration adapter.
 - Tailcat capability validation now uses the pinned Tailcat v0.6.0 parser
   instead of guessing from a `tc` prefix and character set; a regression proves
   that `tcp` is rejected. The dependency is BSD-3-Clause, requires Go 1.27.1,

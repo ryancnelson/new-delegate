@@ -11,9 +11,65 @@ import (
 	"time"
 
 	"gitea.local/ryan/new-delegate/config"
+	"gitea.local/ryan/new-delegate/endpoint"
 	"gitea.local/ryan/new-delegate/mount"
 	"gitea.local/ryan/new-delegate/tlsconfig"
 )
+
+func TestRunCommandDispatchesParsedAddressRoute(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	want := endpoint.Route{
+		Ingress: endpoint.Address{Kind: endpoint.TCPListen, Host: "127.0.0.1", Port: 18080},
+		Egress:  endpoint.Address{Kind: endpoint.TCPConnect, Host: "127.0.0.1", Port: 8080},
+	}
+	var served endpoint.Route
+	exitCode := runCommand(
+		[]string{"TCP-LISTEN:127.0.0.1:18080", "TCP-CONNECT:127.0.0.1:8080"},
+		&stdout,
+		&stderr,
+		func(config.Config) error {
+			t.Fatal("address route invoked configuration runtime")
+			return nil
+		},
+		func(route endpoint.Route) error {
+			served = route
+			return nil
+		},
+	)
+
+	if exitCode != 0 || stdout.Len() != 0 || stderr.Len() != 0 {
+		t.Fatalf("runCommand() = %d, stdout=%q, stderr=%q", exitCode, stdout.String(), stderr.String())
+	}
+	if served != want {
+		t.Fatalf("served route = %#v, want %#v", served, want)
+	}
+}
+
+func TestRunCommandRejectsMalformedAddressRouteBeforeRuntime(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	configCalls := 0
+	routeCalls := 0
+	exitCode := runCommand(
+		[]string{"UDP-LISTEN:127.0.0.1:18080", "TCP-CONNECT:127.0.0.1:8080"},
+		&stdout,
+		&stderr,
+		func(config.Config) error {
+			configCalls++
+			return nil
+		},
+		func(endpoint.Route) error {
+			routeCalls++
+			return nil
+		},
+	)
+
+	if exitCode != 2 || configCalls != 0 || routeCalls != 0 {
+		t.Fatalf("runCommand() = %d, config calls=%d, route calls=%d", exitCode, configCalls, routeCalls)
+	}
+	if !strings.Contains(stderr.String(), `unknown address type "UDP-LISTEN"`) {
+		t.Fatalf("stderr = %q, want unknown address type", stderr.String())
+	}
+}
 
 func TestRunCheckPrintsCanonicalConfigWithoutServing(t *testing.T) {
 	var stdout, stderr bytes.Buffer

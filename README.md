@@ -14,8 +14,8 @@ migration dialect, while canonical TOML describes multi-route gateways and
 protocol translation. Translation uses typed semantic operations rather than a
 bag of protocol-specific optional fields.
 
-The new two-address grammar is parsed and tested but not yet wired into the
-executable. Its first intended forms are:
+The new two-address grammar is strict and tested. Its ordinary TCP form is now
+executable; the two geographic Tailcat forms are parsed but not yet wired:
 
 ```text
 delegate TCP-LISTEN:127.0.0.1:18080 TCP-CONNECT:127.0.0.1:8080
@@ -28,7 +28,17 @@ child command. It creates a fresh in-memory pairing, carries repeated TCP
 streams through one reusable client, and uses the same bounded bridge shutdown
 as ordinary TCP. It is covered by deterministic offline tests and an opt-in
 live public-Tailcat test that proves two sequential streams reuse one pairing.
-The executable commands and real two-host demonstration are still pending.
+The Tailcat executable commands and real two-host demonstration are still
+pending.
+
+The working one-machine TCP relay can be demonstrated with any local HTTP
+backend. In separate terminals:
+
+```sh
+python3 -m http.server 8080 --bind 127.0.0.1
+go run ./cmd/delegate TCP-LISTEN:127.0.0.1:18080 TCP-CONNECT:127.0.0.1:8080
+curl http://127.0.0.1:18080/
+```
 
 ## Development
 
