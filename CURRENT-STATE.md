@@ -12,8 +12,11 @@ Last verified: 2026-09-04
   after consumption or cancellation, and rejects already-buffered trailing
   data. Offline tests cover repeated streams, output failure, startup failure,
   cancellation during non-context-aware startup, idempotent client shutdown,
-  and post-close dial rejection under the race detector. A real network pairing
-  and executable wiring remain outstanding.
+  and post-close dial rejection under the race detector. An opt-in live test on
+  Darwin/arm64 also carried two sequential echo streams over one fresh pairing
+  and reusable client through Tailcat's public infrastructure, then shut down
+  cleanly in 4.95 seconds. Executable and real two-host wiring remain
+  outstanding.
 - A strict, side-effect-free two-address parser now captures the primary CLI
   direction: one listening endpoint followed by one connecting endpoint. It
   covers ordinary TCP, Tailcat-to-TCP destination, and TCP-to-Tailcat client
@@ -25,7 +28,8 @@ Last verified: 2026-09-04
   that `tcp` is rejected. The dependency is BSD-3-Clause, requires Go 1.27.1,
   and passes the full local race plus CGO-free Darwin/arm64 and Linux/amd64
   build gate. Push-triggered Woodpecker pipeline 104 passed at exact commit
-  `1ea9517`. The in-process reusable transport adapter remains in progress.
+  `1ea9517`. The in-process transport adapter and its live reusable-pairing
+  acceptance are now complete; executable wiring remains in P1-038.
 - HTTP CONNECT streams are explicitly owned after net/http hijacking. Parent
   cancellation and listener failure both start a permanent drain, cancel
   pending context-aware dials, reject late session registration, allow active

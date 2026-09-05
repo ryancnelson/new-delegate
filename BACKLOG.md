@@ -278,7 +278,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-037: Replace fragile Tailcat orchestration with a tested transport adapter
 
-- [IN PROGRESS] Depends on P1-036. Files: `link/tailcat.go`, `link/tailcat_test.go`,
+- [DONE] Depends on P1-036. Files: `link/tailcat.go`, `link/tailcat_test.go`,
   `link/bridge.go`, `go.mod`, `go.sum` if embedding; existing Tailcat plans.
 - Prefer a pinned Tailcat Go-library adapter behind the narrow connection
   interface and shared lifecycle. Inspect the actual chosen upstream version,
@@ -330,12 +330,21 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   the latter uses a reaper when Start eventually returns. Offline fake-transport
   tests cover repeated streams and pass under the race detector. The direct
   `tailscale.com` requirement is the version selected by Tailcat v0.6.0 and is
-  used only for Tailcat's exported exact-port filter type. A real network
-  pairing with repeated streams is still required before P1-037 is DONE.
+  used only for Tailcat's exported exact-port filter type.
+- Acceptance checkpoint (d) adds an opt-in live test against Tailcat's public
+  DERP discovery and relay infrastructure. On Darwin/arm64, one fresh
+  in-memory pairing carried two sequential TCP echo streams through the same
+  reusable client and shut both sides down cleanly in 4.95 seconds. The test
+  never logs the pairing, is bounded by a 90-second context plus Go's two-minute
+  timeout, and remains skipped in the deterministic default gate. Run it with
+  `NEW_DELEGATE_LIVE_TAILCAT=1 go test ./link -run
+  TestLiveTailcatPairingReusesClient -count=1 -timeout=2m -v`. This completes
+  P1-037; executable wiring and the two-host Darwin/Linux proof belong to
+  P1-038.
 
 ### P1-038: Wire typed two-address routes into the executable and prove the geographic split
 
-- [IDEA] Depends on P1-037. Files: `cmd/delegate/main.go`, command/runtime tests,
+- [IN PROGRESS] Depends on P1-037. Files: `cmd/delegate/main.go`, command/runtime tests,
   `examples/`, `scripts/` smoke-test entrypoint, README and compatibility docs.
 - The primary one-route form is `delegate ADDRESS ADDRESS`, following socat's
   left-to-right mental model without claiming full socat option compatibility.

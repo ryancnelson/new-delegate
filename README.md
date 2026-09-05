@@ -26,8 +26,9 @@ delegate TCP-LISTEN:127.0.0.1:18080 TAILCAT-CONNECT:@stdin
 The underlying Tailcat transport is now embedded rather than launched as a
 child command. It creates a fresh in-memory pairing, carries repeated TCP
 streams through one reusable client, and uses the same bounded bridge shutdown
-as ordinary TCP. This adapter is covered offline; the executable commands and
-real two-host demonstration are still pending.
+as ordinary TCP. It is covered by deterministic offline tests and an opt-in
+live public-Tailcat test that proves two sequential streams reuse one pairing.
+The executable commands and real two-host demonstration are still pending.
 
 ## Development
 
@@ -35,6 +36,15 @@ real two-host demonstration are still pending.
 go test ./...
 go test -race ./...
 go vet ./...
+```
+
+Run the bounded live Tailcat acceptance separately when public network access
+is available. It generates fresh in-memory credentials and does not print the
+pairing secret:
+
+```sh
+NEW_DELEGATE_LIVE_TAILCAT=1 go test ./link \
+  -run TestLiveTailcatPairingReusesClient -count=1 -timeout=2m -v
 ```
 
 Validate original-style directives without starting a listener:

@@ -117,6 +117,11 @@ approval. It does not manufacture semantic operations.
   4096 bytes. It closes immediately after one record, does not wait for EOF,
   rejects trailing bytes already buffered with that record, and closes on
   cancellation to interrupt blocked reads.
+- Live transport acceptance is opt-in because it contacts Tailcat's public DERP
+  discovery and relay infrastructure. It creates fresh in-memory credentials,
+  never logs the pairing, proves multiple sequential streams reuse one client,
+  and uses explicit deadlines and teardown bounds. Deterministic CI continues
+  to exercise the same adapter through offline fakes.
 - HTTP PUT is represented as a Store operation, not Fetch. Declared oversized
   bodies are rejected before connector invocation and streamed bodies are
   capped at 32 MiB.
