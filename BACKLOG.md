@@ -300,9 +300,10 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   address validation to Tailcat's own parser. Tailcat v0.6.0 is pinned under
   its BSD-3-Clause license, the module floor is deliberately raised from Go
   1.25 to Go 1.27.1, and the full race plus CGO-free Darwin/arm64 and
-  Linux/amd64 gate passes. The in-process reusable client/server adapter,
-  lifecycle regressions, exact-commit Woodpecker run, and live multi-stream
-  pairing remain before P1-037 completion.
+  Linux/amd64 gate passes. Push-triggered Woodpecker pipeline 104 passed at
+  exact commit `1ea9517`. The in-process reusable client/server adapter,
+  lifecycle regressions, and live multi-stream pairing remain before P1-037
+  completion.
 
 ### P1-038: Wire the geographic link into the executable and prove it on Biggie
 

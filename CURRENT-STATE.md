@@ -8,7 +8,8 @@ Last verified: 2026-09-04
   instead of guessing from a `tc` prefix and character set; a regression proves
   that `tcp` is rejected. The dependency is BSD-3-Clause, requires Go 1.27.1,
   and passes the full local race plus CGO-free Darwin/arm64 and Linux/amd64
-  build gate. The in-process reusable transport adapter remains in progress.
+  build gate. Push-triggered Woodpecker pipeline 104 passed at exact commit
+  `1ea9517`. The in-process reusable transport adapter remains in progress.
 - HTTP CONNECT streams are explicitly owned after net/http hijacking. Parent
   cancellation and listener failure both start a permanent drain, cancel
   pending context-aware dials, reject late session registration, allow active
