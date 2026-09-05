@@ -97,6 +97,10 @@ approval. It does not manufacture semantic operations.
 - Geographic bridge clients are registered with session ownership immediately
   after accept, before remote dialing. Once shutdown begins, the tracker closes
   and rejects every late registration; dial callbacks must honor cancellation.
+- Tailcat capability addresses are opaque and case-sensitive. The link package
+  delegates their validation to the pinned upstream Tailcat parser rather than
+  inferring validity from display syntax. Tailcat v0.6.0 establishes the Go
+  1.27.1 toolchain floor and is isolated behind the link transport boundary.
 - HTTP PUT is represented as a Store operation, not Fetch. Declared oversized
   bodies are rejected before connector invocation and streamed bodies are
   capped at 32 MiB.

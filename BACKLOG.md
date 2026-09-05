@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 105 - accept CONNECT and bridge lifecycle)
+**Last Updated:** 2026-09-04 (Iteration 106 - pin Tailcat parser and toolchain)
 
 ---
 
@@ -274,7 +274,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-037: Replace fragile Tailcat orchestration with a tested transport adapter
 
-- [IDEA] Depends on P1-036. Files: `link/tailcat.go`, `link/tailcat_test.go`,
+- [IN PROGRESS] Depends on P1-036. Files: `link/tailcat.go`, `link/tailcat_test.go`,
   `link/bridge.go`, `go.mod`, `go.sum` if embedding; existing Tailcat plans.
 - Prefer a pinned Tailcat Go-library adapter behind the narrow connection
   interface and shared lifecycle. Inspect the actual chosen upstream version,
@@ -295,6 +295,14 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   persisted by default, and one live pairing supports multiple TCP streams.
   Upstream reference: https://github.com/tailscale/tailcat#key-management and
   https://github.com/tailscale/tailcat#go-library . Recheck pinned-version facts.
+- Sub-checkpoint (a) is locally verified: the prior prefix/character heuristic
+  accepted `tcp` as a capability address. The red regression now delegates
+  address validation to Tailcat's own parser. Tailcat v0.6.0 is pinned under
+  its BSD-3-Clause license, the module floor is deliberately raised from Go
+  1.25 to Go 1.27.1, and the full race plus CGO-free Darwin/arm64 and
+  Linux/amd64 gate passes. The in-process reusable client/server adapter,
+  lifecycle regressions, exact-commit Woodpecker run, and live multi-stream
+  pairing remain before P1-037 completion.
 
 ### P1-038: Wire the geographic link into the executable and prove it on Biggie
 

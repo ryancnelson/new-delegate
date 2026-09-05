@@ -14,10 +14,12 @@ import (
 
 const testProcessTimeout = 5 * time.Second
 
+const testTailcatAddress = "tcomFwWCCcjS5nKNqAod034nWoJZW0LZqDhhC8U_dKdnDRYQ8uNGFpGQEu"
+
 func TestPairingRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	pairing := Pairing{RemotePort: 8080, Address: "tcExampleAddress"}
+	pairing := Pairing{RemotePort: 8080, Address: testTailcatAddress}
 	encoded := pairing.Encode()
 	if strings.Contains(encoded, "\n") {
 		t.Fatalf("Encode() contains newline: %q", encoded)
@@ -37,7 +39,7 @@ func TestPairingRejectsMalformedInput(t *testing.T) {
 	for _, encoded := range []string{
 		"", "tcExampleAddress", "ndlink1:0:tcExampleAddress",
 		"ndlink2:8080:tcExampleAddress", "ndlink1:8080:not-tailcat",
-		"ndlink1:8080:tcExample Address",
+		"ndlink1:8080:tcExample Address", "ndlink1:8080:tcp",
 	} {
 		if _, err := ParsePairing(encoded); err == nil {
 			t.Fatalf("ParsePairing(%q) = nil, want error", encoded)
@@ -51,7 +53,7 @@ func TestTailcatArgumentsRequireLoopbackTargets(t *testing.T) {
 	if _, _, err := TailcatServeArgs("192.0.2.20:8080"); err == nil {
 		t.Fatal("TailcatServeArgs() = nil, want non-loopback error")
 	}
-	pairing := Pairing{RemotePort: 8080, Address: "tcExampleAddress"}
+	pairing := Pairing{RemotePort: 8080, Address: testTailcatAddress}
 	if _, err := TailcatForwardArgs(pairing, "0.0.0.0:18080"); err == nil {
 		t.Fatal("TailcatForwardArgs() = nil, want non-loopback error")
 	}
@@ -63,7 +65,7 @@ func TestRunRightPrintsOnePairingAndRedactsTailcatOutput(t *testing.T) {
 	}
 
 	binary := writeTailcatScript(t, `
-printf 'server address tcExampleAddress\n'
+printf 'server address `+testTailcatAddress+`\n'
 while :; do sleep 1; done
 `)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -91,7 +93,7 @@ while :; do sleep 1; done
 	case <-time.After(testProcessTimeout):
 		t.Fatal("RunRight did not emit a pairing")
 	}
-	if got, want := pairing.String(), "ndlink1:8080:tcExampleAddress\n"; got != want {
+	if got, want := pairing.String(), "ndlink1:8080:"+testTailcatAddress+"\n"; got != want {
 		t.Fatalf("pairing = %q, want %q", got, want)
 	}
 
@@ -105,7 +107,7 @@ while :; do sleep 1; done
 	case <-time.After(testProcessTimeout):
 		t.Fatal("RunRight did not stop after cancellation")
 	}
-	if strings.Contains(diagnostics.String(), "tcExampleAddress") {
+	if strings.Contains(diagnostics.String(), testTailcatAddress) {
 		t.Fatalf("diagnostics leaked pairing address: %q", diagnostics.String())
 	}
 }
@@ -125,14 +127,14 @@ while :; do sleep 1; done
 	defer cancel()
 	done := make(chan error, 1)
 	go func() {
-		done <- RunLeft(ctx, binary, strings.NewReader("ndlink1:8080:tcExampleAddress\n"), "127.0.0.1:18080", io.Discard)
+		done <- RunLeft(ctx, binary, strings.NewReader("ndlink1:8080:"+testTailcatAddress+"\n"), "127.0.0.1:18080", io.Discard)
 	}()
 
 	deadline := time.Now().Add(testProcessTimeout)
 	for time.Now().Before(deadline) {
 		contents, err := os.ReadFile(argsFile)
 		if err == nil {
-			if got, want := string(contents), "forward\ntcExampleAddress\n18080:8080\n"; got != want {
+			if got, want := string(contents), "forward\n"+testTailcatAddress+"\n18080:8080\n"; got != want {
 				t.Fatalf("tailcat arguments = %q, want %q", got, want)
 			}
 			cancel()

@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/tailscale/tailcat"
 )
 
 const pairingPrefix = "ndlink1"
@@ -212,17 +214,8 @@ func loopbackPort(address string) (uint16, error) {
 }
 
 func validTailcatAddress(address string) bool {
-	if len(address) < 3 || !strings.HasPrefix(address, "tc") {
-		return false
-	}
-	for _, character := range address {
-		if (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
-			(character >= '0' && character <= '9') || character == '_' || character == '-' {
-			continue
-		}
-		return false
-	}
-	return true
+	_, err := tailcat.ParseAddr(tailcat.Addr(address))
+	return err == nil
 }
 
 func tailcatAddressIn(line string) string {
