@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 103 - accept bridge session ownership)
+**Last Updated:** 2026-09-04 (Iteration 104 - own and drain CONNECT sessions)
 
 ---
 
@@ -262,6 +262,14 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   Darwin/arm64 and Linux/amd64 gate. Push-triggered Woodpecker pipeline 100
   passed all stages at exact commit `deaa9a6`; CONNECT/server lifecycle work
   remains.
+- Sub-checkpoint (b) is locally verified for HTTP CONNECT: the handler owns
+  backend and hijacked client streams, begins a permanent drain on parent
+  cancellation or listener failure, cancels pending context-aware dials,
+  rejects late registrations, allows active relays to finish within the shared
+  shutdown budget, and force-closes sessions held at its deadline. Existing
+  bidirectional half-close behavior remains covered. Focused tests pass across
+  repeated runs and the full race plus Darwin/arm64 and Linux/amd64 gate passes.
+  Exact-commit Woodpecker acceptance remains before P1-036 completion.
 
 ### P1-037: Replace fragile Tailcat orchestration with a tested transport adapter
 

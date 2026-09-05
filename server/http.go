@@ -46,6 +46,7 @@ type httpHandler struct {
 	snapshot  func() config.Config
 	connector mountFetchConnector
 	relay     relayConnector
+	sessions  *connectionSessions
 }
 
 const maxStoreBodyBytes int64 = 32 << 20
@@ -87,7 +88,16 @@ func NewReloadableHTTPHandlerWithRoutesAndRelay(server string, snapshot func() c
 		snapshot:  snapshot,
 		connector: connector,
 		relay:     relay,
+		sessions:  newConnectionSessions(),
 	}
+}
+
+func (h *httpHandler) beginSessionDrain() <-chan struct{} {
+	return h.sessions.beginDrain()
+}
+
+func (h *httpHandler) forceCloseSessions() {
+	h.sessions.forceClose()
 }
 
 func (h *httpHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -276,16 +286,26 @@ func (h *httpHandler) serveCONNECT(response http.ResponseWriter, request *http.R
 		http.Error(response, "invalid relay target", http.StatusBadGateway)
 		return
 	}
-	backend, err := h.relay.Connect(request.Context(), relay)
+	dialContext, cancelDial := h.sessions.dialContext(request.Context())
+	backend, err := h.relay.Connect(dialContext, relay)
+	cancelDial()
 	if err != nil {
 		http.Error(response, "backend relay failed", http.StatusBadGateway)
 		return
 	}
+	if !h.sessions.add(backend) {
+		return
+	}
+	defer h.sessions.remove(backend)
 	client, buffered, err := hijacker.Hijack()
 	if err != nil {
 		_ = backend.Close()
 		return
 	}
+	if !h.sessions.add(client) {
+		return
+	}
+	defer h.sessions.remove(client)
 	defer client.Close()
 	defer backend.Close()
 	_ = client.SetDeadline(time.Time{})

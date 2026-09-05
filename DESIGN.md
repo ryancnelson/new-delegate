@@ -89,6 +89,11 @@ approval. It does not manufacture semantic operations.
 - CONNECT relays have bounded dialing, response-handshake, and rolling idle
   deadlines; EOF propagates as a TCP half-close and both hijacked connections
   are closed when the relay ends.
+- The HTTP handler owns CONNECT backend and hijacked client streams outside
+  net/http's connection registry. Server cancellation or listener failure
+  permanently stops new session registration, cancels pending context-aware
+  dials, drains active relays within the shared shutdown budget, then closes
+  every remaining stream.
 - Geographic bridge clients are registered with session ownership immediately
   after accept, before remote dialing. Once shutdown begins, the tracker closes
   and rejects every late registration; dial callbacks must honor cancellation.

@@ -4,6 +4,12 @@ Last verified: 2026-09-04
 
 ## Verified
 
+- HTTP CONNECT streams are explicitly owned after net/http hijacking. Parent
+  cancellation and listener failure both start a permanent drain, cancel
+  pending context-aware dials, reject late session registration, allow active
+  relays to finish within the shared shutdown budget, and force-close both
+  sides at its deadline. Deterministic lifecycle tests and the full race plus
+  Darwin/arm64 and Linux/amd64 gate pass locally.
 - The geographic bridge now owns each accepted client before starting its
   remote dial. Closing its connection tracker is permanent: concurrent or later
   registrations are rejected and closed, so the drain deadline can close a
