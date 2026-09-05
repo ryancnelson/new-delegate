@@ -58,11 +58,15 @@ func Serve(ctx context.Context, listener net.Listener, dial Dialer, drain time.D
 			_ = client.Close()
 			break
 		}
+		if !active.Add(client) {
+			break
+		}
 
 		streams.Add(1)
 		go func(client net.Conn) {
 			defer streams.Done()
 			defer client.Close()
+			defer active.Remove(client)
 
 			remote, err := dial(ctx)
 			if err != nil {
@@ -73,9 +77,9 @@ func Serve(ctx context.Context, listener net.Listener, dial Dialer, drain time.D
 				return
 			}
 
-			active.Add(client)
-			active.Add(remote)
-			defer active.Remove(client)
+			if !active.Add(remote) {
+				return
+			}
 			defer active.Remove(remote)
 			relay(client, remote)
 		}(client)
@@ -112,18 +116,25 @@ func copyHalf(group *sync.WaitGroup, destination, source net.Conn) {
 }
 
 type connections struct {
-	mu    sync.Mutex
-	items map[net.Conn]struct{}
+	mu      sync.Mutex
+	closing bool
+	items   map[net.Conn]struct{}
 }
 
 func newConnections() *connections {
 	return &connections{items: make(map[net.Conn]struct{})}
 }
 
-func (c *connections) Add(connection net.Conn) {
+func (c *connections) Add(connection net.Conn) bool {
 	c.mu.Lock()
-	defer c.mu.Unlock()
+	if c.closing {
+		c.mu.Unlock()
+		_ = connection.Close()
+		return false
+	}
 	c.items[connection] = struct{}{}
+	c.mu.Unlock()
+	return true
 }
 
 func (c *connections) Remove(connection net.Conn) {
@@ -134,6 +145,7 @@ func (c *connections) Remove(connection net.Conn) {
 
 func (c *connections) Close() {
 	c.mu.Lock()
+	c.closing = true
 	items := make([]net.Conn, 0, len(c.items))
 	for connection := range c.items {
 		items = append(items, connection)

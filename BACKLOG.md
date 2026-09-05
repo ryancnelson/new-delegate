@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 101 - accept semantic FTP translation)
+**Last Updated:** 2026-09-04 (Iteration 102 - own bridge sessions before dial)
 
 ---
 
@@ -235,7 +235,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-036: Own and drain CONNECT and bridge sessions
 
-- [IDEA] Depends on P1-035. Files: `server/lifecycle.go`, `server/group.go`,
+- [IN PROGRESS] Depends on P1-035. Files: `server/lifecycle.go`, `server/group.go`,
   `server/http.go`, `link/bridge.go`, and lifecycle/relay tests.
 - Evidence: HTTP Shutdown does not manage hijacked CONNECT sessions. The bridge
   registers connections only after dialing; Close snapshots allow later Add;
@@ -254,6 +254,13 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 - Acceptance: Serve returns within the documented deadline plus test tolerance,
   no tracked sessions survive, half-close works, race tests pass. Share lifecycle
   logic where useful without conflating HTTP parsing and transparent relay.
+- Sub-checkpoint (a) is locally verified for the geographic bridge: accepted
+  clients register before remote dialing, tracker closure permanently rejects
+  and closes later registrations, and the drain deadline closes an accepted
+  client even while a deliberately non-cooperative dial remains pending. Tests
+  coordinate with channels rather than sleeps and pass under the full race plus
+  Darwin/arm64 and Linux/amd64 gate. Exact-commit Woodpecker acceptance and the
+  CONNECT/server lifecycle work remain.
 
 ### P1-037: Replace fragile Tailcat orchestration with a tested transport adapter
 

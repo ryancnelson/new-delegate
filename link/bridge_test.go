@@ -129,3 +129,71 @@ func TestServeStopsDialingAfterCancellation(t *testing.T) {
 		t.Fatalf("dial calls = %d, want 0", got)
 	}
 }
+
+func TestConnectionsCloseRejectsAndClosesLateRegistration(t *testing.T) {
+	active := newConnections()
+	active.Close()
+	connection, peer := net.Pipe()
+	defer peer.Close()
+	tracked := &trackedCloseConn{Conn: connection, closed: make(chan struct{})}
+
+	active.Add(tracked)
+	select {
+	case <-tracked.closed:
+	case <-time.After(250 * time.Millisecond):
+		t.Fatal("connection added after Close was left open")
+	}
+}
+
+func TestServeOwnsAcceptedClientWhileDialIsPending(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	dialStarted := make(chan struct{})
+	releaseDial := make(chan struct{})
+	serveDone := make(chan error, 1)
+	go func() {
+		serveDone <- Serve(ctx, listener, func(context.Context) (net.Conn, error) {
+			close(dialStarted)
+			<-releaseDial
+			return nil, errors.New("released")
+		}, 20*time.Millisecond)
+	}()
+
+	client, err := net.Dial("tcp", listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	<-dialStarted
+	cancel()
+	_ = client.SetReadDeadline(time.Now().Add(250 * time.Millisecond))
+	_, readErr := client.Read(make([]byte, 1))
+	if readErr == nil {
+		t.Fatal("client remained readable after shutdown")
+	}
+	if timeout, ok := readErr.(net.Error); ok && timeout.Timeout() {
+		close(releaseDial)
+		<-serveDone
+		t.Fatal("accepted client remained open while dial was pending")
+	}
+	close(releaseDial)
+	if err := <-serveDone; err != nil {
+		t.Fatalf("Serve() error = %v, want nil", err)
+	}
+}
+
+type trackedCloseConn struct {
+	net.Conn
+	closed chan struct{}
+	once   atomic.Bool
+}
+
+func (c *trackedCloseConn) Close() error {
+	if c.once.CompareAndSwap(false, true) {
+		close(c.closed)
+	}
+	return c.Conn.Close()
+}

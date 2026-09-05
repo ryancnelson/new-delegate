@@ -89,6 +89,9 @@ approval. It does not manufacture semantic operations.
 - CONNECT relays have bounded dialing, response-handshake, and rolling idle
   deadlines; EOF propagates as a TCP half-close and both hijacked connections
   are closed when the relay ends.
+- Geographic bridge clients are registered with session ownership immediately
+  after accept, before remote dialing. Once shutdown begins, the tracker closes
+  and rejects every late registration; dial callbacks must honor cancellation.
 - HTTP PUT is represented as a Store operation, not Fetch. Declared oversized
   bodies are rejected before connector invocation and streamed bodies are
   capped at 32 MiB.

@@ -8,7 +8,7 @@ Only passing tests may move an item to `verified`.
 | `SERVER` | Named frontend listener and protocol | verified: basic protocol, port, and coordinated HTTP listeners |
 | `MOUNT` | Ordered virtual-resource mapping with deterministic specificity | verified: path/absolute-HTTP/CONNECT sources, legacy syntax, frontend scoping, resolver kernel |
 | `PERMIT` / `REJECT` | Fail-closed policy rules | verified: basic legacy selectors and canonical kernel |
-| `RELAY` | Authorized transparent byte-stream forwarding | partial: HTTP CONNECT over TCP verified |
+| `RELAY` | Authorized transparent byte-stream forwarding | partial: HTTP CONNECT over TCP and bridge pre-dial client ownership verified |
 | `STLS` | Independent readable frontend/backend TLS settings | partial: HTTP frontend/backend and mutual TLS verified |
 | `FCL` | Bounded typed request/response transformations | planned |
 | `CACHE` | Explicit response cache policy | planned |
