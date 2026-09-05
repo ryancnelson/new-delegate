@@ -2,10 +2,12 @@
 
 ## Product boundary
 
-`new-delegate` is a modern successor to the original DeleGate application
-gateway. It supports ordinary forward and reverse proxying, terminating
-gateways, and deliberate cross-protocol operations. Agent-facing endpoints are
-one use of the gateway rather than a separate architecture.
+`new-delegate` is a modern application gateway inspired by the strongest ideas
+in the original DeleGate. It supports ordinary forward and reverse proxying,
+terminating gateways, and deliberate cross-protocol operations. It does not
+promise that arbitrary original DeleGate command lines work unchanged.
+Agent-facing endpoints are one use of the gateway rather than a separate
+architecture.
 
 ## Request path
 
@@ -29,6 +31,7 @@ approval. It does not manufacture semantic operations.
 ## Stable boundaries
 
 - `config`: canonical configuration plus TOML and legacy syntax adapters.
+- `endpoint`: strict, side-effect-free typed address and route parsing.
 - `server`: listener lifecycle, limits, deadlines, and connection context.
 - `protocol`: typed frontend and backend wire codecs.
 - `operation`: protocol-neutral capabilities such as Fetch, Store, List,
@@ -43,6 +46,9 @@ approval. It does not manufacture semantic operations.
 ## Invariants
 
 - Configuration is parsed and validated completely before activation.
+- The primary one-route CLI has exactly two typed addresses: an accepting
+  address followed by a dialing address. Unknown address types, parameters,
+  and options fail before any listener or connector starts.
 - Reload failure leaves the previous configuration active.
 - Paths are normalized and validated before mount matching.
 - Absolute URL mount sources match parsed scheme and authority without DNS;
@@ -104,6 +110,34 @@ approval. It does not manufacture semantic operations.
 - HTTP PUT is represented as a Store operation, not Fetch. Declared oversized
   bodies are rejected before connector invocation and streamed bodies are
   capped at 32 MiB.
+
+## Command grammar
+
+The primary command grammar follows socat's useful mental model: connect two
+addresses, left to right. Address keywords carry strict schemas and capabilities
+rather than entering one untyped option namespace. The first parser slice is:
+
+```text
+delegate TCP-LISTEN:127.0.0.1:18080 TCP-CONNECT:127.0.0.1:8080
+
+# destination site; emits a short-lived handoff on standard output
+delegate TAILCAT-LISTEN:8080 TCP-CONNECT:127.0.0.1:8080
+
+# client site; consumes that handoff without putting it in argv
+delegate TCP-LISTEN:127.0.0.1:18080 TAILCAT-CONNECT:@stdin
+```
+
+The two-address parser is side-effect-free and exists before runtime wiring.
+Keywords are currently exact and case-sensitive. Comma options are reserved
+until each address type has an explicit option schema; accepting arbitrary
+socat options would create misleading compatibility and unsafe ambiguity.
+Future stream address types can compose through the same route contract.
+Semantic protocol translation remains in canonical TOML because it needs named
+servers, mounts, and policy rather than an ever-growing command line.
+
+`SERVER`, `MOUNT`, `PERMIT`, and `REJECT` remain a deliberately small legacy
+migration dialect compiled into canonical configuration. They are not the
+primary grammar or a promise of general DeleGate CLI compatibility.
 
 ## Portability
 

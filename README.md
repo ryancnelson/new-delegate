@@ -2,16 +2,26 @@
 
 [![Woodpecker CI](http://biggie.lynx-eagle.ts.net:8110/api/badges/5/status.svg)](http://biggie.lynx-eagle.ts.net:8110/repos/5)
 
-`new-delegate` is a portable, DeleGate-compatible application gateway written
-in Go. It preserves the original program's strongest concepts: a daemon can
-present one protocol on its client side, map virtual resources with `MOUNT`,
-apply fail-closed access policy, and reach a different protocol on its server
-side.
+`new-delegate` is a portable application gateway written in Go. It preserves
+the original DeleGate program's strongest concepts: a daemon can present one
+protocol on its client side, map virtual resources, apply fail-closed access
+policy, and reach a different protocol on its server side. General command-line
+compatibility with the original is not a goal.
 
-The first milestone is a tested compatibility kernel for `SERVER`, `MOUNT`,
-`PERMIT`, and `REJECT`, followed by an HTTP-to-HTTP vertical slice. Protocol
-translation is built around typed semantic operations rather than a bag of
-protocol-specific optional fields.
+The primary one-route CLI is moving toward a strict, socat-familiar pair of
+typed addresses. `SERVER`, `MOUNT`, `PERMIT`, and `REJECT` remain a curated
+migration dialect, while canonical TOML describes multi-route gateways and
+protocol translation. Translation uses typed semantic operations rather than a
+bag of protocol-specific optional fields.
+
+The new two-address grammar is parsed and tested but not yet wired into the
+executable. Its first intended forms are:
+
+```text
+delegate TCP-LISTEN:127.0.0.1:18080 TCP-CONNECT:127.0.0.1:8080
+delegate TAILCAT-LISTEN:8080 TCP-CONNECT:127.0.0.1:8080
+delegate TCP-LISTEN:127.0.0.1:18080 TAILCAT-CONNECT:@stdin
+```
 
 ## Development
 

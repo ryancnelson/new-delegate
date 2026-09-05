@@ -3,6 +3,11 @@
 This ledger distinguishes implemented behavior from intended compatibility.
 Only passing tests may move an item to `verified`.
 
+This is a ledger for selected concepts and the curated legacy migration
+dialect, not a promise that arbitrary original DeleGate examples will work.
+The primary one-route CLI instead uses a strict, socat-familiar pair of typed
+addresses.
+
 | Original concept | Intended modern form | State |
 | --- | --- | --- |
 | `SERVER` | Named frontend listener and protocol | verified: basic protocol, port, and coordinated HTTP listeners |
@@ -27,6 +32,9 @@ Only passing tests may move an item to `verified`.
 
 Intentional differences:
 
+- General original DeleGate command-line compatibility is not a product goal.
+- The primary one-route grammar is `delegate ADDRESS ADDRESS`; each address has
+  an explicit type and option schema, and the left/right roles are validated.
 - Unknown options are fatal.
 - Identical repeated scalar directives are idempotent; conflicting repetitions
   are fatal rather than silently taking the last value.

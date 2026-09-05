@@ -3,9 +3,9 @@
 **Purpose:** Capture and prioritize improvement ideas for new-delegate.
 
 **Project:** new-delegate (Go)
-**Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
+**Description:** Composable protocol gateway with fail-closed policy, typed endpoints, and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 106 - pin Tailcat parser and toolchain)
+**Last Updated:** 2026-09-04 (Iteration 108 - establish typed two-address grammar)
 
 ---
 
@@ -45,6 +45,10 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   build. HTTP is the only runnable frontend; SOCKS5 has codecs, not a listener.
 - Keep Go, canonical configuration, legacy syntax adapters, deterministic mounts,
   policy-before-backend, and separate semantic/relay paths. No rewrite.
+- Product direction: optimize the primary one-route command grammar for people
+  familiar with socat, not for general original-DeleGate command compatibility.
+  Preserve `SERVER`/`MOUNT`/`PERMIT`/`REJECT` only as a curated migration
+  dialect. Compile every syntax into typed internal values before activation.
 - Only Darwin/arm64 and Linux/amd64 are active build targets. Keep normal builds
   CGO-free; no new assembly. Claude owns the site work; leave it alone.
 - Execute one ready item at a time, in the order below. Larger items may become
@@ -304,15 +308,38 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   exact commit `1ea9517`. The in-process reusable client/server adapter,
   lifecycle regressions, and live multi-stream pairing remain before P1-037
   completion.
+- Sub-checkpoint (b) establishes the runtime-facing grammar contract before the
+  adapter is embedded. `endpoint.ParseRoute` accepts exactly one listening
+  address followed by one connecting address. The first types are
+  `TCP-LISTEN`, `TCP-CONNECT`, `TAILCAT-LISTEN`, and `TAILCAT-CONNECT:@stdin`.
+  Parsing is side-effect-free; case variants, unknown types, malformed hosts or
+  ports, role reversal, literal Tailcat secrets, and all not-yet-specified comma
+  options fail closed. The normal and both geographic halves have table tests.
+  Runtime wiring and the reusable Tailcat adapter remain outstanding.
 
-### P1-038: Wire the geographic link into the executable and prove it on Biggie
+### P1-038: Wire typed two-address routes into the executable and prove the geographic split
 
 - [IDEA] Depends on P1-037. Files: `cmd/delegate/main.go`, command/runtime tests,
   `examples/`, `scripts/` smoke-test entrypoint, README and compatibility docs.
-- Right starts first and emits a one-run handoff; left consumes it and exposes
-  a loopback endpoint. Keep the existing ordinary serve/check/explain behavior.
-  Define and document exact flags before writing command tests. Unknown or
-  invalid link arguments fail before creating processes, listeners, or backends.
+- The primary one-route form is `delegate ADDRESS ADDRESS`, following socat's
+  left-to-right mental model without claiming full socat option compatibility.
+  The address types imply roles; do not add separate `left` and `right` modes.
+  Initial ordinary form:
+  `TCP-LISTEN:127.0.0.1:18080 TCP-CONNECT:127.0.0.1:8080`.
+  Initial right half:
+  `TAILCAT-LISTEN:8080 TCP-CONNECT:127.0.0.1:8080`.
+  Initial left half:
+  `TCP-LISTEN:127.0.0.1:18080 TAILCAT-CONNECT:@stdin`.
+- Right starts first and writes one short-lived handoff line to stdout; left
+  consumes one bounded newline-terminated handoff from stdin and exposes the
+  loopback endpoint. Diagnostics go to stderr and never disclose the handoff.
+  Keep ordinary serve/check/explain and the legacy migration dialect. Unknown
+  address types, parameters, and per-address options fail before any process,
+  listener, or backend is created.
+- Add comma options only through strict schemas owned by their address types.
+  Do not accept socat's arbitrary `EXEC`, file, or shell surfaces by default.
+  Stream endpoints must advertise compatible accept/dial capabilities before
+  runtime wiring. Keep multi-route semantic translation in canonical TOML.
 - First complete slice: HTTP between the two gateways, with any backend protocol
   translation performed on the destination side. Carry approved traffic only;
   do not implicitly trust forwarded client identity just because it arrived
