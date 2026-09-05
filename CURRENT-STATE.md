@@ -4,6 +4,16 @@ Last verified: 2026-09-04
 
 ## Verified
 
+- The fragile Tailcat child-process and human-log scraping experiment has been
+  replaced by an in-process transport adapter. A fresh-key, exact-port Tailcat
+  ingress feeds the shared owned/drained bridge; one lazy Tailcat client is
+  reused for repeated egress streams and has explicit drain/close lifecycle.
+  Pairing input is newline-complete without EOF, bounded to 4096 bytes, closed
+  after consumption or cancellation, and rejects already-buffered trailing
+  data. Offline tests cover repeated streams, output failure, startup failure,
+  cancellation during non-context-aware startup, idempotent client shutdown,
+  and post-close dial rejection under the race detector. A real network pairing
+  and executable wiring remain outstanding.
 - A strict, side-effect-free two-address parser now captures the primary CLI
   direction: one listening endpoint followed by one connecting endpoint. It
   covers ordinary TCP, Tailcat-to-TCP destination, and TCP-to-Tailcat client

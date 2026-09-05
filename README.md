@@ -23,6 +23,12 @@ delegate TAILCAT-LISTEN:8080 TCP-CONNECT:127.0.0.1:8080
 delegate TCP-LISTEN:127.0.0.1:18080 TAILCAT-CONNECT:@stdin
 ```
 
+The underlying Tailcat transport is now embedded rather than launched as a
+child command. It creates a fresh in-memory pairing, carries repeated TCP
+streams through one reusable client, and uses the same bounded bridge shutdown
+as ordinary TCP. This adapter is covered offline; the executable commands and
+real two-host demonstration are still pending.
+
 ## Development
 
 ```sh

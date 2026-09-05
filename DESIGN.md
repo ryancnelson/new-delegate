@@ -107,6 +107,16 @@ approval. It does not manufacture semantic operations.
   delegates their validation to the pinned upstream Tailcat parser rather than
   inferring validity from display syntax. Tailcat v0.6.0 establishes the Go
   1.27.1 toolchain floor and is isolated behind the link transport boundary.
+- Tailcat ingress uses fresh in-memory node and preshared keys, filters the
+  userspace stack to one configured TCP port, and adapts callback connections
+  into the shared bridge lifecycle. Tailcat egress reuses one lazy client for
+  all streams in a pairing. Both sides drain their userspace TCP stacks before
+  close within explicit bounds; no child process, human-log parsing, saved
+  default key, or capability-bearing process argument is involved.
+- Pairing handoff input is a single owned, newline-terminated stream capped at
+  4096 bytes. It closes immediately after one record, does not wait for EOF,
+  rejects trailing bytes already buffered with that record, and closes on
+  cancellation to interrupt blocked reads.
 - HTTP PUT is represented as a Store operation, not Fetch. Declared oversized
   bodies are rejected before connector invocation and streamed bodies are
   capped at 32 MiB.

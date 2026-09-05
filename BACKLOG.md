@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Composable protocol gateway with fail-closed policy, typed endpoints, and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 108 - establish typed two-address grammar)
+**Last Updated:** 2026-09-04 (Iteration 109 - embed reusable Tailcat transport)
 
 ---
 
@@ -316,6 +316,22 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   ports, role reversal, literal Tailcat secrets, and all not-yet-specified comma
   options fail closed. The normal and both geographic halves have table tests.
   Runtime wiring and the reusable Tailcat adapter remain outstanding.
+- Sub-checkpoint (c) replaces the unused subprocess/log-scraping experiment
+  with an in-process adapter. Tailcat ingress exposes exactly one filtered
+  virtual TCP port, generates fresh node and preshared keys in memory, emits
+  one capability line, and hands every accepted stream to the shared bridge
+  lifecycle. Tailcat egress validates the pairing before constructing one lazy
+  client, reuses that client for repeated streams, drains its userspace TCP
+  stack within the caller's context, closes once, and rejects later dials.
+  Pairing input is owned and closed: one bounded newline completes without EOF,
+  already-buffered trailing bytes fail closed, and cancellation closes a
+  blocked input. Output failure, synchronous startup failure, and cancellation
+  during Tailcat's non-context-aware startup all converge on server cleanup;
+  the latter uses a reaper when Start eventually returns. Offline fake-transport
+  tests cover repeated streams and pass under the race detector. The direct
+  `tailscale.com` requirement is the version selected by Tailcat v0.6.0 and is
+  used only for Tailcat's exported exact-port filter type. A real network
+  pairing with repeated streams is still required before P1-037 is DONE.
 
 ### P1-038: Wire typed two-address routes into the executable and prove the geographic split
 
