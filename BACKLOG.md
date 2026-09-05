@@ -5,7 +5,7 @@
 **Project:** new-delegate (Go)
 **Description:** Modern DeleGate-compatible protocol gateway with fail-closed policy and protocol translation
 
-**Last Updated:** 2026-09-04 (Iteration 104 - own and drain CONNECT sessions)
+**Last Updated:** 2026-09-04 (Iteration 105 - accept CONNECT and bridge lifecycle)
 
 ---
 
@@ -235,7 +235,7 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
 
 ### P1-036: Own and drain CONNECT and bridge sessions
 
-- [IN PROGRESS] Depends on P1-035. Files: `server/lifecycle.go`, `server/group.go`,
+- [DONE] Depends on P1-035. Files: `server/lifecycle.go`, `server/group.go`,
   `server/http.go`, `link/bridge.go`, and lifecycle/relay tests.
 - Evidence: HTTP Shutdown does not manage hijacked CONNECT sessions. The bridge
   registers connections only after dialing; Close snapshots allow later Add;
@@ -269,7 +269,8 @@ broader protocol or lifecycle is complete. New items below correct those gaps.
   shutdown budget, and force-closes sessions held at its deadline. Existing
   bidirectional half-close behavior remains covered. Focused tests pass across
   repeated runs and the full race plus Darwin/arm64 and Linux/amd64 gate passes.
-  Exact-commit Woodpecker acceptance remains before P1-036 completion.
+  Push-triggered Woodpecker pipeline 102 passed at exact commit `9651e71`,
+  completing P1-036.
 
 ### P1-037: Replace fragile Tailcat orchestration with a tested transport adapter
 
