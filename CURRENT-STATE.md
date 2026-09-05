@@ -9,6 +9,8 @@ Last verified: 2026-09-04
   registrations are rejected and closed, so the drain deadline can close a
   client even while a non-cooperative dial is still pending. Deterministic
   late-registration and pending-dial tests plus the full local gate pass.
+  Push-triggered Woodpecker pipeline 100 passed all stages at exact commit
+  `deaa9a6`.
 - Protocol-neutral results now distinguish passthrough HTTP status from
   success, not-found, permission-denied, and upstream-failure outcomes. The
   HTTP frontend maps those semantic outcomes to 200/204, 404, 403, and 502 and
